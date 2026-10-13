@@ -447,7 +447,8 @@
 
     {{-- JAVASCRIPT LOGIC --}}
     <script>
-        const customersData = [
+        const serverData = @json($customersData ?? null);
+        const customersData = serverData || [
             { id: 1, name: "Andi Pratama", nik: "NIK001001", custNo: "CST0001", area: "Situbondo", status: "Aktif", paket: "100 Mbps", phone: "081211112222", email: "andi.pratama@email.com", address: "Jl. Melati No. 10, Situbondo", tagihan: "Rp450.000" },
             { id: 2, name: "Siti Rahmawati", nik: "NIK001002", custNo: "CST0002", area: "Besuki", status: "Aktif", paket: "200 Mbps", phone: "081222223333", email: "siti.rahmawati@email.com", address: "Jl. A. Yani No. 12, Besuki", tagihan: "Rp650.000" },
             { id: 3, name: "Budi Santoso", nik: "NIK001003", custNo: "CST0003", area: "Situbondo", status: "Aktif", paket: "50 Mbps", phone: "0812 3456 7890", email: "budi.santoso@email.com", address: "Jl. Sudirman No. 45, Situbondo", tagihan: "Rp350.000" },
@@ -460,7 +461,7 @@
             { id: 10, name: "Irfan Hidayat", nik: "NIK001010", custNo: "CST0010", area: "Besuki", status: "Aktif", paket: "100 Mbps", phone: "081299990000", email: "irfan.hidayat@email.com", address: "Jl. Pelabuhan No. 22, Besuki", tagihan: "Rp450.000" }
         ];
 
-        let currentSelectedCustomer = customersData[2];
+        let currentSelectedCustomer = customersData[2] || customersData[0] || null;
 
         document.addEventListener("DOMContentLoaded", function() {
             renderTable(customersData);

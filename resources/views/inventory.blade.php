@@ -4,7 +4,7 @@
     {{-- DATA DUMMY INVENTORY (Frontend Prototype)     --}}
     {{-- ============================================ --}}
     @php
-        $products = [
+        $products = $products ?? [
             [
                 'id' => 'PRD-001',
                 'name' => 'ONT ZTE F670L',
@@ -248,14 +248,14 @@
             ],
         ];
 
-        $summary = [
+        $summary = $summary ?? [
             'total_products' => 248,
             'total_stock'    => 12480,
             'low_stock'      => 13,
             'warehouse'      => 4,
         ];
 
-        $categories = [
+        $categories = $categories ?? [
             'Modem/ONT',
             'Accessories',
             'Perangkat FO',

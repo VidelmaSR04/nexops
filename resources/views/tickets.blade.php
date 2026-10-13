@@ -1,89 +1,17 @@
 <x-app-layout>
 
     {{-- ============================================ --}}
-    {{-- DATA DUMMY TIKET (Frontend Prototype)         --}}
-    {{-- ============================================ --}}
     @php
-        $rawTickets = [
-            [
-                'id' => '#TK-1025', 'customer' => 'Arkanet', 'location' => 'Situbondo', 'title' => 'Replace ONT', 'subtitle' => 'Ganti ONT ZTE F670L',
-                'priority' => 'High', 'status' => 'Open', 'tech' => 'Budi', 'created_at' => '08 Okt 2026 08:55',
-                'description' => 'Ganti ONT ZTE F670L yang mengalami kerusakan. Pelanggan sudah melaporkan sejak pagi.',
-                'asset' => 'ONT ZTE F670L', 'serial' => 'ZTE001234', 'sla_due' => '08 Okt 2026 12:55', 'sla_left' => '4 jam lagi',
-                'materials' => [['name' => 'ONT ZTE F670L', 'qty' => 1, 'unit' => 'pcs'], ['name' => 'Fiber Patchcord 3m', 'qty' => 1, 'unit' => 'pcs']],
-                'attachments' => [['name' => 'foto_ont_los.jpg', 'size' => '1.4 MB']]
-            ],
-            [
-                'id' => '#TK-1024', 'customer' => 'PT ABC', 'location' => 'Besuki', 'title' => 'Internet Down', 'subtitle' => 'Internet kantor mati total',
-                'priority' => 'High', 'status' => 'Resolved', 'tech' => 'Ahmad', 'created_at' => '08 Okt 2026 08:20',
-                'description' => 'Koneksi internet kantor mati total sejak pagi. Teknisi telah menyambung kabel drop fiber yang putus.',
-                'asset' => 'ONT ZTE F670L', 'serial' => 'ZTE001198', 'sla_due' => '08 Okt 2026 12:20', 'sla_left' => 'Selesai tepat waktu',
-                'materials' => [['name' => 'Protection Sleeve', 'qty' => 2, 'unit' => 'pcs']],
-                'attachments' => [['name' => 'laporan_pekerjaan.pdf', 'size' => '540 KB']]
-            ],
-            [
-                'id' => '#TK-1023', 'customer' => 'Office', 'location' => 'Asembagus', 'title' => 'Router Problem', 'subtitle' => 'Router sering restart sendiri',
-                'priority' => 'Normal', 'status' => 'In Progress', 'tech' => 'Dimas', 'created_at' => '08 Okt 2026 07:45',
-                'description' => 'Router sering hang dan perlu direstart manual beberapa kali sehari saat beban kerja tinggi.',
-                'asset' => 'Router TP-Link Archer C6', 'serial' => 'TPL552210', 'sla_due' => '08 Okt 2026 15:45', 'sla_left' => '6 jam lagi',
-                'materials' => [], 'attachments' => []
-            ],
-            [
-                'id' => '#TK-1022', 'customer' => 'Customer #2393', 'location' => 'Banyuglugur', 'title' => 'No Signal', 'subtitle' => 'Lampu indikator LOS merah',
-                'priority' => 'Normal', 'status' => 'Assigned', 'tech' => 'Rizky', 'created_at' => '08 Okt 2026 07:20',
-                'description' => 'Lampu LOS menyala merah, tidak ada sinyal dari core kabel fiber optik pelanggan.',
-                'asset' => 'ONT Huawei HG8245H', 'serial' => 'HWT778120', 'sla_due' => '08 Okt 2026 15:20', 'sla_left' => '7 jam lagi',
-                'materials' => [], 'attachments' => []
-            ],
-            [
-                'id' => '#TK-1021', 'customer' => 'Cafe 99', 'location' => 'Situbondo', 'title' => 'Speed Low', 'subtitle' => 'Kecepatan jauh di bawah paket',
-                'priority' => 'Low', 'status' => 'Open', 'tech' => '-', 'created_at' => '08 Okt 2026 06:30',
-                'description' => 'Kecepatan internet drop saat ramai pelanggan, terutama di jam sibuk sore hari.',
-                'asset' => 'ONT ZTE F670L', 'serial' => 'ZTE001302', 'sla_due' => '09 Okt 2026 06:30', 'sla_left' => '22 jam lagi',
-                'materials' => [], 'attachments' => []
-            ],
-            [
-                'id' => '#TK-1020', 'customer' => 'PT Sinar', 'location' => 'Besuki', 'title' => 'Network Problem', 'subtitle' => 'Packet loss tinggi di switch lantai 2',
-                'priority' => 'High', 'status' => 'Waiting', 'tech' => 'Budi', 'created_at' => '07 Okt 2026 22:15',
-                'description' => 'Jaringan kantor tersendat. Menunggu pengiriman kabel patchcord baru dari gudang pusat.',
-                'asset' => 'Switch TP-Link SG1016', 'serial' => 'TPS330915', 'sla_due' => '08 Okt 2026 06:15', 'sla_left' => 'Menunggu material',
-                'materials' => [], 'attachments' => []
-            ],
-            [
-                'id' => '#TK-1019', 'customer' => 'Hotel Indah', 'location' => 'Asembagus', 'title' => 'WiFi Down', 'subtitle' => 'Access Point area lobby mati',
-                'priority' => 'Normal', 'status' => 'Resolved', 'tech' => 'Ahmad', 'created_at' => '07 Okt 2026 20:42',
-                'description' => 'WiFi area lobby tidak bisa diakses tamu hotel. Adaptor PoE diganti baru dan access point normal.',
-                'asset' => 'Ubiquiti UAP-AC-LR', 'serial' => 'UBQ440021', 'sla_due' => '08 Okt 2026 04:42', 'sla_left' => 'Selesai',
-                'materials' => [['name' => 'PoE Injector 24V', 'qty' => 1, 'unit' => 'pcs']], 'attachments' => []
-            ],
-            [
-                'id' => '#TK-1018', 'customer' => 'UD Maju', 'location' => 'Situbondo', 'title' => 'Perangkat Rusak', 'subtitle' => 'ONT mati total kena petir',
-                'priority' => 'Critical', 'status' => 'Open', 'tech' => 'Dimas', 'created_at' => '07 Okt 2026 18:30',
-                'description' => 'Perangkat utama mati total setelah hujan petir kemarin sore. Seluruh transaksi kasir terhambat.',
-                'asset' => 'ONT Huawei HG8245H', 'serial' => 'HWT778455', 'sla_due' => '07 Okt 2026 20:30', 'sla_left' => 'SLA Overdue',
-                'materials' => [], 'attachments' => []
-            ],
-            [
-                'id' => '#TK-1017', 'customer' => 'Klinik Sehat', 'location' => 'Besuki', 'title' => 'Internet Lambat', 'subtitle' => 'Akses rekam medis lambat',
-                'priority' => 'Normal', 'status' => 'Assigned', 'tech' => 'Rizky', 'created_at' => '07 Okt 2026 16:20',
-                'description' => 'Akses sistem rekam medis BPJS sangat lambat pada jam pelayanan pasien.',
-                'asset' => 'ONT ZTE F670L', 'serial' => 'ZTE001077', 'sla_due' => '08 Okt 2026 00:20', 'sla_left' => 'Dalam proses',
-                'materials' => [], 'attachments' => []
-            ],
-            [
-                'id' => '#TK-1016', 'customer' => 'Koperasi ABC', 'location' => 'Banyuglugur', 'title' => 'Ganti Kabel', 'subtitle' => 'Kabel luar ruangan terputus',
-                'priority' => 'Low', 'status' => 'Closed', 'tech' => 'Fajar', 'created_at' => '07 Okt 2026 14:10',
-                'description' => 'Kabel dropcore 1 core putus terkena dahan pohon. Sudah dilakukan penarikan kabel baru 85 meter.',
-                'asset' => 'Kabel Dropcore Fiber', 'serial' => '-', 'sla_due' => '08 Okt 2026 14:10', 'sla_left' => 'Tiket ditutup',
-                'materials' => [['name' => 'Kabel Dropcore 1C', 'qty' => 85, 'unit' => 'meter']], 'attachments' => []
-            ],
-        ];
-
-        $ticketsById = collect($rawTickets)->keyBy('id')->all();
-        $technicians = ['Ahmad', 'Budi', 'Dimas', 'Rizky', 'Fajar'];
+        $ticketsById = collect($rawTickets)->keyBy('db_id')->all();
     @endphp
 
     <div class="space-y-6">
+
+        @if (session('success'))
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">
+                {{ session('success') }}
+            </div>
+        @endif
 
         {{-- ============================================ --}}
         {{-- 1. HEADER HALAMAN TICKET                     --}}
@@ -94,11 +22,10 @@
                 <p class="text-secondary text-sm mt-0.5">Kelola dan pantau semua ticket operasional</p>
             </div>
             <div>
-                <button type="button" id="btn-open-create-modal"
-                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-blue-700 shadow-sm transition-colors">
+                <a href="{{ route('tickets.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-blue-700 shadow-sm transition-colors">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     <span>Buat Ticket</span>
-                </button>
+                </a>
             </div>
         </div>
 
@@ -113,7 +40,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-secondary font-medium">Open</p>
-                    <p class="text-2xl font-bold text-dark mt-0.5">42</p>
+                    <p class="text-2xl font-bold text-dark mt-0.5">{{ $summary['open'] }}</p>
                 </div>
             </div>
 
@@ -124,7 +51,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-secondary font-medium">In Progress</p>
-                    <p class="text-2xl font-bold text-dark mt-0.5">18</p>
+                    <p class="text-2xl font-bold text-dark mt-0.5">{{ $summary['in_progress'] }}</p>
                 </div>
             </div>
 
@@ -135,7 +62,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-secondary font-medium">Overdue</p>
-                    <p class="text-2xl font-bold text-dark mt-0.5">7</p>
+                    <p class="text-2xl font-bold text-dark mt-0.5">{{ $summary['overdue'] }}</p>
                 </div>
             </div>
 
@@ -146,7 +73,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-secondary font-medium">Resolved</p>
-                    <p class="text-2xl font-bold text-dark mt-0.5">31</p>
+                    <p class="text-2xl font-bold text-dark mt-0.5">{{ $summary['resolved'] }}</p>
                 </div>
             </div>
         </div>
@@ -241,7 +168,7 @@
                         <tbody id="ticket-table-body" class="divide-y divide-gray-100">
                             @foreach ($rawTickets as $idx => $t)
                                 <tr class="ticket-row cursor-pointer transition-colors hover:bg-blue-50/40 {{ $idx === 0 ? 'bg-blue-50/70 border-l-4 border-l-primary' : '' }}"
-                                    data-id="{{ $t['id'] }}"
+                                    data-id="{{ $t['db_id'] }}"
                                     data-status="{{ $t['status'] }}"
                                     data-priority="{{ $t['priority'] }}"
                                     data-tech="{{ $t['tech'] }}"
@@ -281,10 +208,21 @@
                                     <td class="py-3 pr-3 whitespace-nowrap text-secondary text-[11px]">
                                         {{ $t['created_at'] }}
                                     </td>
-                                    <td class="py-3 pr-4 text-center">
-                                        <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" data-dummy-action="Menu Aksi {{ $t['id'] }}">
+                                    <td class="py-3 pr-4 text-center relative">
+                                        <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" onclick="toggleMenu({{ $t['db_id'] }})">
                                             <i data-lucide="more-vertical" class="w-4 h-4"></i>
                                         </button>
+                                        <div id="menu-{{ $t['db_id'] }}" class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-border z-50 hidden">
+                                            <div class="px-4 py-2">
+                                                <a href="{{ route('tickets.show', $t['db_id']) }}" class="block px-4 py-2 text-sm text-dark hover:bg-gray-100">Lihat</a>
+                                                <a href="{{ route('tickets.edit', $t['db_id']) }}" class="block px-4 py-2 text-sm text-dark hover:bg-gray-100">Edit</a>
+                                                <form action="{{ route('tickets.destroy', $t['db_id']) }}" method="POST" class="block w-full" onsubmit="return confirm('Yakin ingin menghapus ticket ini?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Hapus</button>
+                                                </form>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -299,22 +237,8 @@
                     </table>
                 </div>
 
-                {{-- Pagination Dummy --}}
                 <div class="p-3.5 border-t border-border flex flex-wrap items-center justify-between gap-3 text-xs">
-                    <p id="table-info" class="text-secondary">Menampilkan 1-10 dari 142 ticket</p>
-                    <div class="flex items-center gap-1">
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border flex items-center justify-center text-secondary hover:bg-gray-50" data-dummy-action="Halaman Sebelumnya">
-                            <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button type="button" class="w-7 h-7 rounded-lg bg-primary text-white font-medium flex items-center justify-center">1</button>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border text-secondary hover:bg-gray-50 flex items-center justify-center" data-dummy-action="Halaman 2">2</button>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border text-secondary hover:bg-gray-50 flex items-center justify-center" data-dummy-action="Halaman 3">3</button>
-                        <span class="px-1 text-gray-400">...</span>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border text-secondary hover:bg-gray-50 flex items-center justify-center" data-dummy-action="Halaman 15">15</button>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border flex items-center justify-center text-secondary hover:bg-gray-50" data-dummy-action="Halaman Berikutnya">
-                            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-                        </button>
-                    </div>
+                    <p id="table-info" class="text-secondary">Menampilkan {{ count($rawTickets) }} dari {{ count($rawTickets) }} tiket</p>
                 </div>
 
             </div>
@@ -323,21 +247,21 @@
             {{-- KOLOM KANAN: PANEL DETAIL TICKET         --}}
             {{-- ======================================== --}}
             <aside id="ticket-detail-panel"
-                   class="w-full xl:w-[480px] 2xl:w-[520px] bg-white rounded-2xl border border-border shadow-[0_2px_6px_rgba(0,0,0,0.02)] p-5 shrink-0 transition-all duration-300 xl:sticky xl:top-20">
+                   class="w-full xl:w-[480px] 2xl:w-[520px] bg-white rounded-2xl border border-border shadow-[0_2px_6px_rgba(0,0,0,0.02)] p-5 shrink-0 transition-all duration-300 xl:sticky xl:top-20 {{ empty($rawTickets) ? 'hidden' : '' }}">
 
                 {{-- Header Detail Panel --}}
                 <div class="flex items-start justify-between pb-4 border-b border-border">
                     <div class="space-y-1">
                         <div class="flex items-center gap-2">
-                            <span id="detail-ticket-id" class="text-lg font-bold text-primary">#TK-1025</span>
-                            <span id="detail-priority-badge"><x-priority-badge priority="High" /></span>
-                            <span id="detail-status-badge"><x-status-badge status="Open" /></span>
+                            <span id="detail-ticket-id" class="text-lg font-bold text-primary">-</span>
+                            <span id="detail-priority-badge"></span>
+                            <span id="detail-status-badge"></span>
                         </div>
                         <div class="flex items-center gap-2 text-xs text-secondary">
-                            <span id="detail-created-at">08 Okt 2026 08:55</span>
+                            <span id="detail-created-at">-</span>
                             <span>•</span>
                             <span class="font-medium text-amber-600 flex items-center gap-1">
-                                <i data-lucide="clock" class="w-3 h-3"></i> SLA: <span id="detail-sla-left">4 jam lagi</span>
+                                <i data-lucide="clock" class="w-3 h-3"></i> SLA: <span id="detail-sla-left">-</span>
                             </span>
                         </div>
                     </div>
@@ -351,31 +275,31 @@
 
                 {{-- Judul & Deskripsi Singkat --}}
                 <div class="py-3.5">
-                    <h2 id="detail-title" class="text-base font-bold text-dark">Replace ONT</h2>
-                    <p id="detail-subtitle" class="text-xs text-secondary mt-1">Ganti ONT ZTE F670L yang mengalami kerusakan.</p>
+                    <h2 id="detail-title" class="text-base font-bold text-dark">-</h2>
+                    <p id="detail-subtitle" class="text-xs text-secondary mt-1">-</p>
                 </div>
 
                 {{-- Informasi Ringkas 4 Kolom Horizontal --}}
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-xl bg-surface border border-border/80 text-xs mb-4">
                     <div>
                         <p class="text-[10px] text-secondary uppercase font-semibold">Customer</p>
-                        <p id="detail-card-customer" class="font-bold text-dark mt-0.5 truncate">Arkanet</p>
-                        <p id="detail-card-location" class="text-[10px] text-secondary">Situbondo</p>
+                        <p id="detail-card-customer" class="font-bold text-dark mt-0.5 truncate">-</p>
+                        <p id="detail-card-location" class="text-[10px] text-secondary">-</p>
                     </div>
                     <div>
                         <p class="text-[10px] text-secondary uppercase font-semibold">Technician</p>
-                        <p id="detail-card-tech" class="font-bold text-dark mt-0.5 truncate">Budi</p>
-                        <p class="text-[10px] text-emerald-600 font-medium">On Task</p>
+                        <p id="detail-card-tech" class="font-bold text-dark mt-0.5 truncate">-</p>
+                        <p id="detail-tech-state" class="text-[10px] text-emerald-600 font-medium">-</p>
                     </div>
                     <div>
                         <p class="text-[10px] text-secondary uppercase font-semibold">Asset</p>
-                        <p id="detail-card-asset" class="font-bold text-dark mt-0.5 truncate">ONT ZTE F670L</p>
-                        <p id="detail-card-serial" class="text-[10px] text-secondary truncate">SN: ZTE001234</p>
+                        <p id="detail-card-asset" class="font-bold text-dark mt-0.5 truncate">-</p>
+                        <p id="detail-card-serial" class="text-[10px] text-secondary truncate">SN: -</p>
                     </div>
                     <div>
                         <p class="text-[10px] text-secondary uppercase font-semibold">Priority</p>
-                        <p id="detail-card-priority" class="font-bold text-red-600 mt-0.5">High</p>
-                        <p class="text-[10px] text-secondary">Urgent</p>
+                        <p id="detail-card-priority" class="font-bold text-red-600 mt-0.5">-</p>
+                        <p class="text-[10px] text-secondary">Prioritas</p>
                     </div>
                 </div>
 
@@ -395,36 +319,36 @@
                         <div class="space-y-2.5 text-xs">
                             <div>
                                 <span class="text-secondary text-[11px] block">Nomor Ticket:</span>
-                                <span id="info-ticket-id" class="font-semibold text-dark">TK-1025</span>
+                                <span id="info-ticket-id" class="font-semibold text-dark">-</span>
                             </div>
                             <div>
                                 <span class="text-secondary text-[11px] block">Judul:</span>
-                                <span id="info-title" class="font-medium text-dark">Replace ONT</span>
+                                <span id="info-title" class="font-medium text-dark">-</span>
                             </div>
                             <div>
                                 <span class="text-secondary text-[11px] block">Deskripsi:</span>
                                 <p id="info-description" class="text-dark bg-surface p-2.5 rounded-xl border border-border mt-1 leading-relaxed">
-                                    Ganti ONT ZTE F670L yang mengalami kerusakan. Pelanggan sudah melaporkan sejak pagi.
+                                    -
                                 </p>
                             </div>
                             <div class="grid grid-cols-2 gap-3 pt-1">
                                 <div>
                                     <span class="text-secondary text-[11px] block">Customer:</span>
-                                    <span id="info-customer" class="font-medium text-dark">Arkanet (Situbondo)</span>
+                                    <span id="info-customer" class="font-medium text-dark">-</span>
                                 </div>
                                 <div>
                                     <span class="text-secondary text-[11px] block">Teknisi:</span>
-                                    <span id="info-tech" class="font-medium text-dark">Budi</span>
+                                    <span id="info-tech" class="font-medium text-dark">-</span>
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-3 pt-1">
                                 <div>
                                     <span class="text-secondary text-[11px] block">Created By:</span>
-                                    <span class="font-medium text-dark">Eka Pratama (Administrator)</span>
+                                    <span id="info-creator" class="font-medium text-dark">-</span>
                                 </div>
                                 <div>
                                     <span class="text-secondary text-[11px] block">SLA Due:</span>
-                                    <span id="info-sla-due" class="font-medium text-dark">08 Okt 2026 12:55</span>
+                                    <span id="info-sla-due" class="font-medium text-dark">-</span>
                                 </div>
                             </div>
                         </div>
@@ -434,49 +358,21 @@
                     <div id="tab-material" class="tab-pane hidden space-y-2.5 text-xs">
                         <p class="font-semibold text-dark text-xs mb-2">Material / Sparepart Digunakan:</p>
                         <ul id="material-list" class="space-y-2">
-                            <li class="flex items-center justify-between p-2.5 rounded-xl border border-border bg-surface">
-                                <span class="font-medium text-dark">ONT ZTE F670L</span>
-                                <span class="text-secondary font-semibold">1 pcs</span>
-                            </li>
-                            <li class="flex items-center justify-between p-2.5 rounded-xl border border-border bg-surface">
-                                <span class="font-medium text-dark">Fiber Patchcord 3m</span>
-                                <span class="text-secondary font-semibold">1 pcs</span>
-                            </li>
+                            <li class="text-secondary py-3 text-center">Belum ada material digunakan.</li>
                         </ul>
                     </div>
 
                     {{-- TAB 3: ACTIVITY --}}
                     <div id="tab-activity" class="tab-pane hidden space-y-3 text-xs">
                         <p class="font-semibold text-dark text-xs mb-2">Riwayat Aktivitas Tiket:</p>
-                        <div class="space-y-3 relative before:absolute before:inset-0 before:left-2 before:w-0.5 before:bg-gray-200">
-                            <div class="relative flex items-start gap-3 pl-6">
-                                <span class="absolute left-1 top-1 w-2.5 h-2.5 rounded-full bg-primary ring-4 ring-white"></span>
-                                <div>
-                                    <p class="font-semibold text-dark">Tiket Dibuat</p>
-                                    <p class="text-[11px] text-secondary">Oleh Eka Pratama • 08 Okt 2026 08:55</p>
-                                </div>
-                            </div>
-                            <div class="relative flex items-start gap-3 pl-6">
-                                <span class="absolute left-1 top-1 w-2.5 h-2.5 rounded-full bg-cyan-500 ring-4 ring-white"></span>
-                                <div>
-                                    <p class="font-semibold text-dark">Teknisi Ditugaskan</p>
-                                    <p class="text-[11px] text-secondary">Budi ditugaskan menangani kasus ini</p>
-                                </div>
-                            </div>
-                        </div>
+                        <ul id="activity-list" class="space-y-3"></ul>
                     </div>
 
                     {{-- TAB 4: ATTACHMENT --}}
                     <div id="tab-attachment" class="tab-pane hidden space-y-2.5 text-xs">
                         <p class="font-semibold text-dark text-xs mb-2">Lampiran File / Foto:</p>
                         <ul id="attachment-list" class="space-y-2">
-                            <li class="flex items-center justify-between p-2.5 rounded-xl border border-border bg-surface">
-                                <div class="flex items-center gap-2">
-                                    <i data-lucide="paperclip" class="w-4 h-4 text-secondary"></i>
-                                    <span class="font-medium text-dark">foto_ont_los.jpg</span>
-                                </div>
-                                <span class="text-[11px] text-secondary">1.4 MB</span>
-                            </li>
+                            <li class="text-secondary py-3 text-center">Tidak ada lampiran.</li>
                         </ul>
                     </div>
 
@@ -492,16 +388,16 @@
                             <option value="Closed">Closed</option>
                         </select>
                         <div class="grid grid-cols-2 gap-2">
-                            <button type="button" class="col-span-2 py-2 px-3 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-blue-700 shadow-sm transition-colors text-center" data-dummy-action="Assign Teknisi">
+                            <button type="button" id="btn-assign-tech" class="col-span-2 py-2 px-3 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-blue-700 shadow-sm transition-colors text-center">
                                 Assign Teknisi
                             </button>
-                            <button type="button" class="py-2 px-3 rounded-lg bg-white border border-border text-dark text-xs font-medium hover:bg-gray-50 transition-colors text-center" data-dummy-action="Ubah Status">
+                            <button type="button" id="btn-update-status" class="py-2 px-3 rounded-lg bg-white border border-border text-dark text-xs font-medium hover:bg-gray-50 transition-colors text-center">
                                 Ubah Status
                             </button>
-                            <button type="button" class="py-2 px-3 rounded-lg bg-white border border-border text-dark text-xs font-medium hover:bg-gray-50 transition-colors text-center" data-dummy-action="Edit Ticket">
+                            <button type="button" id="btn-edit-ticket" class="py-2 px-3 rounded-lg bg-white border border-border text-dark text-xs font-medium hover:bg-gray-50 transition-colors text-center">
                                 Edit Ticket
                             </button>
-                            <button type="button" class="col-span-2 py-2 px-3 rounded-lg bg-white border border-red-200 text-danger text-xs font-medium hover:bg-red-50 transition-colors text-center" data-dummy-action="Tutup Ticket">
+                            <button type="button" id="btn-close-ticket" class="col-span-2 py-2 px-3 rounded-lg bg-white border border-red-200 text-danger text-xs font-medium hover:bg-red-50 transition-colors text-center">
                                 Tutup Ticket
                             </button>
                         </div>
@@ -513,16 +409,16 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-secondary text-[11px]">Customer:</p>
-                                <p id="quick-customer" class="font-medium text-dark">Arkanet</p>
+                                <p id="quick-customer" class="font-medium text-dark">-</p>
                             </div>
-                            <a href="#" class="text-primary text-[11px] font-semibold hover:underline" data-dummy-action="Detail Customer Arkanet">Lihat Detail</a>
+                            <a href="{{ route('customers.index') }}" class="text-primary text-[11px] font-semibold hover:underline">Lihat Detail</a>
                         </div>
                         <div class="flex items-center justify-between border-t border-gray-200/60 pt-2">
                             <div>
                                 <p class="text-secondary text-[11px]">Asset Terkait:</p>
-                                <p id="quick-asset" class="font-medium text-dark">ONT ZTE F670L</p>
+                                <p id="quick-asset" class="font-medium text-dark">-</p>
                             </div>
-                            <a href="#" class="text-primary text-[11px] font-semibold hover:underline" data-dummy-action="Detail Asset ONT ZTE">Lihat Detail</a>
+                            <a href="{{ route('assets.index') }}" class="text-primary text-[11px] font-semibold hover:underline">Lihat Detail</a>
                         </div>
                     </div>
 
@@ -534,77 +430,7 @@
 
     </div>
 
-    {{-- ============================================ --}}
-    {{-- 4. MODAL BUAT TICKET (FRONTEND PROTOTYPE)     --}}
-    {{-- ============================================ --}}
-    <div id="modal-create-ticket" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs hidden">
-        <div class="bg-white rounded-2xl border border-border shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in duration-150">
-            <div class="p-4 border-b border-border flex items-center justify-between">
-                <div>
-                    <h3 class="text-base font-bold text-dark">Buat Ticket Baru</h3>
-                    <p class="text-secondary text-xs">Form pembuatan tiket operasional baru</p>
-                </div>
-                <button type="button" id="btn-close-modal" class="p-1 rounded-lg text-gray-400 hover:text-dark hover:bg-gray-100">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <form id="form-create-ticket" class="p-5 space-y-3.5 text-xs">
-                <div>
-                    <label class="block font-medium text-dark mb-1">Customer</label>
-                    <input type="text" placeholder="Contoh: PT ABC / Arkanet" required
-                           class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-medium text-dark mb-1">Lokasi</label>
-                        <input type="text" placeholder="Situbondo" required
-                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
-                    </div>
-                    <div>
-                        <label class="block font-medium text-dark mb-1">Prioritas</label>
-                        <select class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
-                            <option value="Low">Low</option>
-                            <option value="Normal" selected>Normal</option>
-                            <option value="High">High</option>
-                            <option value="Critical">Critical</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="block font-medium text-dark mb-1">Judul Masalah</label>
-                    <input type="text" placeholder="Contoh: Internet Down / Replace ONT" required
-                           class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
-                </div>
-                <div>
-                    <label class="block font-medium text-dark mb-1">Deskripsi Lengkap</label>
-                    <textarea rows="3" placeholder="Jelaskan detail kendala..."
-                              class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"></textarea>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-medium text-dark mb-1">Teknisi</label>
-                        <select class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
-                            <option value="-">Belum Ditugaskan</option>
-                            @foreach ($technicians as $tn)
-                                <option value="{{ $tn }}">{{ $tn }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-medium text-dark mb-1">Perangkat / Asset</label>
-                        <input type="text" placeholder="ONT ZTE F670L"
-                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
-                    </div>
-                </div>
-                <div class="pt-3 border-t border-border flex items-center justify-end gap-2">
-                    <button type="button" id="btn-cancel-modal" class="px-3.5 py-2 rounded-xl border border-border text-secondary hover:bg-gray-50 font-medium">Batal</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-primary text-white font-semibold hover:bg-blue-700 shadow-sm">Simpan Ticket</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    {{-- Toast Notifikasi Dummy --}}
+    {{-- Toast Notifikasi --}}
     <div id="toast-notification"
          class="fixed bottom-5 right-5 z-50 hidden max-w-sm rounded-xl bg-dark text-white text-xs px-4 py-3 shadow-xl transition-all">
     </div>
@@ -626,13 +452,55 @@
                 toastTimer = setTimeout(() => toast.classList.add('hidden'), 2500);
             }
 
-            // Dummy Action Click Handler
-            document.querySelectorAll('[data-dummy-action]').forEach(el => {
-                el.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    showToast(el.getAttribute('data-dummy-action') + ' (Aksi UI Dummy)');
-                });
+            function escapeHtml(value) {
+                const element = document.createElement('span');
+                element.textContent = value ?? '';
+                return element.innerHTML;
+            }
+
+            let selectedTicketId = null;
+
+            async function updateTicketStatus(status) {
+                if (!selectedTicketId) return;
+
+                const button = document.getElementById('btn-update-status');
+                button.disabled = true;
+
+                try {
+                    const response = await fetch(`/tickets/${selectedTicketId}/status`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({ status }),
+                    });
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.message || 'Gagal mengubah status tiket.');
+                    }
+
+                    showToast(data.message);
+                    setTimeout(() => window.location.reload(), 700);
+                } catch (error) {
+                    showToast(`❌ ${error.message}`);
+                    button.disabled = false;
+                }
+            }
+
+            document.getElementById('btn-update-status').addEventListener('click', () => {
+                updateTicketStatus(document.getElementById('action-status-select').value);
+            });
+            document.getElementById('btn-close-ticket').addEventListener('click', () => {
+                updateTicketStatus('Closed');
+            });
+            document.getElementById('btn-edit-ticket').addEventListener('click', () => {
+                if (selectedTicketId) window.location.href = `/tickets/${selectedTicketId}/edit`;
+            });
+            document.getElementById('btn-assign-tech').addEventListener('click', () => {
+                if (selectedTicketId) window.location.href = `/tickets/${selectedTicketId}/edit`;
             });
 
             // 1. Search & Filter & Sort
@@ -657,8 +525,8 @@
 
                 // Sorting
                 const sortedRows = rows.slice().sort((a, b) => {
-                    const idA = parseInt(a.dataset.id.replace('#TK-', ''));
-                    const idB = parseInt(b.dataset.id.replace('#TK-', ''));
+                    const idA = Number(a.dataset.id);
+                    const idB = Number(b.dataset.id);
                     return sortAsc ? idA - idB : idB - idA;
                 });
 
@@ -676,12 +544,13 @@
                 });
 
                 emptyState.classList.toggle('hidden', visibleCount > 0);
-                tableInfo.textContent = `Menampilkan ${visibleCount} dari 142 ticket`;
+                tableInfo.textContent = `Menampilkan ${visibleCount} dari ${rows.length} tiket`;
             }
 
             [searchInput, statusFilter, priorityFilter, techFilter, sortSelect].forEach(el => {
                 el.addEventListener(el === searchInput ? 'input' : 'change', applyFilters);
             });
+            applyFilters();
 
             // Toggle Filter Box
             const toggleFiltersBtn = document.getElementById('btn-toggle-filters');
@@ -717,6 +586,7 @@
                 const t = rawData[ticketId];
                 if (!t) return;
 
+                selectedTicketId = t.db_id;
                 document.getElementById('detail-ticket-id').textContent = t.id;
                 document.getElementById('info-ticket-id').textContent = t.id.replace('#', '');
                 document.getElementById('detail-created-at').textContent = t.created_at;
@@ -733,6 +603,8 @@
 
                 document.getElementById('detail-card-tech').textContent = t.tech;
                 document.getElementById('info-tech').textContent = t.tech;
+                document.getElementById('detail-tech-state').textContent = t.tech === '-' ? 'Belum ditugaskan' : 'Ditugaskan';
+                document.getElementById('info-creator').textContent = t.creator;
 
                 document.getElementById('detail-card-asset').textContent = t.asset;
                 document.getElementById('quick-asset').textContent = t.asset;
@@ -748,14 +620,24 @@
                 }
 
                 document.getElementById('action-status-select').value = t.status;
+                document.getElementById('btn-close-ticket').disabled = t.status === 'Closed';
+
+                const activityList = document.getElementById('activity-list');
+                activityList.innerHTML = t.activities && t.activities.length
+                    ? t.activities.map(activity => `
+                        <li class="border-l-2 border-primary py-1 pl-3">
+                            <p class="font-medium text-dark">${escapeHtml(activity.description)}</p>
+                            <p class="mt-1 text-[11px] text-secondary">${escapeHtml(activity.user)} · ${escapeHtml(activity.created_at)}</p>
+                        </li>`).join('')
+                    : '<li class="text-secondary">Belum ada riwayat aktivitas.</li>';
 
                 // Materials
                 const matList = document.getElementById('material-list');
                 matList.innerHTML = t.materials && t.materials.length
                     ? t.materials.map(m => `
                         <li class="flex items-center justify-between p-2.5 rounded-xl border border-border bg-surface">
-                            <span class="font-medium text-dark">${m.name}</span>
-                            <span class="text-secondary font-semibold">${m.qty} ${m.unit}</span>
+                            <span class="font-medium text-dark">${escapeHtml(m.name)}</span>
+                            <span class="text-secondary font-semibold">${escapeHtml(m.qty)} ${escapeHtml(m.unit)}</span>
                         </li>`).join('')
                     : '<li class="text-secondary py-3 text-center">Belum ada material digunakan.</li>';
 
@@ -766,9 +648,9 @@
                         <li class="flex items-center justify-between p-2.5 rounded-xl border border-border bg-surface">
                             <div class="flex items-center gap-2">
                                 <i data-lucide="paperclip" class="w-4 h-4 text-secondary"></i>
-                                <span class="font-medium text-dark">${a.name}</span>
+                                <span class="font-medium text-dark">${escapeHtml(a.name)}</span>
                             </div>
-                            <span class="text-[11px] text-secondary">${a.size}</span>
+                            <span class="text-[11px] text-secondary">${escapeHtml(a.size)}</span>
                         </li>`).join('')
                     : '<li class="text-secondary py-3 text-center">Tidak ada lampiran.</li>';
 
@@ -783,12 +665,18 @@
                     rows.forEach(other => {
                         other.classList.remove('bg-blue-50/70', 'border-l-4', 'border-l-primary');
                     });
+
                     r.classList.add('bg-blue-50/70', 'border-l-4', 'border-l-primary');
 
                     populateDetail(id);
                     detailPanel.classList.remove('hidden');
                 });
             });
+
+            if (rows.length > 0) {
+                rows[0].classList.add('bg-blue-50/70', 'border-l-4', 'border-l-primary');
+                populateDetail(rows[0].dataset.id);
+            }
 
             // Tutup Panel Detail
             document.getElementById('btn-close-detail').addEventListener('click', () => {
@@ -812,26 +700,24 @@
                 });
             });
 
-            // 4. Modal Buat Ticket
-            const modal = document.getElementById('modal-create-ticket');
-            document.getElementById('btn-open-create-modal').addEventListener('click', () => {
-                modal.classList.remove('hidden');
-            });
-            const closeModal = () => modal.classList.add('hidden');
-            document.getElementById('btn-close-modal').addEventListener('click', closeModal);
-            document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
-
-            document.getElementById('form-create-ticket').addEventListener('click', (e) => {
-                if (e.target.type === 'submit') {
-                    e.preventDefault();
-                    closeModal();
-                    showToast('Ticket baru berhasil dibuat (Simulasi Frontend)!');
-                }
-            });
-
             // Refresh Lucide Icons
             if (window.lucide) {
                 window.lucide.createIcons();
+            }
+        });
+    </script>
+    <script>
+        function toggleMenu(id) {
+            document.querySelectorAll('[id^="menu-"]').forEach(el => {
+                if (el.id !== `menu-${id}`) el.classList.add('hidden');
+            });
+            const menu = document.getElementById('menu-' + id);
+            if (menu) menu.classList.toggle('hidden');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('[id^="menu-"]') && !e.target.closest('button[onclick^="toggleMenu"]')) {
+                document.querySelectorAll('[id^="menu-"]').forEach(el => el.classList.add('hidden'));
             }
         });
     </script>
