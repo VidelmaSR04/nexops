@@ -194,7 +194,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-50">
                         @php
-                            $technicians = [
+                            $technicians = $technicians ?? [
                                 ['name' => 'Ahmad', 'active' => 3, 'completed' => 42, 'sla' => '96%', 'status' => 'Online', 'statusColor' => 'success'],
                                 ['name' => 'Budi', 'active' => 2, 'completed' => 38, 'sla' => '94%', 'status' => 'Online', 'statusColor' => 'success'],
                                 ['name' => 'Dimas', 'active' => 4, 'completed' => 35, 'sla' => '91%', 'status' => 'Online', 'statusColor' => 'success'],
@@ -305,7 +305,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-50">
                         @php
-                            $lowStocks = [
+                            $lowStocks = $lowStocks ?? [
                                 ['name' => 'ONT ZTE F670L', 'warehouse' => 'Gudang Utama', 'stock' => 4, 'min' => 10],
                                 ['name' => 'ONT Huawei HG8245H', 'warehouse' => 'Gudang Situbondo', 'stock' => 6, 'min' => 10],
                                 ['name' => 'RJ45 Connector', 'warehouse' => 'Gudang Utama', 'stock' => 42, 'min' => 100],
@@ -347,7 +347,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-50">
                         @php
-                            $tickets = [
+                            $tickets = $tickets ?? [
                                 ['id' => '#TK-1025', 'customer' => 'Arkanet', 'issue' => 'Replace ONT', 'priority' => 'High', 'priColor' => 'danger', 'tech' => 'Budi', 'status' => 'Open', 'stColor' => 'primary'],
                                 ['id' => '#TK-1024', 'customer' => 'PT ABC', 'issue' => 'Internet Down', 'priority' => 'High', 'priColor' => 'danger', 'tech' => 'Ahmad', 'status' => 'Resolved', 'stColor' => 'success'],
                                 ['id' => '#TK-1023', 'customer' => 'Office', 'issue' => 'Router Problem', 'priority' => 'Normal', 'priColor' => 'warning', 'tech' => 'Dimas', 'status' => 'In Progress', 'stColor' => 'info'],

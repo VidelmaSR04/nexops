@@ -4,7 +4,7 @@
     {{-- DATA DUMMY WAREHOUSE (Frontend Prototype)     --}}
     {{-- ============================================ --}}
     @php
-        $warehouses = [
+        $warehouses = $warehouses ?? [
             [
                 'id' => 'WH-001',
                 'name' => 'Gudang Utama',
@@ -116,7 +116,7 @@
             ],
         ];
 
-        $summary = [
+        $summary = $summary ?? [
             'total_warehouses' => 4,
             'total_capacity'   => 120000,
             'available_stock'  => 98450,

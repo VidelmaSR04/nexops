@@ -4,7 +4,7 @@
     {{-- DATA DUMMY ASSETS (Frontend Prototype)        --}}
     {{-- ============================================ --}}
     @php
-        $assets = [
+        $assets = $assets ?? [
             [
                 'id' => 'AST-001',
                 'name' => 'ONT ZTE F670L',
@@ -235,14 +235,14 @@
             ],
         ];
 
-        $summary = [
+        $summary = $summary ?? [
             'total_asset' => 1284,
             'active'      => 1167,
             'maintenance' => 72,
             'damaged'     => 45,
         ];
 
-        $categories = [
+        $categories = $categories ?? [
             'Modem/ONT',
             'Perangkat Jaringan',
             'Server',
@@ -326,7 +326,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-secondary font-medium">Rusak</p>
-                    <p class="text-2xl font-bold text-dark mt-0.5">{{ $summary['damaged'] }}</p>
+                    <p class="text-2xl font-bold text-dark mt-0.5">{{ number_format($summary['broken']) }}</p>
                 </div>
             </div>
         </div>

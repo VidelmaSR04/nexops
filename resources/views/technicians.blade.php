@@ -8,7 +8,7 @@
         $statuses = ['On Task', 'Available', 'Offline', 'Cuti'];
 
         // Catatan: Rina Amelia diset On Task agar ringkasan 12 / 10 / 7 / 2 konsisten dengan data tabel.
-        $technicians = [
+        $technicians = $technicians ?? [
             ['id' => 1,  'name' => 'Budi Santoso',    'nik' => 'NIK001234', 'area' => 'Situbondo', 'status' => 'On Task',   'tickets' => 8, 'role' => 'Teknisi Senior', 'phone' => '0812 3456 7890', 'email' => 'budi.santoso@nexops.id',    'joined_iso' => '2024-01-12', 'exp_years' => 3, 'rating' => 4.8],
             ['id' => 2,  'name' => 'Ahmad Fauzi',     'nik' => 'NIK001235', 'area' => 'Besuki',    'status' => 'On Task',   'tickets' => 6, 'role' => 'Teknisi',        'phone' => '0813 5521 7742', 'email' => 'ahmad.fauzi@nexops.id',     'joined_iso' => '2024-03-04', 'exp_years' => 2, 'rating' => 4.6],
             ['id' => 3,  'name' => 'Dimas Priyanto',  'nik' => 'NIK001236', 'area' => 'Situbondo', 'status' => 'On Task',   'tickets' => 7, 'role' => 'Teknisi',        'phone' => '0852 1190 3388', 'email' => 'dimas.priyanto@nexops.id',  'joined_iso' => '2024-02-19', 'exp_years' => 3, 'rating' => 4.7],

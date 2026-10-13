@@ -183,25 +183,34 @@
                                         <th class="py-3 pr-3 text-center">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    <tr>
-                                        <td class="py-3 pl-3 font-semibold text-dark">Eka Pratama</td>
-                                        <td class="py-3 pr-3 text-secondary">eka@nexops.id</td>
-                                        <td class="py-3 pr-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-primary">Administrator</span></td>
-                                        <td class="py-3 pr-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-600">Aktif</span></td>
-                                        <td class="py-3 pr-3 text-center">
-                                            <button type="button" class="p-1 rounded text-gray-400 hover:text-dark hover:bg-gray-100" onclick="showToast('Simulasi Edit User')"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-3 pl-3 font-semibold text-dark">Budi Santoso</td>
-                                        <td class="py-3 pr-3 text-secondary">budi.tech@nexops.id</td>
-                                        <td class="py-3 pr-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-600">Teknisi</span></td>
-                                        <td class="py-3 pr-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-600">Aktif</span></td>
-                                        <td class="py-3 pr-3 text-center">
-                                            <button type="button" class="p-1 rounded text-gray-400 hover:text-dark hover:bg-gray-100" onclick="showToast('Simulasi Edit User')"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                                        </td>
-                                    </tr>
+                                 <tbody class="divide-y divide-gray-100">
+                                    @if(isset($users) && count($users) > 0)
+                                        @foreach($users as $u)
+                                            <tr>
+                                                <td class="py-3 pl-3 font-semibold text-dark">{{ $u->name }}</td>
+                                                <td class="py-3 pr-3 text-secondary">{{ $u->email }}</td>
+                                                <td class="py-3 pr-3">
+                                                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold {{ $u->role === 'admin' ? 'bg-blue-50 text-primary' : 'bg-amber-50 text-amber-600' }}">
+                                                        {{ ucfirst($u->role ?? 'User') }}
+                                                    </span>
+                                                </td>
+                                                <td class="py-3 pr-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-600">Aktif</span></td>
+                                                <td class="py-3 pr-3 text-center">
+                                                    <button type="button" class="p-1 rounded text-gray-400 hover:text-dark hover:bg-gray-100" onclick="showToast('Edit User: {{ $u->name }}')"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        <tr>
+                                            <td class="py-3 pl-3 font-semibold text-dark">Eka Pratama</td>
+                                            <td class="py-3 pr-3 text-secondary">eka@nexops.id</td>
+                                            <td class="py-3 pr-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-primary">Administrator</span></td>
+                                            <td class="py-3 pr-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-600">Aktif</span></td>
+                                            <td class="py-3 pr-3 text-center">
+                                                <button type="button" class="p-1 rounded text-gray-400 hover:text-dark hover:bg-gray-100" onclick="showToast('Simulasi Edit User')"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                                            </td>
+                                        </tr>
+                                    @endif
                                 </tbody>
                             </table>
                         </div>
@@ -541,20 +550,25 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                        <tr>
-                            <td class="py-2.5 pl-3 font-medium text-dark">12 Okt 2026, 08:30</td>
-                            <td class="py-2.5 pr-3">Chrome on Windows</td>
-                            <td class="py-2.5 pr-3">Situbondo, ID</td>
-                            <td class="py-2.5 pr-3 text-secondary">36.75.12.90</td>
-                            <td class="py-2.5 pr-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-600">Berhasil</span></td>
-                        </tr>
-                        <tr>
-                            <td class="py-2.5 pl-3 font-medium text-dark">10 Okt 2026, 14:15</td>
-                            <td class="py-2.5 pr-3">Firefox on MacOS</td>
-                            <td class="py-2.5 pr-3">Surabaya, ID</td>
-                            <td class="py-2.5 pr-3 text-secondary">114.125.8.12</td>
-                            <td class="py-2.5 pr-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-600">Berhasil</span></td>
-                        </tr>
+                        @if(isset($loginHistories) && count($loginHistories) > 0)
+                            @foreach($loginHistories as $lh)
+                                <tr>
+                                    <td class="py-2.5 pl-3 font-medium text-dark">{{ $lh->logged_in_at ? $lh->logged_in_at->format('d M Y, H:i') : '-' }}</td>
+                                    <td class="py-2.5 pr-3">{{ $lh->device ?? 'Desktop' }}</td>
+                                    <td class="py-2.5 pr-3">{{ $lh->location ?? 'Situbondo, ID' }}</td>
+                                    <td class="py-2.5 pr-3 text-secondary">{{ $lh->ip_address }}</td>
+                                    <td class="py-2.5 pr-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-600">{{ $lh->status ?? 'Berhasil' }}</span></td>
+                                </tr>
+                            @endforeach
+                        @else
+                            <tr>
+                                <td class="py-2.5 pl-3 font-medium text-dark">12 Okt 2026, 08:30</td>
+                                <td class="py-2.5 pr-3">Chrome on Windows</td>
+                                <td class="py-2.5 pr-3">Situbondo, ID</td>
+                                <td class="py-2.5 pr-3 text-secondary">36.75.12.90</td>
+                                <td class="py-2.5 pr-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-600">Berhasil</span></td>
+                            </tr>
+                        @endif
                     </tbody>
                 </table>
             </div>
