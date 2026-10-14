@@ -123,13 +123,22 @@
             'used_stock'       => 21550,
         ];
 
-        $locations = ['Situbondo', 'Besuki', 'Area Lapangan'];
-        $statuses = ['Aktif', 'Maintenance', 'Nonaktif'];
+        $locations = $locations ?? ['Situbondo', 'Besuki', 'Area Lapangan'];
+        $statuses = $statuses ?? ['Aktif', 'Maintenance', 'Nonaktif'];
 
         $warehousesById = collect($warehouses)->keyBy('id')->all();
     @endphp
 
     <div class="space-y-6">
+        @if (session('success'))
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">{{ session('success') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                <p class="font-semibold">Data belum tersimpan:</p>
+                <ul class="mt-1 list-inside list-disc">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+            </div>
+        @endif
 
         {{-- ============================================ --}}
         {{-- 1. HEADER WAREHOUSE                          --}}
@@ -314,7 +323,7 @@
                                         </span>
                                     </td>
                                     <td class="py-3 pr-4 text-center">
-                                        <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" data-dummy-action="Menu Aksi {{ $wh['id'] }}">
+                                        <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" data-warehouse-action="edit" aria-label="Edit {{ $wh['name'] }}">
                                             <i data-lucide="more-vertical" class="w-4 h-4"></i>
                                         </button>
                                     </td>
@@ -331,18 +340,8 @@
                     </table>
                 </div>
 
-                {{-- Pagination & Summary Info --}}
-                <div class="p-3.5 border-t border-border flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="p-3.5 border-t border-border text-xs">
                     <p id="table-info" class="text-secondary">Menampilkan 1–{{ count($warehouses) }} dari {{ count($warehouses) }} gudang</p>
-                    <div class="flex items-center gap-1">
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border flex items-center justify-center text-secondary hover:bg-gray-50" data-dummy-action="Halaman Sebelumnya">
-                            <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button type="button" class="w-7 h-7 rounded-lg bg-primary text-white font-medium flex items-center justify-center">1</button>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border flex items-center justify-center text-secondary hover:bg-gray-50" data-dummy-action="Halaman Berikutnya">
-                            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-                        </button>
-                    </div>
                 </div>
 
             </div>
@@ -518,14 +517,14 @@
                                 <p class="text-secondary text-[11px]">Lokasi:</p>
                                 <p id="quick-location" class="font-medium text-dark">Jl. Raya Situbondo No. 12</p>
                             </div>
-                            <a href="#" class="text-primary text-[11px] font-semibold hover:underline" data-dummy-action="Detail Lokasi Gudang">Lihat Detail</a>
+                            <span class="text-secondary text-[11px]">—</span>
                         </div>
                         <div class="flex items-center justify-between border-t border-gray-200/60 pt-2">
                             <div>
                                 <p class="text-secondary text-[11px]">Kapasitas:</p>
                                 <p id="quick-capacity" class="font-medium text-dark">50,000 unit</p>
                             </div>
-                            <a href="#" class="text-primary text-[11px] font-semibold hover:underline" data-dummy-action="Detail Kapasitas Rak">Lihat Detail</a>
+                            <span class="text-secondary text-[11px]">—</span>
                         </div>
                         <div class="flex items-center justify-between border-t border-gray-200/60 pt-2">
                             <div>
@@ -562,30 +561,31 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <form id="form-create-warehouse" class="p-5 space-y-3.5 text-xs">
+            <form id="form-create-warehouse" action="{{ route('warehouse.store') }}" method="POST" class="p-5 space-y-3.5 text-xs">
+                @csrf
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-medium text-dark mb-1">Kode Gudang <span class="text-danger">*</span></label>
-                        <input type="text" id="create-code" placeholder="WH-005" required
-                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                        <label class="block font-medium text-dark mb-1">Kode Gudang</label>
+                        <input type="text" id="create-code" value="{{ $warehousePreview }}" readonly
+                               class="w-full rounded-xl border border-border bg-gray-50 text-gray-500 px-3 py-2 text-xs cursor-not-allowed">
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Nama Gudang <span class="text-danger">*</span></label>
-                        <input type="text" id="create-name" placeholder="Contoh: Gudang Transit Timur" required
+                        <input type="text" id="create-name" name="name" placeholder="Contoh: Gudang Transit Timur" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                 </div>
 
                 <div>
                     <label class="block font-medium text-dark mb-1">Lokasi / Alamat Lengkap <span class="text-danger">*</span></label>
-                    <input type="text" id="create-location" placeholder="Jl. Pelabuhan Jangkar No. 9" required
+                    <input type="text" id="create-location" name="address" placeholder="Jl. Pelabuhan Jangkar No. 9" required
                            class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                 </div>
 
                 <div class="grid grid-cols-3 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">Area Wilayah</label>
-                        <select id="create-area" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <select id="create-area" name="area" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                             @foreach ($locations as $loc)
                                 <option value="{{ $loc }}">{{ $loc }}</option>
                             @endforeach
@@ -593,12 +593,12 @@
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Kapasitas (Unit)</label>
-                        <input type="number" id="create-capacity" min="1000" value="15000" required
+                        <input type="number" id="create-capacity" name="capacity" min="1" value="15000" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Status Awal</label>
-                        <select id="create-status" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <select id="create-status" name="status" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                             <option value="Aktif">Aktif</option>
                             <option value="Maintenance">Maintenance</option>
                             <option value="Nonaktif">Nonaktif</option>
@@ -608,13 +608,13 @@
 
                 <div>
                     <label class="block font-medium text-dark mb-1">Pengelola / PIC</label>
-                    <input type="text" id="create-manager" placeholder="Nama staf pengelola gudang" required
+                    <input type="text" id="create-manager" name="manager_name" placeholder="Nama staf pengelola gudang"
                            class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                 </div>
 
                 <div>
                     <label class="block font-medium text-dark mb-1">Deskripsi Fasilitas</label>
-                    <textarea id="create-desc" rows="2.5" placeholder="Keterangan peruntukan atau spesifikasi gudang..."
+                    <textarea id="create-desc" name="description" rows="2" placeholder="Keterangan peruntukan atau spesifikasi gudang..."
                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"></textarea>
                 </div>
 
@@ -640,7 +640,9 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <form id="form-edit-warehouse" class="p-5 space-y-3.5 text-xs">
+            <form id="form-edit-warehouse" method="POST" class="p-5 space-y-3.5 text-xs">
+                @csrf
+                @method('PUT')
                 <input type="hidden" id="edit-id-hidden">
 
                 <div class="grid grid-cols-2 gap-3">
@@ -651,7 +653,7 @@
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Status</label>
-                        <select id="edit-status" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <select id="edit-status" name="status" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                             <option value="Aktif">Aktif</option>
                             <option value="Maintenance">Maintenance</option>
                             <option value="Nonaktif">Nonaktif</option>
@@ -661,32 +663,40 @@
 
                 <div>
                     <label class="block font-medium text-dark mb-1">Nama Gudang</label>
-                    <input type="text" id="edit-name" required
+                    <input type="text" id="edit-name" name="name" required
                            class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                 </div>
 
                 <div>
                     <label class="block font-medium text-dark mb-1">Lokasi Alamat</label>
-                    <input type="text" id="edit-location" required
+                    <input type="text" id="edit-location" name="address" required
                            class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">Kapasitas (Unit)</label>
-                        <input type="number" id="edit-capacity" min="1000" required
+                        <input type="number" id="edit-capacity" name="capacity" min="1" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Pengelola</label>
-                        <input type="text" id="edit-manager" required
+                        <input type="text" id="edit-manager" name="manager_name"
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                 </div>
 
                 <div>
+                    <label class="block font-medium text-dark mb-1">Area Wilayah</label>
+                    <select id="edit-area" name="area" required class="w-full rounded-xl border border-border px-3 py-2 text-xs">
+                        @foreach ($locations as $loc)
+                            <option value="{{ $loc }}">{{ $loc }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
                     <label class="block font-medium text-dark mb-1">Deskripsi</label>
-                    <textarea id="edit-desc" rows="2.5"
+                    <textarea id="edit-desc" name="description" rows="2"
                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"></textarea>
                 </div>
 
@@ -712,7 +722,8 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <form id="form-update-stock" class="p-5 space-y-3.5 text-xs">
+            <form id="form-update-stock" method="POST" class="p-5 space-y-3.5 text-xs">
+                @csrf
                 <div>
                     <label class="block font-medium text-dark mb-1">Gudang Tujuan</label>
                     <input type="text" id="stock-modal-wh-name" readonly
@@ -720,21 +731,41 @@
                 </div>
                 <div>
                     <label class="block font-medium text-dark mb-1">Jenis Aktivitas Stok</label>
-                    <select class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
-                        <option value="Penerimaan PO (Masuk)">Penerimaan PO Masuk</option>
-                        <option value="Mutasi Antar Gudang">Mutasi Antar Gudang</option>
-                        <option value="Penyesuaian Opname">Penyesuaian Opname (Adjusment)</option>
-                        <option value="Pengeluaran Proyek">Pengeluaran Proyek</option>
+                    <select id="stock-movement-type" name="type" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <option value="Masuk">Stok Masuk</option>
+                        <option value="Keluar">Stok Keluar</option>
+                        <option value="Transfer">Transfer Antar Gudang</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium text-dark mb-1">Produk</label>
+                    <select name="inventory_item_id" required class="w-full rounded-xl border border-border px-3 py-2 text-xs">
+                        @foreach ($inventoryItems as $item)
+                            <option value="{{ $item->id }}">{{ $item->sku }} - {{ $item->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium text-dark mb-1">Jumlah</label>
+                    <input type="number" name="quantity" min="1" required class="w-full rounded-xl border border-border px-3 py-2 text-xs">
+                </div>
+                <div id="transfer-destination-field" class="hidden">
+                    <label class="block font-medium text-dark mb-1">Gudang Tujuan</label>
+                    <select name="to_warehouse_id" id="stock-destination" class="w-full rounded-xl border border-border px-3 py-2 text-xs">
+                        <option value="">Pilih gudang tujuan</option>
+                        @foreach ($warehouseOptions as $warehouse)
+                            <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div>
                     <label class="block font-medium text-dark mb-1">Nomor Referensi Dokumen</label>
-                    <input type="text" placeholder="Contoh: PO-2026-092 / SJ-088" required
+                    <input type="text" name="reference" placeholder="Contoh: PO-2026-092 / SJ-088"
                            class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                 </div>
                 <div>
                     <label class="block font-medium text-dark mb-1">Catatan Mutasi</label>
-                    <textarea rows="2.5" placeholder="Rincian material yang diupdate..." required
+                    <textarea name="note" rows="2" placeholder="Rincian material yang diupdate..."
                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20"></textarea>
                 </div>
                 <div class="pt-3 border-t border-border flex items-center justify-end gap-2">
@@ -749,6 +780,8 @@
     <div id="toast-notification"
          class="fixed bottom-5 right-5 z-50 hidden max-w-sm rounded-xl bg-dark text-white text-xs px-4 py-3 shadow-xl transition-all">
     </div>
+    <form id="form-delete-warehouse" method="POST" class="hidden">@csrf @method('DELETE')</form>
+    <form id="form-warehouse-status" method="POST" class="hidden">@csrf @method('PATCH')<input type="hidden" name="status" id="warehouse-status-value"></form>
 
     {{-- ============================================ --}}
     {{-- 7. JAVASCRIPT LOGIC INTERAKTIF              --}}
@@ -760,7 +793,7 @@
             let warehouseMap = {};
             warehouseList.forEach(w => { warehouseMap[w.id] = w; });
 
-            let currentSelectedId = 'WH-001';
+            let currentSelectedId = warehouseList[0]?.id || null;
 
             // Toast helper
             let toastTimer;
@@ -771,15 +804,6 @@
                 clearTimeout(toastTimer);
                 toastTimer = setTimeout(() => toast.classList.add('hidden'), 2600);
             }
-
-            // Dummy Action Handler
-            document.querySelectorAll('[data-dummy-action]').forEach(el => {
-                el.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    showToast(el.getAttribute('data-dummy-action') + ' (Aksi UI)');
-                });
-            });
 
             // 1. Search & Filter & Sort
             const searchInput = document.getElementById('warehouse-search');
@@ -819,7 +843,7 @@
                 });
 
                 emptyState.classList.toggle('hidden', visibleCount > 0);
-                tableInfo.textContent = `Menampilkan 1–${visibleCount} dari ${rows.length} gudang`;
+                tableInfo.textContent = `Menampilkan ${visibleCount} dari ${rows.length} gudang`;
             }
 
             [searchInput, locationFilter, statusFilter, sortSelect].forEach(el => {
@@ -968,6 +992,13 @@
                 });
             });
 
+            document.querySelectorAll('[data-warehouse-action="edit"]').forEach(button => {
+                button.addEventListener('click', () => {
+                    button.closest('.warehouse-row')?.click();
+                    document.getElementById('btn-trigger-edit').click();
+                });
+            });
+
             // Tutup Panel Detail
             document.getElementById('btn-close-detail').addEventListener('click', () => {
                 detailPanel.classList.add('hidden');
@@ -1012,54 +1043,22 @@
             document.getElementById('btn-close-create-modal').addEventListener('click', closeCreateModal);
             document.getElementById('btn-cancel-create-modal').addEventListener('click', closeCreateModal);
 
-            document.getElementById('form-create-warehouse').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const code = document.getElementById('create-code').value.trim();
-                const name = document.getElementById('create-name').value.trim();
-                const location = document.getElementById('create-location').value.trim();
-                const area = document.getElementById('create-area').value;
-                const capacity = parseInt(document.getElementById('create-capacity').value) || 10000;
-                const status = document.getElementById('create-status').value;
-                const manager = document.getElementById('create-manager').value.trim();
-                const desc = document.getElementById('create-desc').value.trim();
-
-                const newWh = {
-                    id: code,
-                    name: name,
-                    location: location,
-                    area: area,
-                    capacity: capacity,
-                    available_stock: capacity,
-                    used_stock: 0,
-                    status: status,
-                    manager: manager,
-                    manager_role: 'Warehouse Officer',
-                    categories_count: 2,
-                    description: desc || 'Gudang baru berhasil didaftarkan.',
-                    stock_items: [],
-                    history: [{ title: 'Gudang Didaftarkan', date: 'Hari ini', desc: 'Fasilitas baru tercatat di sistem NEXOPS.' }],
-                    docs: []
-                };
-
-                warehouseMap[code] = newWh;
-                closeCreateModal();
-                showToast(`Warehouse ${code} - ${name} berhasil ditambahkan!`);
-                populateDetail(code);
-            });
-
             // 5. Modal Edit Gudang
             const editModal = document.getElementById('modal-edit-warehouse');
+            const editForm = document.getElementById('form-edit-warehouse');
             document.getElementById('btn-trigger-edit').addEventListener('click', () => {
                 const current = warehouseMap[currentSelectedId];
                 if (!current) return;
 
                 document.getElementById('edit-id-hidden').value = current.id;
                 document.getElementById('edit-code').value = current.id;
+                editForm.action = `{{ url('/warehouse') }}/${encodeURIComponent(current.id)}`;
                 document.getElementById('edit-name').value = current.name;
                 document.getElementById('edit-location').value = current.location;
                 document.getElementById('edit-capacity').value = current.capacity;
                 document.getElementById('edit-manager').value = current.manager;
                 document.getElementById('edit-status').value = current.status;
+                document.getElementById('edit-area').value = current.area;
                 document.getElementById('edit-desc').value = current.description;
 
                 editModal.classList.remove('hidden');
@@ -1069,53 +1068,29 @@
             document.getElementById('btn-close-edit-modal').addEventListener('click', closeEditModal);
             document.getElementById('btn-cancel-edit-modal').addEventListener('click', closeEditModal);
 
-            document.getElementById('form-edit-warehouse').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const code = document.getElementById('edit-id-hidden').value;
-                const current = warehouseMap[code];
-                if (!current) return;
-
-                current.name = document.getElementById('edit-name').value.trim();
-                current.location = document.getElementById('edit-location').value.trim();
-                current.capacity = parseInt(document.getElementById('edit-capacity').value) || current.capacity;
-                current.manager = document.getElementById('edit-manager').value.trim();
-                current.status = document.getElementById('edit-status').value;
-                current.description = document.getElementById('edit-desc').value.trim();
-
-                closeEditModal();
-                showToast(`Perubahan data ${code} berhasil disimpan!`);
-                populateDetail(code);
-
-                // Update table row
-                const row = document.querySelector(`.warehouse-row[data-id="${code}"]`);
-                if (row) {
-                    row.querySelector('td:nth-child(3) p:first-child').textContent = current.name;
-                    row.querySelector('td:nth-child(3) p:last-child').textContent = current.description;
-                    row.querySelector('td:nth-child(4)').textContent = current.location;
-                    row.querySelector('td:nth-child(5)').textContent = Number(current.capacity).toLocaleString('id-ID') + ' unit';
-                    row.dataset.name = current.name;
-                    row.dataset.capacity = current.capacity;
-                    row.dataset.status = current.status;
-                }
-            });
-
             // 6. Modal Update Stok
             const stockModal = document.getElementById('modal-update-stock');
+            const stockForm = document.getElementById('form-update-stock');
             document.getElementById('btn-trigger-update-stock').addEventListener('click', () => {
                 const current = warehouseMap[currentSelectedId];
                 if (!current) return;
                 document.getElementById('stock-modal-wh-name').value = `${current.name} (${current.id})`;
+                stockForm.action = `{{ url('/warehouse') }}/${encodeURIComponent(current.id)}/movements`;
                 stockModal.classList.remove('hidden');
             });
             const closeStockModal = () => stockModal.classList.add('hidden');
             document.getElementById('btn-close-stock-modal').addEventListener('click', closeStockModal);
             document.getElementById('btn-cancel-stock-modal').addEventListener('click', closeStockModal);
 
-            document.getElementById('form-update-stock').addEventListener('submit', (e) => {
-                e.preventDefault();
-                closeStockModal();
-                showToast('Catatan update stok berhasil direkam!');
+            const movementType = document.getElementById('stock-movement-type');
+            const destinationField = document.getElementById('transfer-destination-field');
+            const destinationSelect = document.getElementById('stock-destination');
+            movementType.addEventListener('change', () => {
+                const isTransfer = movementType.value === 'Transfer';
+                destinationField.classList.toggle('hidden', !isTransfer);
+                destinationSelect.required = isTransfer;
             });
+            movementType.dispatchEvent(new Event('change'));
 
             // 7. Hapus Gudang
             document.getElementById('btn-trigger-delete').addEventListener('click', () => {
@@ -1123,22 +1098,24 @@
                 if (!current) return;
 
                 if (confirm(`Apakah Anda yakin ingin menghapus gudang "${current.name}" (${current.id})? Tindakan ini bersifat permanen.`)) {
-                    showToast(`Gudang ${current.id} berhasil dihapus!`);
-                    const row = document.querySelector(`.warehouse-row[data-id="${current.id}"]`);
-                    if (row) row.remove();
-                    delete warehouseMap[current.id];
-
-                    const firstRemaining = document.querySelector('.warehouse-row');
-                    if (firstRemaining) {
-                        firstRemaining.click();
-                    } else {
-                        detailPanel.classList.add('hidden');
-                    }
+                    const deleteForm = document.getElementById('form-delete-warehouse');
+                    deleteForm.action = `{{ url('/warehouse') }}/${encodeURIComponent(current.id)}`;
+                    deleteForm.submit();
                 }
             });
 
-            // Inisialisasi awal gudang pertama
-            populateDetail('WH-001');
+            document.getElementById('action-status-select').addEventListener('change', (event) => {
+                if (!currentSelectedId) return;
+                const statusForm = document.getElementById('form-warehouse-status');
+                statusForm.action = `{{ url('/warehouse') }}/${encodeURIComponent(currentSelectedId)}/status`;
+                document.getElementById('warehouse-status-value').value = event.target.value;
+                statusForm.submit();
+            });
+
+            if (currentSelectedId) populateDetail(currentSelectedId);
+            @if ($errors->any())
+                showToast('Periksa pesan validasi untuk memperbaiki data.');
+            @endif
 
             // Refresh icons
             if (window.lucide) {

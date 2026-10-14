@@ -264,6 +264,15 @@
     @endphp
 
     <div class="space-y-6">
+        @if (session('success'))
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">{{ session('success') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                <p class="font-semibold">Data belum tersimpan:</p>
+                <ul class="mt-1 list-inside list-disc">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+            </div>
+        @endif
 
         {{-- ============================================ --}}
         {{-- 1. HEADER ASSETS                             --}}
@@ -452,7 +461,7 @@
                                         </span>
                                     </td>
                                     <td class="py-3 pr-4 text-center">
-                                        <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" data-dummy-action="Menu Aksi {{ $item['id'] }}">
+                                        <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" data-asset-action="edit" aria-label="Edit {{ $item['name'] }}">
                                             <i data-lucide="more-vertical" class="w-4 h-4"></i>
                                         </button>
                                     </td>
@@ -469,22 +478,8 @@
                     </table>
                 </div>
 
-                {{-- Pagination Dummy --}}
-                <div class="p-3.5 border-t border-border flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="p-3.5 border-t border-border text-xs">
                     <p id="table-info" class="text-secondary">Menampilkan 1-10 dari {{ count($assets) }} aset</p>
-                    <div class="flex items-center gap-1">
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border flex items-center justify-center text-secondary hover:bg-gray-50" data-dummy-action="Halaman Sebelumnya">
-                            <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button type="button" class="w-7 h-7 rounded-lg bg-primary text-white font-medium flex items-center justify-center">1</button>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border text-secondary hover:bg-gray-50 flex items-center justify-center" data-dummy-action="Halaman 2">2</button>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border text-secondary hover:bg-gray-50 flex items-center justify-center" data-dummy-action="Halaman 3">3</button>
-                        <span class="px-1 text-gray-400">...</span>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border text-secondary hover:bg-gray-50 flex items-center justify-center" data-dummy-action="Halaman 128">128</button>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border flex items-center justify-center text-secondary hover:bg-gray-50" data-dummy-action="Halaman Berikutnya">
-                            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-                        </button>
-                    </div>
                 </div>
 
             </div>
@@ -625,7 +620,7 @@
                             <div class="p-3 rounded-xl bg-surface border border-border">
                                 <p class="text-[11px] text-secondary">Perangkat Jaringan Terkait</p>
                                 <p id="related-devices-count" class="text-xl font-bold text-dark mt-1">1 perangkat</p>
-                                <a href="#" class="text-[11px] text-primary font-medium hover:underline mt-1 block" data-dummy-action="Lihat Topologi Jaringan">Lihat di Topologi →</a>
+                                <span class="text-[11px] text-secondary mt-1 block">Tampilan topologi belum tersedia.</span>
                             </div>
                         </div>
                         <div class="p-3 rounded-xl bg-blue-50/50 border border-blue-200/40 text-[11px] text-secondary flex items-start gap-2 mt-2">
@@ -658,9 +653,6 @@
                             <button type="button" id="btn-trigger-maintenance" class="py-2 px-3 rounded-lg bg-white border border-border text-dark text-xs font-medium hover:bg-gray-50 transition-colors text-center">
                                 Maintenance
                             </button>
-                            <button type="button" id="btn-trigger-exchange" class="py-2 px-3 rounded-lg bg-white border border-border text-dark text-xs font-medium hover:bg-gray-50 transition-colors text-center">
-                                Tukar Asset
-                            </button>
                             <button type="button" id="btn-trigger-delete" class="py-2 px-3 rounded-lg bg-white border border-red-200 text-danger text-xs font-medium hover:bg-red-50 transition-colors text-center">
                                 Hapus Asset
                             </button>
@@ -675,14 +667,14 @@
                                 <p class="text-secondary text-[11px]">Lokasi:</p>
                                 <p id="quick-location" class="font-medium text-dark">Gudang Utama</p>
                             </div>
-                            <a href="#" class="text-primary text-[11px] font-semibold hover:underline" data-dummy-action="Detail Lokasi Gudang">Lihat Detail</a>
+                            <a href="{{ route('warehouse.index') }}" class="text-primary text-[11px] font-semibold hover:underline">Lihat Gudang</a>
                         </div>
                         <div class="flex items-center justify-between border-t border-gray-200/60 pt-2">
                             <div>
                                 <p class="text-secondary text-[11px]">Vendor:</p>
                                 <p id="quick-vendor" class="font-medium text-dark">ZTE</p>
                             </div>
-                            <a href="#" class="text-primary text-[11px] font-semibold hover:underline" data-dummy-action="Detail Vendor ZTE">Lihat Detail</a>
+                            <span class="text-secondary text-[11px]">—</span>
                         </div>
                         <div class="border-t border-gray-200/60 pt-2 text-[11px] text-secondary">
                             <p id="quick-connected-note">Asset ini terhubung dengan 3 ticket dan 1 perangkat jaringan.</p>
@@ -711,38 +703,70 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <form id="form-create-asset" class="p-5 space-y-3.5 text-xs">
+            <form id="form-create-asset" action="{{ route('assets.store') }}" method="POST" class="p-5 space-y-3.5 text-xs">
+                @csrf
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-medium text-dark mb-1">Kode Asset <span class="text-danger">*</span></label>
-                        <input type="text" id="create-code" placeholder="AST-011" required
-                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                        <label class="block font-medium text-dark mb-1">Kode Asset</label>
+                        <input type="text" id="create-code" value="{{ $assetPreview }}" readonly
+                               class="w-full rounded-xl border border-border bg-gray-50 text-gray-500 px-3 py-2 text-xs cursor-not-allowed">
                     </div>
                     <div>
-                        <label class="block font-medium text-dark mb-1">Serial Number <span class="text-danger">*</span></label>
-                        <input type="text" id="create-serial" placeholder="SN12345678" required
+                        <label class="block font-medium text-dark mb-1">Serial Number</label>
+                        <input type="text" id="create-serial" name="serial_number" placeholder="SN12345678"
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                 </div>
 
                 <div>
                     <label class="block font-medium text-dark mb-1">Nama Asset <span class="text-danger">*</span></label>
-                    <input type="text" id="create-name" placeholder="Contoh: Switch Cisco Catalyst 2960" required
+                    <input type="text" id="create-name" name="name" placeholder="Contoh: Switch Cisco Catalyst 2960" required
                            class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">Kategori <span class="text-danger">*</span></label>
-                        <select id="create-category" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <input type="text" id="create-category" name="category" list="asset-categories" required
+                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <datalist id="asset-categories">
                             @foreach ($categories as $cat)
-                                <option value="{{ $cat }}">{{ $cat }}</option>
+                                <option value="{{ $cat }}">
+                            @endforeach
+                        </datalist>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-dark mb-1">Gudang Penyimpanan</label>
+                        <select id="create-warehouse" name="warehouse_id" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                            <option value="">Pilih gudang</option>
+                            @foreach ($warehouses as $warehouse)
+                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-medium text-dark mb-1">Produk Inventory Terkait (opsional)</label>
+                    <select id="create-inventory-item" name="inventory_item_id" class="w-full rounded-xl border border-border px-3 py-2 text-xs">
+                        <option value="">Tidak ditautkan ke produk inventory</option>
+                        @foreach ($inventoryItems as $item)
+                            <option value="{{ $item->id }}" data-category="{{ $item->category?->name }}">{{ $item->sku }} - {{ $item->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium text-dark mb-1">Customer (jika aset terpasang)</label>
+                        <select id="create-customer" name="customer_id" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                            <option value="">Tidak terpasang ke customer</option>
+                            @foreach ($customers as $customer)
+                                <option value="{{ $customer->id }}">{{ $customer->name }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div>
-                        <label class="block font-medium text-dark mb-1">Lokasi Penyimpanan <span class="text-danger">*</span></label>
-                        <input type="text" id="create-location" placeholder="Gudang Utama" required
+                        <label class="block font-medium text-dark mb-1">Lokasi Detail</label>
+                        <input type="text" id="create-location" name="location_name" placeholder="Rak A / ruang perangkat"
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                 </div>
@@ -750,12 +774,12 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">Vendor</label>
-                        <input type="text" id="create-vendor" placeholder="Cisco / ZTE"
+                        <input type="text" id="create-vendor" name="vendor" placeholder="Cisco / ZTE"
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Status Awal</label>
-                        <select id="create-status" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <select id="create-status" name="status" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                             <option value="Aktif">Aktif</option>
                             <option value="Maintenance">Maintenance</option>
                             <option value="Rusak">Rusak</option>
@@ -764,10 +788,24 @@
                     </div>
                 </div>
 
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium text-dark mb-1">Tanggal Pembelian</label>
+                        <input type="date" name="purchase_date" class="w-full rounded-xl border border-border px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-dark mb-1">Garansi (Bulan)</label>
+                        <input type="number" name="warranty_months" min="0" max="65535" class="w-full rounded-xl border border-border px-3 py-2 text-xs">
+                    </div>
+                </div>
                 <div>
                     <label class="block font-medium text-dark mb-1">Deskripsi & Catatan</label>
-                    <textarea id="create-desc" rows="2.5" placeholder="Keterangan peruntukan atau spesifikasi aset..."
+                    <textarea id="create-desc" name="description" rows="2" placeholder="Keterangan peruntukan atau spesifikasi aset..."
                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"></textarea>
+                </div>
+                <div>
+                    <label class="block font-medium text-dark mb-1">Spesifikasi</label>
+                    <textarea name="specs" rows="2" class="w-full rounded-xl border border-border px-3 py-2 text-xs"></textarea>
                 </div>
 
                 <div class="pt-3 border-t border-border flex items-center justify-end gap-2">
@@ -792,7 +830,9 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <form id="form-edit-asset" class="p-5 space-y-3.5 text-xs">
+            <form id="form-edit-asset" method="POST" class="p-5 space-y-3.5 text-xs">
+                @csrf
+                @method('PUT')
                 <input type="hidden" id="edit-id-hidden">
 
                 <div class="grid grid-cols-2 gap-3">
@@ -803,29 +843,55 @@
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Serial Number</label>
-                        <input type="text" id="edit-serial" required
+                        <input type="text" id="edit-serial" name="serial_number"
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                 </div>
 
                 <div>
                     <label class="block font-medium text-dark mb-1">Nama Asset</label>
-                    <input type="text" id="edit-name" required
+                    <input type="text" id="edit-name" name="name" required
                            class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">Kategori</label>
-                        <select id="edit-category" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
-                            @foreach ($categories as $cat)
-                                <option value="{{ $cat }}">{{ $cat }}</option>
+                        <input type="text" id="edit-category" name="category" list="asset-categories" required
+                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-dark mb-1">Lokasi</label>
+                        <select id="edit-warehouse" name="warehouse_id" class="w-full rounded-xl border border-border px-3 py-2 text-xs">
+                            <option value="">Pilih gudang</option>
+                            @foreach ($warehouses as $warehouse)
+                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div>
-                        <label class="block font-medium text-dark mb-1">Lokasi</label>
-                        <input type="text" id="edit-location" required
+                        <label class="block font-medium text-dark mb-1">Produk Inventory Terkait (opsional)</label>
+                        <select id="edit-inventory-item" name="inventory_item_id" class="w-full rounded-xl border border-border px-3 py-2 text-xs">
+                            <option value="">Tidak ditautkan ke produk inventory</option>
+                            @foreach ($inventoryItems as $item)
+                                <option value="{{ $item->id }}" data-category="{{ $item->category?->name }}">{{ $item->sku }} - {{ $item->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium text-dark mb-1">Customer</label>
+                        <select id="edit-customer" name="customer_id" class="w-full rounded-xl border border-border px-3 py-2 text-xs">
+                            <option value="">Tidak terpasang ke customer</option>
+                            @foreach ($customers as $customer)
+                                <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-dark mb-1">Lokasi Detail</label>
+                        <input type="text" id="edit-location" name="location_name"
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                 </div>
@@ -833,12 +899,12 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">Vendor</label>
-                        <input type="text" id="edit-vendor"
+                        <input type="text" id="edit-vendor" name="vendor"
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Status</label>
-                        <select id="edit-status" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <select id="edit-status" name="status" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                             <option value="Aktif">Aktif</option>
                             <option value="Maintenance">Maintenance</option>
                             <option value="Rusak">Rusak</option>
@@ -847,10 +913,24 @@
                     </div>
                 </div>
 
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium text-dark mb-1">Tanggal Pembelian</label>
+                        <input type="date" id="edit-purchase-date" name="purchase_date" class="w-full rounded-xl border border-border px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-dark mb-1">Garansi (Bulan)</label>
+                        <input type="number" id="edit-warranty-months" name="warranty_months" min="0" max="65535" class="w-full rounded-xl border border-border px-3 py-2 text-xs">
+                    </div>
+                </div>
                 <div>
                     <label class="block font-medium text-dark mb-1">Deskripsi</label>
-                    <textarea id="edit-desc" rows="2.5"
+                    <textarea id="edit-desc" name="description" rows="2"
                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"></textarea>
+                </div>
+                <div>
+                    <label class="block font-medium text-dark mb-1">Spesifikasi</label>
+                    <textarea id="edit-specs" name="specs" rows="2" class="w-full rounded-xl border border-border px-3 py-2 text-xs"></textarea>
                 </div>
 
                 <div class="pt-3 border-t border-border flex items-center justify-end gap-2">
@@ -875,7 +955,9 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <form id="form-maintenance" class="p-5 space-y-3.5 text-xs">
+            <form id="form-maintenance" method="POST" class="p-5 space-y-3.5 text-xs">
+                        @csrf
+                        <input type="hidden" name="work_type" id="maintenance-work-type">
                 <div>
                     <label class="block font-medium text-dark mb-1">Aset yang Dipelihara</label>
                     <input type="text" id="maint-asset-name" readonly
@@ -883,7 +965,7 @@
                 </div>
                 <div>
                     <label class="block font-medium text-dark mb-1">Jenis Pekerjaan Maintenance</label>
-                    <select class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                    <select id="maintenance-work-select" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                         <option value="Pemeriksaan Berkala">Pemeriksaan Berkala (Preventive)</option>
                         <option value="Perbaikan Kerusakan">Perbaikan Kerusakan (Corrective)</option>
                         <option value="Upgrade Firmware">Upgrade Firmware / Konfigurasi</option>
@@ -892,12 +974,12 @@
                 </div>
                 <div>
                     <label class="block font-medium text-dark mb-1">Teknisi Penanggung Jawab</label>
-                    <input type="text" placeholder="Nama teknisi (Contoh: Budi / Ahmad)" required
+                    <input type="text" name="technician" placeholder="Nama teknisi (Contoh: Budi / Ahmad)" required
                            class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                 </div>
                 <div>
                     <label class="block font-medium text-dark mb-1">Catatan Tindakan</label>
-                    <textarea rows="3" placeholder="Rincian bagian yang diperiksa atau diganti..." required
+                    <textarea name="note" rows="3" placeholder="Rincian bagian yang diperiksa atau diganti..." required
                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20"></textarea>
                 </div>
                 <div class="pt-3 border-t border-border flex items-center justify-end gap-2">
@@ -912,6 +994,8 @@
     <div id="toast-notification"
          class="fixed bottom-5 right-5 z-50 hidden max-w-sm rounded-xl bg-dark text-white text-xs px-4 py-3 shadow-xl transition-all">
     </div>
+    <form id="form-delete-asset" method="POST" class="hidden">@csrf @method('DELETE')</form>
+    <form id="form-asset-status" method="POST" class="hidden">@csrf @method('PATCH')<input type="hidden" name="status" id="asset-status-value"></form>
 
     {{-- ============================================ --}}
     {{-- 7. JAVASCRIPT LOGIC INTERAKTIF              --}}
@@ -923,7 +1007,7 @@
             let assetMap = {};
             assetList.forEach(a => { assetMap[a.id] = a; });
 
-            let currentSelectedId = 'AST-001';
+            let currentSelectedId = assetList[0]?.id || null;
 
             // Toast helper
             let toastTimer;
@@ -934,15 +1018,6 @@
                 clearTimeout(toastTimer);
                 toastTimer = setTimeout(() => toast.classList.add('hidden'), 2600);
             }
-
-            // Dummy Action Handler
-            document.querySelectorAll('[data-dummy-action]').forEach(el => {
-                el.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    showToast(el.getAttribute('data-dummy-action') + ' (Aksi UI)');
-                });
-            });
 
             // 1. Search & Filter & Sort
             const searchInput = document.getElementById('asset-search');
@@ -1052,7 +1127,6 @@
 
                 // Tab Detail
                 document.getElementById('info-code').textContent = a.id;
-                document.getElementById('info-name').textContent = a.name;
                 document.getElementById('info-category').textContent = a.category;
                 document.getElementById('info-serial').textContent = a.serial;
                 document.getElementById('info-vendor').textContent = a.vendor || '-';
@@ -1119,6 +1193,13 @@
                 });
             });
 
+            document.querySelectorAll('[data-asset-action="edit"]').forEach(button => {
+                button.addEventListener('click', () => {
+                    button.closest('.asset-row')?.click();
+                    document.getElementById('btn-trigger-edit').click();
+                });
+            });
+
             // Tutup Panel Detail
             document.getElementById('btn-close-detail').addEventListener('click', () => {
                 detailPanel.classList.add('hidden');
@@ -1143,66 +1224,72 @@
 
             // 4. Modal Tambah Asset
             const createModal = document.getElementById('modal-create-asset');
+            const createCategory = document.getElementById('create-category');
+            const createInventoryItem = document.getElementById('create-inventory-item');
+            createInventoryItem.addEventListener('change', () => {
+                const option = createInventoryItem.selectedOptions[0];
+                if (createInventoryItem.value && option.dataset.category) {
+                    createCategory.value = option.dataset.category;
+                    createCategory.readOnly = true;
+                } else {
+                    createCategory.readOnly = false;
+                }
+            });
             document.getElementById('btn-open-create-modal').addEventListener('click', () => {
                 createModal.classList.remove('hidden');
             });
             const closeCreateModal = () => createModal.classList.add('hidden');
             document.getElementById('btn-close-create-modal').addEventListener('click', closeCreateModal);
             document.getElementById('btn-cancel-create-modal').addEventListener('click', closeCreateModal);
-
-            document.getElementById('form-create-asset').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const code = document.getElementById('create-code').value.trim();
-                const serial = document.getElementById('create-serial').value.trim();
-                const name = document.getElementById('create-name').value.trim();
-                const category = document.getElementById('create-category').value;
-                const location = document.getElementById('create-location').value.trim();
-                const vendor = document.getElementById('create-vendor').value.trim() || 'Vendor Umum';
-                const status = document.getElementById('create-status').value;
-                const desc = document.getElementById('create-desc').value.trim();
-
-                const newAsset = {
-                    id: code,
-                    name: name,
-                    category: category,
-                    serial: serial,
-                    location: location,
-                    status: status,
-                    vendor: vendor,
-                    purchase_date: 'Hari ini',
-                    warranty: '12 Bulan',
-                    description: desc || 'Aset baru berhasil didaftarkan.',
-                    specs: 'Standard Deployment Specs',
-                    icon: 'box',
-                    history: [
-                        { title: 'Asset Didaftarkan', date: 'Hari ini', desc: 'Registrasi melalui portal NEXOPS.' }
-                    ],
-                    related_tickets: 0,
-                    related_devices: 0,
-                    docs: []
-                };
-
-                assetMap[code] = newAsset;
-                closeCreateModal();
-                showToast(`Asset ${code} - ${name} berhasil ditambahkan!`);
-                populateDetail(code);
+            document.getElementById('create-warehouse').addEventListener('change', (event) => {
+                if (event.target.value) {
+                    document.getElementById('create-customer').value = '';
+                }
+            });
+            document.getElementById('create-customer').addEventListener('change', (event) => {
+                if (event.target.value) {
+                    document.getElementById('create-warehouse').value = '';
+                }
+            });
+            document.getElementById('create-inventory-item').addEventListener('change', (event) => {
+                const categoryInput = document.getElementById('create-category');
+                const option = event.target.selectedOptions[0];
+                if (event.target.value && option.dataset.category) {
+                    categoryInput.value = option.dataset.category;
+                    categoryInput.readOnly = true;
+                } else {
+                    categoryInput.readOnly = false;
+                }
             });
 
             // 5. Modal Edit Asset
             const editModal = document.getElementById('modal-edit-asset');
+            const editForm = document.getElementById('form-edit-asset');
             document.getElementById('btn-trigger-edit').addEventListener('click', () => {
                 const current = assetMap[currentSelectedId];
                 if (!current) return;
 
                 document.getElementById('edit-id-hidden').value = current.id;
                 document.getElementById('edit-code').value = current.id;
-                document.getElementById('edit-serial').value = current.serial;
+                editForm.action = `{{ url('/assets') }}/${encodeURIComponent(current.id)}`;
+                document.getElementById('edit-serial').value = current.serial === '-' ? '' : current.serial;
                 document.getElementById('edit-name').value = current.name;
                 document.getElementById('edit-category').value = current.category;
-                document.getElementById('edit-location').value = current.location;
+                document.getElementById('edit-inventory-item').value = current.inventory_item_id || '';
+                const linkedItem = document.getElementById('edit-inventory-item').selectedOptions[0];
+                document.getElementById('edit-category').readOnly = Boolean(current.inventory_item_id && linkedItem?.dataset.category);
+                if (current.inventory_item_id && linkedItem?.dataset.category) {
+                    document.getElementById('edit-category').value = linkedItem.dataset.category;
+                }
+                document.getElementById('edit-warehouse').value = current.warehouse_id || '';
+                document.getElementById('edit-customer').value = current.customer_id || '';
+                document.getElementById('edit-location').value = (current.warehouse_id || current.customer_id) ? '' : (current.location || '');
                 document.getElementById('edit-vendor').value = current.vendor || '';
                 document.getElementById('edit-status').value = current.status;
+                document.getElementById('edit-purchase-date').value = current.purchase_date_value || '';
+                document.getElementById('edit-warranty-months').value = current.warranty_months ?? '';
                 document.getElementById('edit-desc').value = current.description || '';
+                document.getElementById('edit-specs').value = current.specs || '';
 
                 editModal.classList.remove('hidden');
             });
@@ -1210,67 +1297,45 @@
             const closeEditModal = () => editModal.classList.add('hidden');
             document.getElementById('btn-close-edit-modal').addEventListener('click', closeEditModal);
             document.getElementById('btn-cancel-edit-modal').addEventListener('click', closeEditModal);
-
-            document.getElementById('form-edit-asset').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const code = document.getElementById('edit-id-hidden').value;
-                const current = assetMap[code];
-                if (!current) return;
-
-                current.name = document.getElementById('edit-name').value.trim();
-                current.serial = document.getElementById('edit-serial').value.trim();
-                current.category = document.getElementById('edit-category').value;
-                current.location = document.getElementById('edit-location').value.trim();
-                current.vendor = document.getElementById('edit-vendor').value.trim();
-                current.status = document.getElementById('edit-status').value;
-                current.description = document.getElementById('edit-desc').value.trim();
-
-                closeEditModal();
-                showToast(`Perubahan asset ${code} berhasil disimpan!`);
-                populateDetail(code);
-
-                // Update table row
-                const row = document.querySelector(`.asset-row[data-id="${code}"]`);
-                if (row) {
-                    row.querySelector('td:nth-child(3) p:first-child').textContent = current.name;
-                    row.querySelector('td:nth-child(3) p:last-child').textContent = current.vendor;
-                    row.querySelector('td:nth-child(4) span').textContent = current.category;
-                    row.querySelector('td:nth-child(5)').textContent = current.serial;
-                    row.querySelector('td:nth-child(6)').textContent = current.location;
-                    row.dataset.name = current.name;
-                    row.dataset.category = current.category;
-                    row.dataset.serial = current.serial;
-                    row.dataset.location = current.location;
-                    row.dataset.status = current.status;
+            document.getElementById('edit-inventory-item').addEventListener('change', (event) => {
+                const categoryInput = document.getElementById('edit-category');
+                const option = event.target.selectedOptions[0];
+                if (event.target.value && option.dataset.category) {
+                    categoryInput.value = option.dataset.category;
+                    categoryInput.readOnly = true;
+                } else {
+                    categoryInput.readOnly = false;
+                }
+            });
+            document.getElementById('edit-warehouse').addEventListener('change', (event) => {
+                if (event.target.value) {
+                    document.getElementById('edit-customer').value = '';
+                }
+            });
+            document.getElementById('edit-customer').addEventListener('change', (event) => {
+                if (event.target.value) {
+                    document.getElementById('edit-warehouse').value = '';
                 }
             });
 
             // 6. Modal Maintenance
             const maintModal = document.getElementById('modal-maintenance');
+            const maintenanceForm = document.getElementById('form-maintenance');
             document.getElementById('btn-trigger-maintenance').addEventListener('click', () => {
                 const current = assetMap[currentSelectedId];
                 if (!current) return;
                 document.getElementById('maint-asset-name').value = `${current.name} (${current.id}) - SN: ${current.serial}`;
+                maintenanceForm.action = `{{ url('/assets') }}/${encodeURIComponent(current.id)}/maintenance`;
                 maintModal.classList.remove('hidden');
             });
             const closeMaintModal = () => maintModal.classList.add('hidden');
             document.getElementById('btn-close-maint-modal').addEventListener('click', closeMaintModal);
             document.getElementById('btn-cancel-maint-modal').addEventListener('click', closeMaintModal);
 
-            document.getElementById('form-maintenance').addEventListener('submit', (e) => {
-                e.preventDefault();
-                closeMaintModal();
-                showToast('Catatan maintenance berhasil direkam!');
+            document.getElementById('maintenance-work-select').addEventListener('change', (event) => {
+                document.getElementById('maintenance-work-type').value = event.target.value;
             });
-
-            // 7. Tukar Asset (Exchange)
-            document.getElementById('btn-trigger-exchange').addEventListener('click', () => {
-                const current = assetMap[currentSelectedId];
-                if (!current) return;
-                if (confirm(`Apakah Anda ingin memulai proses Tukar Asset untuk "${current.name}" (${current.id})?`)) {
-                    showToast(`Proses pergantian unit untuk ${current.id} telah dicatat.`);
-                }
-            });
+            document.getElementById('maintenance-work-type').value = document.getElementById('maintenance-work-select').value;
 
             // 8. Hapus Asset
             document.getElementById('btn-trigger-delete').addEventListener('click', () => {
@@ -1278,22 +1343,25 @@
                 if (!current) return;
 
                 if (confirm(`Apakah Anda yakin ingin menghapus aset "${current.name}" (${current.id})? Tindakan ini bersifat permanen.`)) {
-                    showToast(`Asset ${current.id} berhasil dihapus!`);
-                    const row = document.querySelector(`.asset-row[data-id="${current.id}"]`);
-                    if (row) row.remove();
-                    delete assetMap[current.id];
-
-                    const firstRemaining = document.querySelector('.asset-row');
-                    if (firstRemaining) {
-                        firstRemaining.click();
-                    } else {
-                        detailPanel.classList.add('hidden');
-                    }
+                    const deleteForm = document.getElementById('form-delete-asset');
+                    deleteForm.action = `{{ url('/assets') }}/${encodeURIComponent(current.id)}`;
+                    deleteForm.submit();
                 }
             });
 
-            // Inisialisasi awal produk pertama
-            populateDetail('AST-001');
+            document.getElementById('action-status-select').addEventListener('change', (event) => {
+                if (!currentSelectedId) return;
+                const statusForm = document.getElementById('form-asset-status');
+                statusForm.action = `{{ url('/assets') }}/${encodeURIComponent(currentSelectedId)}/status`;
+                document.getElementById('asset-status-value').value = event.target.value;
+                statusForm.submit();
+            });
+
+            // Inisialisasi awal aset pertama
+            if (currentSelectedId) populateDetail(currentSelectedId);
+            @if ($errors->any())
+                showToast('Periksa pesan validasi untuk memperbaiki data.');
+            @endif
 
             // Refresh icons
             if (window.lucide) {

@@ -278,6 +278,15 @@
         {{-- ============================================ --}}
         {{-- 1. HEADER INVENTORY                          --}}
         {{-- ============================================ --}}
+        @if (session('success'))
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">{{ session('success') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                <p class="font-semibold">Data belum tersimpan:</p>
+                <ul class="mt-1 list-inside list-disc">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+            </div>
+        @endif
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-dark tracking-tight">Inventory</h1>
@@ -462,7 +471,7 @@
                                         </span>
                                     </td>
                                     <td class="py-3 pr-4 text-center">
-                                        <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" data-dummy-action="Menu Aksi {{ $item['id'] }}">
+                                        <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" data-product-action="edit" aria-label="Edit {{ $item['name'] }}">
                                             <i data-lucide="more-vertical" class="w-4 h-4"></i>
                                         </button>
                                     </td>
@@ -479,22 +488,8 @@
                     </table>
                 </div>
 
-                {{-- Pagination Dummy --}}
-                <div class="p-3.5 border-t border-border flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="p-3.5 border-t border-border text-xs">
                     <p id="table-info" class="text-secondary">Menampilkan 1-10 dari {{ count($products) }} produk</p>
-                    <div class="flex items-center gap-1">
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border flex items-center justify-center text-secondary hover:bg-gray-50" data-dummy-action="Halaman Sebelumnya">
-                            <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button type="button" class="w-7 h-7 rounded-lg bg-primary text-white font-medium flex items-center justify-center">1</button>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border text-secondary hover:bg-gray-50 flex items-center justify-center" data-dummy-action="Halaman 2">2</button>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border text-secondary hover:bg-gray-50 flex items-center justify-center" data-dummy-action="Halaman 3">3</button>
-                        <span class="px-1 text-gray-400">...</span>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border text-secondary hover:bg-gray-50 flex items-center justify-center" data-dummy-action="Halaman 25">25</button>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border flex items-center justify-center text-secondary hover:bg-gray-50" data-dummy-action="Halaman Berikutnya">
-                            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-                        </button>
-                    </div>
                 </div>
 
             </div>
@@ -623,7 +618,7 @@
                             <div class="p-3 rounded-xl bg-surface border border-border">
                                 <p class="text-[11px] text-secondary">Aset Aktif di Customer</p>
                                 <p id="related-active-assets" class="text-xl font-bold text-dark mt-1">14 unit</p>
-                                <a href="#" class="text-[11px] text-primary font-medium hover:underline mt-1 block" data-dummy-action="Lihat Semua Aset Terpasang">Lihat Daftar Aset →</a>
+                                <a href="{{ route('assets.index') }}" class="text-[11px] text-primary font-medium hover:underline mt-1 block">Lihat Daftar Aset →</a>
                             </div>
                             <div class="p-3 rounded-xl bg-surface border border-border">
                                 <p class="text-[11px] text-secondary">Tiket Terkait Terbuka</p>
@@ -669,33 +664,36 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <form id="form-create-product" class="p-5 space-y-3.5 text-xs">
+            <form id="form-create-product" action="{{ route('inventory.store') }}" method="POST" class="p-5 space-y-3.5 text-xs">
+                @csrf
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-medium text-dark mb-1">Kode Produk <span class="text-danger">*</span></label>
-                        <input type="text" id="create-code" placeholder="PRD-011" required
-                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                        <label class="block font-medium text-dark mb-1">Kode Produk</label>
+                        <input type="text" id="create-code" value="{{ $skuPreview }}" readonly
+                               class="w-full rounded-xl border border-border bg-gray-50 text-gray-500 px-3 py-2 text-xs cursor-not-allowed">
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Kategori <span class="text-danger">*</span></label>
-                        <select id="create-category" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <input type="text" id="create-category" name="category" list="inventory-categories" required
+                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <datalist id="inventory-categories">
                             @foreach ($categories as $cat)
-                                <option value="{{ $cat }}">{{ $cat }}</option>
+                                <option value="{{ $cat }}">
                             @endforeach
-                        </select>
+                        </datalist>
                     </div>
                 </div>
 
                 <div>
                     <label class="block font-medium text-dark mb-1">Nama Produk <span class="text-danger">*</span></label>
-                    <input type="text" id="create-name" placeholder="Contoh: ONT Fiberhome HG6243C" required
+                    <input type="text" id="create-name" name="name" placeholder="Contoh: ONT Fiberhome HG6243C" required
                            class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                 </div>
 
                 <div class="grid grid-cols-3 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">Satuan <span class="text-danger">*</span></label>
-                        <select id="create-unit" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <select id="create-unit" name="unit" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                             <option value="Unit">Unit</option>
                             <option value="Pcs">Pcs</option>
                             <option value="Pack">Pack</option>
@@ -705,29 +703,28 @@
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Stok Awal</label>
-                        <input type="number" id="create-stock" min="0" value="50" required
+                        <input type="number" id="create-stock" name="stock" min="0" value="0" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Min. Stok</label>
-                        <input type="number" id="create-min" min="0" value="10" required
+                        <input type="number" id="create-min" name="min_stock" min="0" value="10" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                 </div>
 
                 <div>
                     <label class="block font-medium text-dark mb-1">Gudang Penyimpanan</label>
-                    <select id="create-warehouse" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
-                        <option value="Gudang Utama">Gudang Utama (Situbondo)</option>
-                        <option value="Gudang Situbondo">Gudang Situbondo</option>
-                        <option value="Gudang Besuki">Gudang Besuki</option>
-                        <option value="Gudang Asembagus">Gudang Asembagus</option>
+                    <select id="create-warehouse" name="warehouse_id" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        @foreach ($warehouses as $warehouse)
+                            <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                        @endforeach
                     </select>
                 </div>
 
                 <div>
                     <label class="block font-medium text-dark mb-1">Deskripsi Produk</label>
-                    <textarea id="create-desc" rows="2.5" placeholder="Spesifikasi atau informasi penting produk..."
+                    <textarea id="create-desc" name="description" rows="2" placeholder="Spesifikasi atau informasi penting produk..."
                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"></textarea>
                 </div>
 
@@ -753,7 +750,9 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <form id="form-edit-product" class="p-5 space-y-3.5 text-xs">
+            <form id="form-edit-product" method="POST" class="p-5 space-y-3.5 text-xs">
+                @csrf
+                @method('PUT')
                 <input type="hidden" id="edit-id-hidden">
 
                 <div class="grid grid-cols-2 gap-3">
@@ -764,41 +763,47 @@
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Kategori</label>
-                        <select id="edit-category" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
-                            @foreach ($categories as $cat)
-                                <option value="{{ $cat }}">{{ $cat }}</option>
-                            @endforeach
-                        </select>
+                        <input type="text" id="edit-category" name="category" list="inventory-categories" required
+                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                     </div>
                 </div>
 
                 <div>
                     <label class="block font-medium text-dark mb-1">Nama Produk</label>
-                    <input type="text" id="edit-name" required
+                    <input type="text" id="edit-name" name="name" required
                            class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                 </div>
 
                 <div class="grid grid-cols-3 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">Satuan</label>
-                        <input type="text" id="edit-unit" required
+                        <input type="text" id="edit-unit" name="unit" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Stok Total</label>
-                        <input type="number" id="edit-stock" min="0" required
+                        <input type="number" id="edit-stock" name="stock" min="0" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Min. Stok</label>
-                        <input type="number" id="edit-min" min="0" required
+                        <input type="number" id="edit-min" name="min_stock" min="0" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                 </div>
 
                 <div>
+                    <label class="block font-medium text-dark mb-1">Gudang untuk Penyesuaian Stok</label>
+                    <select id="edit-warehouse" name="warehouse_id" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        @foreach ($warehouses as $warehouse)
+                            <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
                     <label class="block font-medium text-dark mb-1">Deskripsi</label>
-                    <textarea id="edit-desc" rows="2.5"
+                    <textarea id="edit-desc" name="description" rows="2"
                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"></textarea>
                 </div>
 
@@ -814,6 +819,10 @@
     <div id="toast-notification"
          class="fixed bottom-5 right-5 z-50 hidden max-w-sm rounded-xl bg-dark text-white text-xs px-4 py-3 shadow-xl transition-all">
     </div>
+    <form id="form-delete-product" method="POST" class="hidden">
+        @csrf
+        @method('DELETE')
+    </form>
 
     {{-- ============================================ --}}
     {{-- 6. JAVASCRIPT LOGIC INTERAKTIF              --}}
@@ -825,7 +834,7 @@
             let productMap = {};
             productList.forEach(p => { productMap[p.id] = p; });
 
-            let currentSelectedId = 'PRD-001';
+            let currentSelectedId = productList[0]?.id || null;
 
             // Toast helper
             let toastTimer;
@@ -836,15 +845,6 @@
                 clearTimeout(toastTimer);
                 toastTimer = setTimeout(() => toast.classList.add('hidden'), 2600);
             }
-
-            // Dummy Action Click Handler
-            document.querySelectorAll('[data-dummy-action]').forEach(el => {
-                el.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    showToast(el.getAttribute('data-dummy-action') + ' (Aksi UI)');
-                });
-            });
 
             // 1. Search & Filter & Sort
             const searchInput = document.getElementById('product-search');
@@ -1020,6 +1020,13 @@
                 });
             });
 
+            document.querySelectorAll('[data-product-action="edit"]').forEach(button => {
+                button.addEventListener('click', () => {
+                    button.closest('.product-row')?.click();
+                    document.getElementById('btn-edit-product').click();
+                });
+            });
+
             // Tutup Panel Detail
             document.getElementById('btn-close-detail').addEventListener('click', () => {
                 detailPanel.classList.add('hidden');
@@ -1051,61 +1058,22 @@
             document.getElementById('btn-close-create-modal').addEventListener('click', closeCreateModal);
             document.getElementById('btn-cancel-create-modal').addEventListener('click', closeCreateModal);
 
-            document.getElementById('form-create-product').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const code = document.getElementById('create-code').value.trim();
-                const name = document.getElementById('create-name').value.trim();
-                const category = document.getElementById('create-category').value;
-                const unit = document.getElementById('create-unit').value;
-                const stock = parseInt(document.getElementById('create-stock').value) || 0;
-                const min = parseInt(document.getElementById('create-min').value) || 0;
-                const warehouse = document.getElementById('create-warehouse').value;
-                const desc = document.getElementById('create-desc').value.trim();
-
-                const status = stock <= 0 ? 'Habis' : (stock <= min ? 'Low Stock' : 'Aktif');
-
-                const newProduct = {
-                    id: code,
-                    name: name,
-                    category: category,
-                    unit: unit,
-                    total_stock: stock,
-                    min_stock: min,
-                    status: status,
-                    location: warehouse,
-                    address: 'Jl. Raya Situbondo',
-                    serial_example: 'SN-' + Math.floor(100000 + Math.random() * 900000),
-                    description: desc || 'Produk baru ditambahkan ke persediaan.',
-                    warehouses: [{ name: warehouse, stock: stock, min: min }],
-                    movements: [{
-                        date: 'Hari ini',
-                        type: 'Masuk',
-                        qty: stock,
-                        ref: 'Stok Awal Produk Baru',
-                        user: 'Administrator'
-                    }],
-                    related: { active_assets: 0, open_tickets: 0 }
-                };
-
-                productMap[code] = newProduct;
-                closeCreateModal();
-                showToast(`Produk ${code} - ${name} berhasil ditambahkan!`);
-                populateDetail(code);
-            });
-
             // 5. Modal Edit Produk
             const editModal = document.getElementById('modal-edit-product');
+            const editForm = document.getElementById('form-edit-product');
             document.getElementById('btn-edit-product').addEventListener('click', () => {
                 const current = productMap[currentSelectedId];
                 if (!current) return;
 
                 document.getElementById('edit-id-hidden').value = current.id;
                 document.getElementById('edit-code').value = current.id;
+                editForm.action = `{{ url('/inventory') }}/${encodeURIComponent(current.id)}`;
                 document.getElementById('edit-name').value = current.name;
                 document.getElementById('edit-category').value = current.category;
                 document.getElementById('edit-unit').value = current.unit;
                 document.getElementById('edit-stock').value = current.total_stock;
                 document.getElementById('edit-min').value = current.min_stock;
+                document.getElementById('edit-warehouse').value = current.warehouses?.[0]?.id || '';
                 document.getElementById('edit-desc').value = current.description;
 
                 editModal.classList.remove('hidden');
@@ -1115,62 +1083,23 @@
             document.getElementById('btn-close-edit-modal').addEventListener('click', closeEditModal);
             document.getElementById('btn-cancel-edit-modal').addEventListener('click', closeEditModal);
 
-            document.getElementById('form-edit-product').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const code = document.getElementById('edit-id-hidden').value;
-                const current = productMap[code];
-                if (!current) return;
-
-                current.name = document.getElementById('edit-name').value.trim();
-                current.category = document.getElementById('edit-category').value;
-                current.unit = document.getElementById('edit-unit').value.trim();
-                current.total_stock = parseInt(document.getElementById('edit-stock').value) || 0;
-                current.min_stock = parseInt(document.getElementById('edit-min').value) || 0;
-                current.description = document.getElementById('edit-desc').value.trim();
-                current.status = current.total_stock <= 0 ? 'Habis' : (current.total_stock <= current.min_stock ? 'Low Stock' : 'Aktif');
-
-                closeEditModal();
-                showToast(`Perubahan data ${code} berhasil disimpan!`);
-                populateDetail(code);
-
-                // Update row in table
-                const row = document.querySelector(`.product-row[data-id="${code}"]`);
-                if (row) {
-                    row.querySelector('td:nth-child(3) p:first-child').textContent = current.name;
-                    row.querySelector('td:nth-child(3) p:last-child').textContent = current.unit;
-                    row.querySelector('td:nth-child(4)').textContent = current.category;
-                    row.querySelector('td:nth-child(5)').textContent = Number(current.total_stock).toLocaleString('id-ID');
-                    row.querySelector('td:nth-child(6)').textContent = Number(current.min_stock).toLocaleString('id-ID');
-                    row.dataset.name = current.name;
-                    row.dataset.stock = current.total_stock;
-                    row.dataset.category = current.category;
-                    row.dataset.status = current.status;
-                }
-            });
-
             // 6. Hapus Produk
             document.getElementById('btn-delete-product').addEventListener('click', () => {
                 const current = productMap[currentSelectedId];
                 if (!current) return;
 
                 if (confirm(`Apakah Anda yakin ingin menghapus produk "${current.name}" (${current.id})?`)) {
-                    showToast(`Produk ${current.id} berhasil dihapus!`);
-                    const row = document.querySelector(`.product-row[data-id="${current.id}"]`);
-                    if (row) row.remove();
-                    delete productMap[current.id];
-
-                    // Pilih baris pertama yang tersisa
-                    const firstRemaining = document.querySelector('.product-row');
-                    if (firstRemaining) {
-                        firstRemaining.click();
-                    } else {
-                        detailPanel.classList.add('hidden');
-                    }
+                    const deleteForm = document.getElementById('form-delete-product');
+                    deleteForm.action = `{{ url('/inventory') }}/${encodeURIComponent(current.id)}`;
+                    deleteForm.submit();
                 }
             });
 
             // Inisialisasi awal produk pertama
-            populateDetail('PRD-001');
+            if (currentSelectedId) populateDetail(currentSelectedId);
+            @if ($errors->any())
+                showToast('Periksa pesan validasi untuk memperbaiki data.');
+            @endif
 
             // Refresh icons
             if (window.lucide) {

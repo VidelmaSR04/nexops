@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Asset extends Model
@@ -16,6 +17,7 @@ class Asset extends Model
         'asset_code',
         'name',
         'category_id',
+        'inventory_item_id',
         'serial_number',
         'warehouse_id',
         'customer_id',
@@ -31,13 +33,18 @@ class Asset extends Model
     ];
 
     protected $casts = [
-        'purchase_date'   => 'date',
+        'purchase_date' => 'date',
         'warranty_months' => 'integer',
     ];
 
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function inventoryItem(): BelongsTo
+    {
+        return $this->belongsTo(InventoryItem::class);
     }
 
     public function warehouse(): BelongsTo
@@ -54,5 +61,9 @@ class Asset extends Model
     {
         return $this->hasMany(Ticket::class);
     }
-}
 
+    public function activityLogs(): MorphMany
+    {
+        return $this->morphMany(ActivityLog::class, 'subject');
+    }
+}
