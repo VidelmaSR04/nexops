@@ -39,13 +39,65 @@ Route::get('/inventory', [InventoryController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('inventory.index');
 
+Route::post('/inventory', [InventoryController::class, 'store'])
+    ->middleware(['auth', 'verified'])
+    ->name('inventory.store');
+
+Route::put('/inventory/{sku}', [InventoryController::class, 'update'])
+    ->middleware(['auth', 'verified'])
+    ->name('inventory.update');
+
+Route::delete('/inventory/{sku}', [InventoryController::class, 'destroy'])
+    ->middleware(['auth', 'verified'])
+    ->name('inventory.destroy');
+
 Route::get('/assets', [AssetController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('assets.index');
 
+Route::post('/assets', [AssetController::class, 'store'])
+    ->middleware(['auth', 'verified'])
+    ->name('assets.store');
+
+Route::put('/assets/{asset:asset_code}', [AssetController::class, 'update'])
+    ->middleware(['auth', 'verified'])
+    ->name('assets.update');
+
+Route::patch('/assets/{asset:asset_code}/status', [AssetController::class, 'updateStatus'])
+    ->middleware(['auth', 'verified'])
+    ->name('assets.update-status');
+
+Route::post('/assets/{asset:asset_code}/maintenance', [AssetController::class, 'storeMaintenance'])
+    ->middleware(['auth', 'verified'])
+    ->name('assets.maintenance.store');
+
+Route::delete('/assets/{asset:asset_code}', [AssetController::class, 'destroy'])
+    ->middleware(['auth', 'verified'])
+    ->name('assets.destroy');
+
 Route::get('/warehouse', [WarehouseController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('warehouse.index');
+
+Route::post('/warehouse', [WarehouseController::class, 'store'])
+    ->middleware(['auth', 'verified'])
+    ->name('warehouse.store');
+
+Route::put('/warehouse/{warehouse:code}', [WarehouseController::class, 'update'])
+    ->middleware(['auth', 'verified'])
+    ->name('warehouse.update');
+
+Route::patch('/warehouse/{warehouse:code}/status', [WarehouseController::class, 'updateStatus'])
+    ->middleware(['auth', 'verified'])
+    ->name('warehouse.update-status');
+
+Route::delete('/warehouse/{warehouse:code}', [WarehouseController::class, 'destroy'])
+    ->middleware(['auth', 'verified'])
+    ->name('warehouse.destroy');
+
+Route::post('/warehouse/{warehouse:code}/movements', [WarehouseController::class, 'storeMovement'])
+    ->middleware(['auth', 'verified'])
+    ->name('warehouse.movements.store');
 
 Route::get('/technicians', [TechnicianController::class, 'index'])
     ->middleware(['auth', 'verified'])
