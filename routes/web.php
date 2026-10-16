@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AssetController;
+use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
@@ -103,13 +104,57 @@ Route::get('/technicians', [TechnicianController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('technicians.index');
 
+Route::get('/technicians/{technician}', [TechnicianController::class, 'show'])
+    ->middleware(['auth', 'verified'])
+    ->name('technicians.show');
+
+Route::post('/technicians', [TechnicianController::class, 'store'])
+    ->middleware(['auth', 'verified'])
+    ->name('technicians.store');
+
+Route::put('/technicians/{technician}', [TechnicianController::class, 'update'])
+    ->middleware(['auth', 'verified'])
+    ->name('technicians.update');
+
+Route::patch('/technicians/{technician}/status', [TechnicianController::class, 'updateStatus'])
+    ->middleware(['auth', 'verified'])
+    ->name('technicians.update-status');
+
+Route::delete('/technicians/{technician}', [TechnicianController::class, 'destroy'])
+    ->middleware(['auth', 'verified'])
+    ->name('technicians.destroy');
+
+Route::post('/tickets/{ticket}/assignments', [AssignmentController::class, 'store'])
+    ->middleware(['auth', 'verified'])
+    ->name('tickets.assignments.store');
+
+Route::delete('/tickets/{ticket}/assignments/{assignment}', [AssignmentController::class, 'destroy'])
+    ->middleware(['auth', 'verified'])
+    ->name('tickets.assignments.destroy');
+
 Route::get('/customers', [CustomerController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('customers.index');
 
+Route::get('/customers/{customer}', [CustomerController::class, 'show'])
+    ->middleware(['auth', 'verified'])
+    ->name('customers.show');
+
 Route::post('/customers', [CustomerController::class, 'store'])
     ->middleware(['auth', 'verified'])
     ->name('customers.store');
+
+Route::put('/customers/{customer}', [CustomerController::class, 'update'])
+    ->middleware(['auth', 'verified'])
+    ->name('customers.update');
+
+Route::patch('/customers/{customer}/status', [CustomerController::class, 'updateStatus'])
+    ->middleware(['auth', 'verified'])
+    ->name('customers.update-status');
+
+Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])
+    ->middleware(['auth', 'verified'])
+    ->name('customers.destroy');
 
 Route::view('/reports', 'reports')
     ->middleware(['auth', 'verified'])
