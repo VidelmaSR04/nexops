@@ -5,55 +5,244 @@ namespace App\Http\Controllers;
 use App\Models\Technician;
 use App\Models\Ticket;
 use Illuminate\Http\Request;
+use App\Http\Requests\TechnicianRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\ValidationException;
 
 class TechnicianController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $technicians = Technician::with(['assignments.ticket'])->get()->map(function ($t) {
-            $activeTickets = $t->assignments
-                ->where('is_active', true)
-                ->map(function ($a) {
-                    return [
-                        'id'       => $a->ticket?->ticket_number ?? 'TK-' . $a->ticket_id,
-                        'title'    => $a->ticket?->title ?? 'Tiket Perbaikan',
-                        'priority' => $a->ticket?->priority ?? 'Normal',
-                    ];
-                })->values()->toArray();
+        $query = Technician::with([
+            'assignments' => fn ($query) => $query->with('ticket')->orderByDesc('assigned_at'),
+        ]);
 
-            return [
-                'id'         => $t->id,
-                'name'       => $t->name,
-                'nik'        => $t->nik,
-                'area'       => $t->area ?? 'Situbondo',
-                'status'     => $t->status ?? 'Available',
-                'tickets'    => count($activeTickets),
-                'role'       => $t->position ?? 'Teknisi',
-                'phone'      => $t->phone ?? '-',
-                'email'      => $t->email ?? '-',
-                'joined_iso' => $t->joined_at ? $t->joined_at->format('Y-m-d') : '2024-01-01',
-                'exp_years'  => $t->exp_years ?? 1,
-                'rating'     => (float) $t->rating,
-                'active'     => $activeTickets,
+        if ($request->filled('search')) {
+            $search = $request->string('search')->toString();
+            $query->where(function (Builder $technicians) use ($search) {
+                $technicians->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('nik', 'like', '%' . $search . '%')
+                    ->orWhere('area', 'like', '%' . $search . '%');
+            });
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->string('status')->toString());
+        }
+        if ($request->filled('area')) {
+            $query->where('area', $request->string('area')->toString());
+        }
+
+        $pagination = null;
+        if ($request->filled('per_page')) {
+            $validated = $request->validate(['per_page' => 'integer|min:1|max:100']);
+            $page = $query->orderByDesc('id')->paginate($validated['per_page']);
+            $technicians = collect($page->items())
+                ->map(fn (Technician $technician) => $this->serializeTechnician($technician))
+                ->all();
+            $pagination = [
+                'current_page' => $page->currentPage(),
+                'last_page' => $page->lastPage(),
+                'per_page' => $page->perPage(),
+                'total' => $page->total(),
             ];
-        })->toArray();
+        } else {
+            $technicians = $query->orderByDesc('id')->get()
+                ->map(fn (Technician $technician) => $this->serializeTechnician($technician))
+                ->all();
+        }
 
         $assignableTickets = Ticket::whereIn('status', ['Open', 'Assigned', 'In Progress'])
+            ->with('customer')
+            ->whereHas('customer')
+            ->orderByDesc('created_at')
             ->get()
             ->map(function ($tk) {
                 return [
                     'id'       => $tk->ticket_number,
                     'title'    => $tk->title,
                     'priority' => $tk->priority,
-                    'customer' => $tk->customer_name ?? $tk->customer?->name ?? 'Customer',
-                    'area'     => $tk->location ?? 'Situbondo',
+                    'customer' => $tk->customer?->name ?? $tk->customer_name ?? '',
+                    'location' => $tk->location ?? $tk->customer?->area ?? '',
                 ];
             })->toArray();
+
+        if ($request->is('api/*') || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Data teknisi berhasil diambil.',
+                'data' => [
+                    'technicians' => $technicians,
+                    'assignableTickets' => $assignableTickets,
+                    'pagination' => $pagination,
+                ],
+            ]);
+        }
 
         return view('technicians', [
             'technicians'       => $technicians,
             'assignableTickets' => $assignableTickets,
         ]);
     }
-}
 
+    public function show($technicianId): JsonResponse
+    {
+        $technician = Technician::with([
+            'assignments' => fn ($query) => $query->with('ticket')->orderByDesc('assigned_at'),
+        ])->findOrFail($technicianId);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Detail teknisi berhasil diambil.',
+            'data' => $this->serializeTechnician($technician),
+        ]);
+    }
+
+    public function store(TechnicianRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        if ($validated['status'] === 'On Task') {
+            throw ValidationException::withMessages([
+                'status' => 'Status On Task hanya dapat ditetapkan melalui penugasan tiket.',
+            ]);
+        }
+
+        $technician = Technician::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Teknisi berhasil ditambahkan.',
+            'data' => $this->serializeTechnician($technician->load('assignments.ticket')),
+        ], 201);
+    }
+
+    public function update(TechnicianRequest $request, $technicianId): JsonResponse
+    {
+        $technician = Technician::findOrFail($technicianId);
+
+        $validated = $request->validated();
+
+        $this->assertStatusMatchesAssignments($technician, $validated['status']);
+        $technician->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Teknisi berhasil diperbarui.',
+            'data' => $this->serializeTechnician($technician->fresh()->load('assignments.ticket')),
+        ]);
+    }
+
+    public function updateStatus(Request $request, $technicianId): JsonResponse
+    {
+        $validated = $request->validate([
+            'status' => 'required|string|in:Available,On Task,Offline,Cuti',
+        ]);
+        $technician = Technician::findOrFail($technicianId);
+        $this->assertStatusMatchesAssignments($technician, $validated['status']);
+        $technician->update(['status' => $validated['status']]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status teknisi berhasil diperbarui.',
+            'data' => $this->serializeTechnician($technician->fresh()->load('assignments.ticket')),
+        ]);
+    }
+
+    public function destroy($technicianId): JsonResponse
+    {
+        $technician = Technician::findOrFail($technicianId);
+        $this->assertStatusMatchesAssignments($technician, 'Offline');
+        $technician->update(['status' => 'Offline']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Teknisi berhasil dinonaktifkan.',
+            'data' => $this->serializeTechnician($technician->fresh()->load('assignments.ticket')),
+        ]);
+    }
+
+    private function serializeTechnician(Technician $technician): array
+    {
+        $assignments = $technician->assignments;
+        $activeAssignments = $assignments->where('is_active', true);
+        $hasStoredCoordinates = $technician->latitude !== null && $technician->longitude !== null;
+        $coordinates = $hasStoredCoordinates
+            ? ['latitude' => (float) $technician->latitude, 'longitude' => (float) $technician->longitude]
+            : $this->simulatedCoordinates($technician);
+
+        $active = $activeAssignments->map(fn ($assignment) => [
+            'id' => $assignment->ticket?->ticket_number ?? 'TK-' . $assignment->ticket_id,
+            'title' => $assignment->ticket?->title ?? '',
+            'priority' => $assignment->ticket?->priority ?? '',
+        ])->values()->all();
+
+        $history = $assignments->map(fn ($assignment) => [
+            'title' => $assignment->is_active ? 'Ticket ditugaskan' : 'Penugasan ticket berakhir',
+            'desc' => ($assignment->ticket?->ticket_number ?? 'TK-' . $assignment->ticket_id)
+                . ($assignment->ticket?->title ? ' — ' . $assignment->ticket->title : ''),
+            'time' => $assignment->assigned_at?->format('d M Y H:i') ?? '-',
+        ])->values()->all();
+
+        return [
+            'id' => $technician->id,
+            'name' => $technician->name,
+            'nik' => $technician->nik,
+            'area' => $technician->area ?? '',
+            'latitude' => $coordinates['latitude'] ?? null,
+            'longitude' => $coordinates['longitude'] ?? null,
+            'location_is_simulated' => ! $hasStoredCoordinates && $coordinates !== null,
+            'status' => $technician->status,
+            'tickets' => $activeAssignments->count(),
+            'role' => $technician->position,
+            'phone' => $technician->phone ?? '',
+            'email' => $technician->email ?? '',
+            'joined_iso' => $technician->joined_at?->format('Y-m-d'),
+            'exp_years' => $technician->exp_years,
+            'rating' => (float) $technician->rating,
+            'active' => $active,
+            'history' => $history,
+            'docs' => [],
+        ];
+    }
+
+    private function simulatedCoordinates(Technician $technician): ?array
+    {
+        $area = mb_strtolower(trim((string) $technician->area));
+        $center = match ($area) {
+            'situbondo' => [-7.7066, 113.9298],
+            'besuki' => [-7.7335, 113.6965],
+            'lapangan', 'area lapangan' => [-7.7066, 113.9298],
+            default => null,
+        };
+
+        if ($center === null) {
+            return null;
+        }
+
+        $seed = hexdec(substr(hash('sha256', $technician->id . ':' . $area), 0, 8)) / 0xffffffff;
+        $latitudeOffset = ($seed * 2 - 1) * 0.008;
+        $longitudeSeed = fmod($seed * 1.61803398875, 1);
+        $longitudeOffset = ($longitudeSeed * 2 - 1) * 0.01;
+
+        return [
+            'latitude' => round($center[0] + $latitudeOffset, 7),
+            'longitude' => round($center[1] + $longitudeOffset, 7),
+        ];
+    }
+
+    private function assertStatusMatchesAssignments(Technician $technician, string $status): void
+    {
+        $hasActiveAssignments = $technician->activeAssignments()->exists();
+        $isConsistent = $hasActiveAssignments
+            ? $status === 'On Task'
+            : $status !== 'On Task';
+
+        if (! $isConsistent) {
+            throw ValidationException::withMessages([
+                'status' => $hasActiveAssignments
+                    ? 'Teknisi masih memiliki tiket aktif dan harus berstatus On Task.'
+                    : 'Status On Task hanya dapat ditetapkan melalui penugasan tiket.',
+            ]);
+        }
+    }
+}

@@ -400,20 +400,21 @@
             const state = {
                 data: @json($technicians),
                 pool: @json($assignableTickets),
-                selectedId: 1,
+                selectedId: @json($technicians[0]['id'] ?? null),
                 page: 1,
                 perPage: 10,
                 search: '',
                 status: '',
                 area: '',
                 checked: new Set(),
-                nextId: 13,
                 tab: 'detail',
                 formMode: 'add',
                 menuId: null,
             };
 
             const $ = (id) => document.getElementById(id);
+            const technicianBaseUrl = @json(url('/technicians'));
+            const ticketBaseUrl = @json(url('/tickets'));
             const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
             const AVATAR_COLORS = [
                 'bg-blue-100 text-blue-700', 'bg-emerald-100 text-emerald-700', 'bg-amber-100 text-amber-700',
@@ -458,6 +459,24 @@
                 toast.classList.remove('hidden');
                 clearTimeout(toastTimer);
                 toastTimer = setTimeout(() => toast.classList.add('hidden'), 2600);
+            }
+
+            async function requestJson(url, method, data) {
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: data ? JSON.stringify(data) : undefined,
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    const firstError = payload.errors ? Object.values(payload.errors).flat()[0] : null;
+                    throw new Error(firstError || payload.message || 'Permintaan gagal diproses.');
+                }
+                return payload;
             }
 
             // ---------- Filter ----------
@@ -690,10 +709,12 @@
                 if (t) {
                     $('f-name').value = t.name; $('f-nik').value = t.nik; $('f-role').value = t.role;
                     $('f-phone').value = t.phone; $('f-email').value = t.email; $('f-area').value = t.area;
+                    $('f-latitude').value = t.latitude ?? ''; $('f-longitude').value = t.longitude ?? '';
                     $('f-status').value = t.status; $('f-joined').value = t.joined_iso; $('f-exp').value = t.exp_years;
                 } else {
                     $('f-role').value = 'Teknisi';
                     $('f-area').selectedIndex = 0;
+                    $('f-latitude').value = ''; $('f-longitude').value = '';
                     $('f-status').value = 'Available';
                     $('f-joined').value = new Date().toISOString().slice(0, 10);
                     $('f-exp').value = 0;
@@ -703,7 +724,7 @@
 
             $('f-nik').addEventListener('input', () => $('f-nik').setCustomValidity(''));
 
-            $('form-tech').addEventListener('submit', (e) => {
+            $('form-tech').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const nik = $('f-nik').value.trim();
                 const dup = state.data.some((x) => x.nik.toLowerCase() === nik.toLowerCase() && !(state.formMode === 'edit' && x.id === state.selectedId));
@@ -711,34 +732,28 @@
                 if (!e.target.reportValidity()) return;
 
                 const values = {
-                    name: $('f-name').value.trim(), nik: nik, role: $('f-role').value.trim(),
-                    phone: $('f-phone').value.trim(), email: $('f-email').value.trim(), area: $('f-area').value,
-                    status: $('f-status').value, joined_iso: $('f-joined').value, exp_years: parseInt($('f-exp').value, 10) || 0,
+                    name: $('f-name').value.trim(),
+                    nik,
+                    position: $('f-role').value.trim(),
+                    phone: $('f-phone').value.trim() || null,
+                    email: $('f-email').value.trim() || null,
+                    area: $('f-area').value || null,
+                    latitude: $('f-latitude').value === '' ? null : Number($('f-latitude').value),
+                    longitude: $('f-longitude').value === '' ? null : Number($('f-longitude').value),
+                    status: $('f-status').value,
+                    joined_at: $('f-joined').value || null,
+                    exp_years: parseInt($('f-exp').value, 10) || 0,
                 };
 
-                if (state.formMode === 'edit') {
-                    const t = current();
-                    if (t.status !== values.status) {
-                        t.history.unshift({ title: 'Status diubah', desc: t.status + ' → ' + values.status, time: 'Baru saja' });
-                    }
-                    Object.assign(t, values);
-                    closeModal('modal-form');
-                    refreshAll();
-                    showToast('Data teknisi diperbarui (simulasi frontend).');
-                } else {
-                    const t = Object.assign({
-                        id: state.nextId++, tickets: 0, rating: null, active: [], docs: [],
-                        history: [{ title: 'Teknisi ditambahkan', desc: 'Data teknisi dibuat (simulasi)', time: 'Baru saja' }],
-                    }, values);
-                    state.data.push(t);
-                    state.search = ''; state.status = ''; state.area = '';
-                    $('tech-search').value = ''; $('filter-status').value = ''; $('filter-area').value = '';
-                    state.page = Math.ceil(state.data.length / state.perPage);
-                    closeModal('modal-form');
-                    state.selectedId = t.id;
-                    renderStats();
-                    selectTech(t.id, true);
-                    showToast('Teknisi baru ditambahkan (simulasi frontend).');
+                try {
+                    const editing = state.formMode === 'edit';
+                    const url = editing
+                        ? technicianBaseUrl + '/' + encodeURIComponent(state.selectedId)
+                        : technicianBaseUrl;
+                    await requestJson(url, editing ? 'PUT' : 'POST', values);
+                    window.location.reload();
+                } catch (error) {
+                    showToast(error.message);
                 }
             });
 
@@ -765,37 +780,71 @@
                 if (e.target.name === 'assign-ticket') $('assign-confirm').disabled = false;
             });
 
-            $('form-assign').addEventListener('submit', (e) => {
+            $('form-assign').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const picked = document.querySelector('input[name="assign-ticket"]:checked');
-                const t = current();
-                if (!picked || !t) return;
-                const idx = state.pool.findIndex((k) => k.id === picked.value);
-                if (idx < 0) return;
-                const k = state.pool.splice(idx, 1)[0];
-                t.active.unshift({ id: k.id, title: k.title, priority: k.priority });
-                t.tickets += 1;
-                if (t.status === 'Available') t.status = 'On Task';
-                t.history.unshift({ title: 'Ticket ditugaskan', desc: k.id + ' — ' + k.title, time: 'Baru saja' });
-                closeModal('modal-assign');
-                refreshAll();
-                showToast(k.id + ' ditugaskan kepada ' + t.name + ' (simulasi frontend).');
+                const technician = current();
+                if (!picked || !technician) return;
+
+                try {
+                    await requestJson(
+                        ticketBaseUrl + '/' + encodeURIComponent(picked.value) + '/assignments',
+                        'POST',
+                        { technician_id: technician.id },
+                    );
+                    window.location.reload();
+                } catch (error) {
+                    showToast(error.message);
+                }
             });
 
             // ---------- Aksi: lokasi & jadwal ----------
             function openLocation() {
                 const t = current();
                 if (!t) return;
-                const off = t.status === 'Offline' || t.status === 'Cuti';
+                const latitude = t.latitude === null || t.latitude === '' ? null : Number(t.latitude);
+                const longitude = t.longitude === null || t.longitude === '' ? null : Number(t.longitude);
+                const hasCoordinates = Number.isFinite(latitude) && Number.isFinite(longitude)
+                    && latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
+                const mapFrame = $('location-map-frame');
+                const offBox = $('location-off');
                 $('location-sub').textContent = t.name + ' · ' + t.nik;
                 $('location-area').textContent = t.area;
-                $('location-updated').textContent = off ? 'Tidak tersedia' : '5 menit lalu';
-                $('location-pin-label').textContent = t.name.split(' ')[0];
-                $('location-pin').classList.toggle('hidden', off);
-                const offBox = $('location-off');
-                offBox.classList.toggle('hidden', !off);
-                offBox.classList.toggle('flex', off);
-                offBox.textContent = 'Lokasi tidak tersedia (' + t.status + ')';
+                $('location-coordinates').textContent = hasCoordinates
+                    ? latitude.toFixed(6) + ', ' + longitude.toFixed(6)
+                    : 'Belum tersedia';
+                offBox.classList.toggle('hidden', hasCoordinates);
+                offBox.classList.toggle('flex', !hasCoordinates);
+                mapFrame.classList.toggle('hidden', !hasCoordinates);
+                const mapLink = $('location-open-map');
+                mapLink.classList.toggle('hidden', !hasCoordinates);
+
+                if (hasCoordinates) {
+                    const bbox = [
+                        Math.max(-180, longitude - 0.008),
+                        Math.max(-90, latitude - 0.005),
+                        Math.min(180, longitude + 0.008),
+                        Math.min(90, latitude + 0.005),
+                    ].join(',');
+                    const embedUrl = new URL('https://www.openstreetmap.org/export/embed.html');
+                    embedUrl.searchParams.set('bbox', bbox);
+                    embedUrl.searchParams.set('layer', 'mapnik');
+                    embedUrl.searchParams.set('marker', latitude + ',' + longitude);
+                    mapFrame.src = embedUrl.toString();
+
+                    const fullMapUrl = new URL('https://www.openstreetmap.org/');
+                    fullMapUrl.searchParams.set('mlat', String(latitude));
+                    fullMapUrl.searchParams.set('mlon', String(longitude));
+                    fullMapUrl.hash = 'map=17/' + latitude + '/' + longitude;
+                    mapLink.href = fullMapUrl.toString();
+                    $('location-note').textContent = t.location_is_simulated
+                        ? 'Titik acak simulasi di sekitar area ' + t.area + '. Bukan lokasi GPS aktual teknisi.'
+                        : 'Menampilkan koordinat tersimpan untuk area ' + t.area + '. Status ' + t.status + '; ini bukan pelacakan posisi real-time.';
+                } else {
+                    mapFrame.removeAttribute('src');
+                    mapLink.removeAttribute('href');
+                    $('location-note').textContent = 'Lokasi belum dapat ditampilkan. Isi latitude dan longitude melalui Edit Teknisi.';
+                }
                 openModal('modal-location');
             }
 
@@ -828,28 +877,36 @@
                 icon.className = 'mx-auto w-12 h-12 rounded-full flex items-center justify-center ' + (reactivate ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-danger');
                 $('confirm-title').textContent = (reactivate ? 'Aktifkan ' : 'Nonaktifkan ') + t.name + '?';
                 $('confirm-text').textContent = reactivate
-                    ? 'Status teknisi akan diubah menjadi Available (simulasi frontend).'
-                    : 'Status teknisi akan diubah menjadi Offline (simulasi frontend, data tidak disimpan).';
+                    ? 'Status teknisi akan diubah menjadi Available.'
+                    : 'Status teknisi akan diubah menjadi Offline. Riwayat tiket tetap disimpan.';
                 const warn = $('confirm-warning');
                 const showWarn = !reactivate && t.tickets > 0;
                 warn.classList.toggle('hidden', !showWarn);
-                warn.textContent = showWarn ? 'Teknisi ini masih memiliki ' + t.tickets + ' ticket aktif.' : '';
+                warn.textContent = showWarn
+                    ? 'Teknisi masih menangani ' + t.tickets + ' ticket aktif. Selesaikan atau batalkan penugasan terlebih dahulu.'
+                    : '';
                 const ok = $('confirm-ok');
                 ok.textContent = reactivate ? 'Ya, Aktifkan' : 'Ya, Nonaktifkan';
                 ok.className = 'px-4 py-2 rounded-xl text-white font-semibold shadow-sm ' + (reactivate ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-danger hover:bg-red-600');
+                ok.disabled = showWarn;
                 openModal('modal-confirm');
             }
 
-            $('confirm-ok').addEventListener('click', () => {
+            $('confirm-ok').addEventListener('click', async () => {
                 const t = current();
                 if (!t) return;
                 const reactivate = t.status === 'Offline';
                 const next = reactivate ? 'Available' : 'Offline';
-                t.history.unshift({ title: reactivate ? 'Teknisi diaktifkan' : 'Teknisi dinonaktifkan', desc: t.status + ' → ' + next, time: 'Baru saja' });
-                t.status = next;
-                closeModal('modal-confirm');
-                refreshAll();
-                showToast(t.name + (reactivate ? ' diaktifkan' : ' dinonaktifkan') + ' (simulasi frontend).');
+                try {
+                    if (reactivate) {
+                        await requestJson(technicianBaseUrl + '/' + encodeURIComponent(t.id) + '/status', 'PATCH', { status: next });
+                    } else {
+                        await requestJson(technicianBaseUrl + '/' + encodeURIComponent(t.id), 'DELETE');
+                    }
+                    window.location.reload();
+                } catch (error) {
+                    showToast(error.message);
+                }
             });
 
             // ---------- Event: toolbar ----------
@@ -932,13 +989,16 @@
             $('q-rating-link').addEventListener('click', () => setTab('history'));
             $('d-infobar-link').addEventListener('click', () => setTab('tickets'));
 
-            $('action-status').addEventListener('change', (e) => {
+            $('action-status').addEventListener('change', async (e) => {
                 const t = current();
                 if (!t || t.status === e.target.value) return;
-                t.history.unshift({ title: 'Status diubah', desc: t.status + ' → ' + e.target.value, time: 'Baru saja' });
-                t.status = e.target.value;
-                refreshAll();
-                showToast('Status ' + t.name + ' diubah menjadi ' + t.status + ' (simulasi frontend).');
+                try {
+                    await requestJson(technicianBaseUrl + '/' + encodeURIComponent(t.id) + '/status', 'PATCH', { status: e.target.value });
+                    window.location.reload();
+                } catch (error) {
+                    $('action-status').value = t.status;
+                    showToast(error.message);
+                }
             });
 
             $('docs-list').addEventListener('click', (e) => {
