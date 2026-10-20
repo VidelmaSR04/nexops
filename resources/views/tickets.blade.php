@@ -22,10 +22,10 @@
                 <p class="text-secondary text-sm mt-0.5">Kelola dan pantau semua ticket operasional</p>
             </div>
             <div>
-                <a href="{{ route('tickets.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-blue-700 shadow-sm transition-colors">
+                <button type="button" id="btn-create-ticket" onclick="openTicketModal('create')" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-blue-700 shadow-sm transition-colors">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     <span>Buat Ticket</span>
-                </a>
+                </button>
             </div>
         </div>
 
@@ -212,14 +212,21 @@
                                         <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" onclick="toggleMenu({{ $t['db_id'] }})">
                                             <i data-lucide="more-vertical" class="w-4 h-4"></i>
                                         </button>
-                                        <div id="menu-{{ $t['db_id'] }}" class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-border z-50 hidden">
-                                            <div class="px-4 py-2">
-                                                <a href="{{ route('tickets.show', $t['db_id']) }}" class="block px-4 py-2 text-sm text-dark hover:bg-gray-100">Lihat</a>
-                                                <a href="{{ route('tickets.edit', $t['db_id']) }}" class="block px-4 py-2 text-sm text-dark hover:bg-gray-100">Edit</a>
-                                                <form action="{{ route('tickets.destroy', $t['db_id']) }}" method="POST" class="block w-full" onsubmit="return confirm('Yakin ingin menghapus ticket ini?');">
+                                        <div id="menu-{{ $t['db_id'] }}" class="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg border border-border z-50 hidden text-left overflow-hidden">
+                                            <div class="py-1">
+                                                <a href="{{ route('tickets.show', $t['db_id']) }}"
+                                                class="block w-full px-4 py-2 text-left text-sm text-dark hover:bg-gray-100">Lihat</a>
+
+                                                <button type="button" onclick="openTicketModal('edit', {{ $t['db_id'] }})"
+                                                        class="block w-full px-4 py-2 text-left text-sm text-dark hover:bg-gray-100">Edit</button>
+
+                                                <form action="{{ route('tickets.destroy', $t['db_id']) }}" method="POST" class="block w-full"
+                                                    <form action="{{ route('tickets.destroy', $t['db_id']) }}" method="POST" class="block w-full"
+                                                        onsubmit="return confirmDelete(event, this, '{{ $t['id'] }}')">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Hapus</button>
+                                                    <button type="submit"
+                                                            class="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50">Hapus</button>
                                                 </form>
                                             </div>
                                         </div>
@@ -430,15 +437,174 @@
 
     </div>
 
-    {{-- Toast Notifikasi --}}
-    <div id="toast-notification"
-         class="fixed bottom-5 right-5 z-50 hidden max-w-sm rounded-xl bg-dark text-white text-xs px-4 py-3 shadow-xl transition-all">
+   {{-- MODAL: BUAT / EDIT TICKET --}}
+@php
+    $modalInput = 'w-full rounded-xl border border-border bg-white px-3 py-2 text-xs text-dark focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary';
+@endphp
+<div id="ticket-modal" class="fixed inset-0 z-[60] hidden items-center justify-center p-4 bg-black/40" role="dialog" aria-modal="true" aria-labelledby="ticket-modal-title">
+    <div class="bg-white rounded-2xl border border-border shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
+        <div class="p-4 border-b border-border flex items-start justify-between gap-3 sticky top-0 bg-white rounded-t-2xl">
+            <div>
+                <h3 id="ticket-modal-title" class="text-base font-bold text-dark">Buat Ticket</h3>
+                <p id="ticket-modal-sub" class="text-secondary text-xs mt-0.5">Isi informasi ticket operasional</p>
+            </div>
+            <button type="button" data-close-ticket-modal class="p-1.5 rounded-lg text-gray-400 hover:text-dark hover:bg-gray-100" aria-label="Tutup">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <form id="ticket-form" method="POST" action="{{ route('tickets.store') }}" class="p-5 space-y-3.5 text-xs" novalidate>
+            @csrf
+            <input type="hidden" name="_method" id="ticket-form-method" value="PUT" disabled>
+
+            <div id="ticket-form-errors" class="hidden rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-700 space-y-0.5"></div>
+
+            <div>
+                <label for="tf-customer" class="block font-medium text-dark mb-1">Customer</label>
+                <input id="tf-customer" type="text" name="customer_name" required maxlength="255" class="{{ $modalInput }}">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label for="tf-location" class="block font-medium text-dark mb-1">Lokasi</label>
+                    <input id="tf-location" type="text" name="location" required maxlength="100" class="{{ $modalInput }}">
+                </div>
+                <div>
+                    <label for="tf-priority" class="block font-medium text-dark mb-1">Prioritas</label>
+                    <select id="tf-priority" name="priority" required class="{{ $modalInput }}">
+                        @foreach (['Low', 'Normal', 'High', 'Critical'] as $priority)
+                            <option value="{{ $priority }}" @selected($priority === 'Normal')>{{ $priority }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label for="tf-title" class="block font-medium text-dark mb-1">Judul Masalah</label>
+                <input id="tf-title" type="text" name="title" required maxlength="255" class="{{ $modalInput }}">
+            </div>
+
+            <div>
+                <label for="tf-description" class="block font-medium text-dark mb-1">Deskripsi</label>
+                <textarea id="tf-description" name="description" rows="3" class="{{ $modalInput }}"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label for="tf-tech" class="block font-medium text-dark mb-1">Teknisi</label>
+                    <select id="tf-tech" name="assigned_tech_name" class="{{ $modalInput }}">
+                        <option value="-">Belum ditugaskan</option>
+                        @foreach ($technicians as $tn)
+                            <option value="{{ $tn }}">{{ $tn }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="tf-asset" class="block font-medium text-dark mb-1">Perangkat / Aset</label>
+                    <input id="tf-asset" type="text" name="asset_name" class="{{ $modalInput }}">
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-border flex items-center justify-end gap-2">
+                <button type="button" data-close-ticket-modal class="px-3.5 py-2 rounded-xl border border-border text-secondary hover:bg-gray-50 font-medium">Batal</button>
+                <button id="ticket-form-submit" type="submit" class="px-4 py-2 rounded-xl bg-primary text-white font-semibold hover:bg-blue-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">Simpan Ticket</button>
+            </div>
+        </form>
     </div>
+</div>
+
+{{-- MODAL: KONFIRMASI (hapus / persetujuan update) --}}
+<div id="confirm-modal" class="fixed inset-0 z-[80] hidden items-center justify-center p-4 bg-black/40" role="alertdialog" aria-modal="true" aria-labelledby="confirm-modal-title" aria-describedby="confirm-modal-message">
+    <div class="bg-white rounded-2xl border border-border shadow-2xl w-full max-w-sm">
+        <div class="p-5 text-center space-y-3 text-xs">
+            <div id="confirm-icon-danger" class="mx-auto w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <div id="confirm-icon-primary" class="hidden mx-auto w-12 h-12 rounded-full bg-blue-50 text-primary flex items-center justify-center">
+                <i data-lucide="help-circle" class="w-6 h-6"></i>
+            </div>
+            <h3 id="confirm-modal-title" class="text-base font-bold text-dark"></h3>
+            <p id="confirm-modal-message" class="text-secondary leading-relaxed"></p>
+        </div>
+        <div class="p-4 border-t border-border flex items-center justify-end gap-2 text-xs">
+            <button type="button" id="confirm-modal-cancel" class="px-3.5 py-2 rounded-xl border border-border text-secondary hover:bg-gray-50 font-medium">Batal</button>
+            <button type="button" id="confirm-modal-ok" class="px-4 py-2 rounded-xl text-white font-semibold shadow-sm"></button>
+        </div>
+    </div>
+</div>
+
+{{-- Toast Notifikasi --}}
+<div id="toast-notification"
+     class="fixed bottom-5 right-5 z-[70] hidden max-w-sm rounded-xl bg-dark text-white text-xs px-4 py-3 shadow-xl transition-all">
+</div>
 
     {{-- ============================================ --}}
     {{-- 5. JAVASCRIPT LOGIC INTERAKTIF              --}}
     {{-- ============================================ --}}
-    <script>
+        <script>
+        // ===== POP-UP KONFIRMASI =====
+        let confirmResolver = null;
+        const confirmModal = document.getElementById('confirm-modal');
+        const confirmOk = document.getElementById('confirm-modal-ok');
+        const confirmCancel = document.getElementById('confirm-modal-cancel');
+
+        function closeConfirm(result) {
+            confirmModal.classList.add('hidden');
+            confirmModal.classList.remove('flex');
+            if (confirmResolver) {
+                const resolve = confirmResolver;
+                confirmResolver = null;
+                resolve(result);
+            }
+        }
+
+        function askConfirm({ title, message, confirmText = 'Ya, lanjutkan', cancelText = 'Batal', variant = 'primary' }) {
+            if (confirmResolver) closeConfirm(false);
+
+            return new Promise(resolve => {
+                confirmResolver = resolve;
+                const danger = variant === 'danger';
+
+                document.getElementById('confirm-modal-title').textContent = title;
+                document.getElementById('confirm-modal-message').textContent = message;
+                document.getElementById('confirm-icon-danger').classList.toggle('hidden', !danger);
+                document.getElementById('confirm-icon-primary').classList.toggle('hidden', danger);
+
+                confirmOk.textContent = confirmText;
+                confirmCancel.textContent = cancelText;
+                confirmOk.className = 'px-4 py-2 rounded-xl text-white font-semibold shadow-sm '
+                    + (danger ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-blue-700');
+
+                confirmModal.classList.remove('hidden');
+                confirmModal.classList.add('flex');
+                (danger ? confirmCancel : confirmOk).focus(); // aksi berbahaya: fokus default ke Batal
+            });
+        }
+
+        function confirmDelete(event, form, label) {
+            event.preventDefault();
+            document.querySelectorAll('[id^="menu-"]').forEach(el => el.classList.add('hidden'));
+
+            askConfirm({
+                title: 'Hapus ticket?',
+                message: `Ticket ${label} akan dihapus dari daftar.`,
+                confirmText: 'Ya, hapus',
+                variant: 'danger',
+            }).then(ok => { if (ok) form.submit(); }); // form.submit() tidak memicu onsubmit lagi
+
+            return false;
+        }
+
+        confirmOk.addEventListener('click', () => closeConfirm(true));
+        confirmCancel.addEventListener('click', () => closeConfirm(false));
+        confirmModal.addEventListener('click', (e) => { if (e.target === confirmModal) closeConfirm(false); });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !confirmModal.classList.contains('hidden')) {
+                e.stopImmediatePropagation(); // Esc hanya menutup konfirmasi, bukan modal ticket di bawahnya
+                closeConfirm(false);
+            }
+        }, true);
+
         document.addEventListener('DOMContentLoaded', function () {
             const rawData = @json($ticketsById);
 
@@ -462,6 +628,16 @@
 
             async function updateTicketStatus(status) {
                 if (!selectedTicketId) return;
+
+                const ok = await askConfirm({
+                    title: status === 'Closed' ? 'Tutup ticket?' : 'Ubah status ticket?',
+                    message: status === 'Closed'
+                        ? 'Ticket akan ditutup dan penugasan teknisi dinonaktifkan.'
+                        : `Status ticket akan diubah menjadi "${status}".`,
+                    confirmText: status === 'Closed' ? 'Ya, tutup' : 'Ya, ubah',
+                    variant: status === 'Closed' ? 'danger' : 'primary',
+                });
+                if (!ok) return;
 
                 const button = document.getElementById('btn-update-status');
                 button.disabled = true;
@@ -497,10 +673,137 @@
                 updateTicketStatus('Closed');
             });
             document.getElementById('btn-edit-ticket').addEventListener('click', () => {
-                if (selectedTicketId) window.location.href = `/tickets/${selectedTicketId}/edit`;
+                if (selectedTicketId) openTicketModal('edit', selectedTicketId);
             });
             document.getElementById('btn-assign-tech').addEventListener('click', () => {
-                if (selectedTicketId) window.location.href = `/tickets/${selectedTicketId}/edit`;
+                if (selectedTicketId) openTicketModal('edit', selectedTicketId, 'tf-tech');
+            });
+
+            // ===== MODAL BUAT / EDIT TICKET =====
+            const ticketModal = document.getElementById('ticket-modal');
+            const ticketForm = document.getElementById('ticket-form');
+            const ticketFormErrors = document.getElementById('ticket-form-errors');
+            const ticketMethodInput = document.getElementById('ticket-form-method');
+            const ticketSubmitBtn = document.getElementById('ticket-form-submit');
+            const ticketStoreUrl = @json(route('tickets.store'));
+            const ticketUpdateUrl = @json(route('tickets.update', ['ticket' => '__ID__']));
+
+            function clearTicketErrors() {
+                ticketFormErrors.classList.add('hidden');
+                ticketFormErrors.innerHTML = '';
+            }
+
+            function showTicketErrors(messages) {
+                ticketFormErrors.innerHTML = messages.map(m => `<p>• ${escapeHtml(m)}</p>`).join('');
+                ticketFormErrors.classList.remove('hidden');
+            }
+
+            function closeTicketModal() {
+                ticketModal.classList.add('hidden');
+                ticketModal.classList.remove('flex');
+                document.body.classList.remove('overflow-y-hidden');
+            }
+
+            function openTicketModal(mode, id = null, focusId = 'tf-customer') {
+                clearTicketErrors();
+                ticketForm.reset();
+                ticketSubmitBtn.disabled = false;
+
+                const title = document.getElementById('ticket-modal-title');
+                const sub = document.getElementById('ticket-modal-sub');
+
+                if (mode === 'edit') {
+                    const t = rawData[id];
+                    if (!t) return;
+
+                    title.textContent = `Edit Ticket ${t.id}`;
+                    sub.textContent = 'Perbarui data ticket atau tugaskan teknisi';
+                    ticketSubmitBtn.textContent = 'Simpan Perubahan';
+                    ticketForm.action = ticketUpdateUrl.replace('__ID__', t.db_id);
+                    ticketMethodInput.disabled = false;
+
+                    const blank = v => (v === '-' || v == null) ? '' : v;
+                    document.getElementById('tf-customer').value = blank(t.customer);
+                    document.getElementById('tf-location').value = blank(t.location);
+                    document.getElementById('tf-priority').value = t.priority;
+                    document.getElementById('tf-title').value = blank(t.title);
+                    document.getElementById('tf-description').value = blank(t.description);
+                    document.getElementById('tf-tech').value = t.tech || '-';
+                    document.getElementById('tf-asset').value = blank(t.asset);
+                } else {
+                    title.textContent = 'Buat Ticket';
+                    sub.textContent = 'Isi informasi ticket operasional';
+                    ticketSubmitBtn.textContent = 'Simpan Ticket';
+                    ticketForm.action = ticketStoreUrl;
+                    ticketMethodInput.disabled = true;
+                }
+
+                // Tutup menu titik tiga yang mungkin masih terbuka
+                document.querySelectorAll('[id^="menu-"]').forEach(el => el.classList.add('hidden'));
+
+                ticketModal.classList.remove('hidden');
+                ticketModal.classList.add('flex');
+                document.body.classList.add('overflow-y-hidden');
+                setTimeout(() => document.getElementById(focusId)?.focus(), 50);
+            }
+            window.openTicketModal = openTicketModal;
+
+            ticketForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                clearTicketErrors();
+
+                // Minta persetujuan hanya saat mode edit
+                if (!ticketMethodInput.disabled) {
+                    const ok = await askConfirm({
+                        title: 'Simpan perubahan?',
+                        message: 'Data ticket ini akan diperbarui.',
+                        confirmText: 'Ya, simpan',
+                    });
+                    if (!ok) return;
+                }
+
+                ticketSubmitBtn.disabled = true;
+
+                try {
+                    const response = await fetch(ticketForm.action, {
+                        method: 'POST', // _method=PUT ikut terkirim lewat FormData saat edit
+                        body: new FormData(ticketForm),
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                    });
+
+                    if (response.status === 422) {
+                        const data = await response.json();
+                        showTicketErrors(Object.values(data.errors || {}).flat());
+                        ticketSubmitBtn.disabled = false;
+                        return;
+                    }
+
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        throw new Error(data.message || 'Gagal menyimpan ticket.');
+                    }
+
+                    closeTicketModal();
+                    showToast(`✅ ${data.message || 'Ticket berhasil disimpan.'}`);
+                    setTimeout(() => window.location.reload(), 700);
+                } catch (error) {
+                    showTicketErrors([error.message]);
+                    ticketSubmitBtn.disabled = false;
+                }
+            });
+
+            document.querySelectorAll('[data-close-ticket-modal]').forEach(btn => {
+                btn.addEventListener('click', closeTicketModal);
+            });
+            ticketModal.addEventListener('click', (e) => {
+                if (e.target === ticketModal) closeTicketModal();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !ticketModal.classList.contains('hidden')) closeTicketModal();
             });
 
             // 1. Search & Filter & Sort
