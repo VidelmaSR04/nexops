@@ -7,7 +7,8 @@
         <div class="flex items-start justify-between">
             <div>
                 <h1 class="text-2xl font-bold text-dark">
-                    Good Morning, {{ explode(' ', Auth::user()->name)[0] }} 👋
+                    @php $h = now()->hour; $greet = $h < 11 ? 'Good Morning' : ($h < 15 ? 'Good Afternoon' : ($h < 19 ? 'Good Evening' : 'Good Night')); @endphp
+                    {{ $greet }}, {{ explode(' ', Auth::user()->name)[0] }} 👋
                 </h1>
                 <p class="text-gray-500 text-sm mt-1">Berikut ringkasan operasional hari ini.</p>
             </div>
@@ -30,60 +31,64 @@
         <!-- ============================================ -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
 
-            <x-kpi-card
-                title="Open Ticket"
-                value="42"
-                icon="ticket"
-                color="primary"
-                trend="12%"
-                :trend-up="true"
-                subtitle="dari minggu lalu"
-            />
+            @if(!is_null($kpi['new_ticket_trend']))
+                <x-kpi-card
+                    title="Open Ticket"
+                    :value="$kpi['open_tickets']"
+                    icon="ticket"
+                    color="primary"
+                    :trend="abs($kpi['new_ticket_trend']) . '%'"
+                    :trend-up="$kpi['new_ticket_trend'] >= 0"
+                    subtitle="ticket baru vs minggu lalu"
+                />
+            @else
+                <x-kpi-card
+                    title="Open Ticket"
+                    :value="$kpi['open_tickets']"
+                    icon="ticket"
+                    color="primary"
+                    subtitle="Menunggu penanganan"
+                />
+            @endif
 
             <x-kpi-card
                 title="In Progress"
-                value="18"
+                :value="$kpi['in_progress_tickets']"
                 icon="loader"
                 color="info"
-                trend="4%"
-                :trend-up="true"
-                subtitle="dari minggu lalu"
+                subtitle="Sedang dikerjakan"
             />
 
             <x-kpi-card
                 title="Overdue"
-                value="7"
+                :value="$kpi['overdue_tickets']"
                 icon="alert-circle"
                 color="danger"
-                trend="8%"
-                :trend-up="false"
-                subtitle="dari minggu lalu"
+                subtitle="Melewati batas SLA"
             />
 
             <x-kpi-card
                 title="Low Stock"
-                value="13"
+                :value="$kpi['low_stock_items']"
                 icon="package-x"
                 color="warning"
-                subtitle="⚠ Perlu tindakan"
+                :subtitle="$kpi['low_stock_items'] > 0 ? '⚠ Perlu tindakan' : 'Stok aman'"
             />
 
             <x-kpi-card
                 title="Total Asset"
-                value="1,284"
+                :value="number_format($kpi['total_assets'])"
                 icon="monitor"
                 color="primary"
-                trend="6%"
-                :trend-up="true"
-                subtitle="Aktif"
+                subtitle="Terdaftar"
             />
 
             <x-kpi-card
                 title="Technician"
-                value="24"
+                :value="$kpi['total_technicians']"
                 icon="hard-hat"
                 color="success"
-                subtitle="● Online 18"
+                :subtitle="'● Online ' . $kpi['online_technicians']"
             />
 
         </div>
@@ -115,17 +120,17 @@
                     <div class="relative w-40 h-40 shrink-0 mx-auto">
                         <canvas id="ticketStatusChart"></canvas>
                         <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <span class="text-2xl font-bold text-dark">141</span>
+                            <span class="text-2xl font-bold text-dark">{{ $statusChart['total'] }}</span>
                             <span class="text-xs text-gray-400">Total Ticket</span>
                         </div>
                     </div>
                     <div class="space-y-2 text-xs w-full">
-                        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Open <span class="ml-auto font-medium text-gray-600">42</span> <span class="text-gray-400">30%</span></div>
-                        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span> Assigned <span class="ml-auto font-medium text-gray-600">18</span> <span class="text-gray-400">13%</span></div>
-                        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> In Progress <span class="ml-auto font-medium text-gray-600">15</span> <span class="text-gray-400">11%</span></div>
-                        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-gray-400"></span> Waiting <span class="ml-auto font-medium text-gray-600">8</span> <span class="text-gray-400">6%</span></div>
-                        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Resolved <span class="ml-auto font-medium text-gray-600">31</span> <span class="text-gray-400">22%</span></div>
-                        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-slate-700"></span> Closed <span class="ml-auto font-medium text-gray-600">27</span> <span class="text-gray-400">19%</span></div>
+                        @php
+                            $dots = ['Open' => 'bg-blue-500', 'Assigned' => 'bg-cyan-500', 'In Progress' => 'bg-amber-500', 'Waiting' => 'bg-gray-400', 'Resolved' => 'bg-emerald-500', 'Closed' => 'bg-slate-700'];
+                        @endphp
+                        @foreach($statusChart['items'] as $s)
+                            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full {{ $dots[$s['status']] ?? 'bg-gray-300' }}"></span> {{ $s['status'] }} <span class="ml-auto font-medium text-gray-600">{{ $s['count'] }}</span> <span class="text-gray-400">{{ $s['percent'] }}%</span></div>
+                        @endforeach
                     </div>
                 </div>
             </div>
@@ -134,38 +139,34 @@
             <div class="bg-white rounded-2xl border border-gray-100 p-5">
                 <h3 class="text-sm font-semibold text-dark mb-4">SLA Compliance</h3>
                 <div class="text-center mb-4">
-                    <span class="text-4xl font-bold text-dark">91%</span>
+                    <span class="text-4xl font-bold text-dark">{{ $sla['compliance'] }}%</span>
                     <p class="text-xs text-gray-400 mt-1">Sesuai SLA</p>
                 </div>
                 <!-- Response Time -->
                 <div class="mb-3">
                     <div class="flex justify-between text-xs mb-1">
-                        <span class="text-gray-500">Response Time</span>
-                        <span class="font-semibold text-dark">94%</span>
+                        <span class="text-gray-500">Sudah Ditugaskan</span>
+                        <span class="font-semibold text-dark">{{ $sla['response'] }}%</span>
                     </div>
                     <div class="w-full bg-gray-100 rounded-full h-2">
-                        <div class="bg-success rounded-full h-2" style="width: 94%"></div>
+                        <div class="bg-success rounded-full h-2" style="width: {{ $sla['response'] }}%"></div>
                     </div>
                 </div>
                 <!-- Resolution Time -->
                 <div class="mb-4">
                     <div class="flex justify-between text-xs mb-1">
-                        <span class="text-gray-500">Resolution Time</span>
-                        <span class="font-semibold text-dark">87%</span>
+                        <span class="text-gray-500">Selesai Tepat Waktu</span>
+                        <span class="font-semibold text-dark">{{ $sla['resolution'] }}%</span>
                     </div>
                     <div class="w-full bg-gray-100 rounded-full h-2">
-                        <div class="bg-primary rounded-full h-2" style="width: 87%"></div>
+                        <div class="bg-primary rounded-full h-2" style="width: {{ $sla['resolution'] }}%"></div>
                     </div>
                 </div>
                 <!-- MTTR -->
                 <div class="border-t border-gray-100 pt-3 text-center">
                     <p class="text-xs text-gray-400">Rata-rata MTTR</p>
-                    <p class="text-xl font-bold text-dark">02:34:21</p>
-                    <div class="flex items-center justify-center gap-1 mt-1">
-                        <i data-lucide="trending-up" class="w-3 h-3 text-success"></i>
-                        <span class="text-xs text-success font-medium">12%</span>
-                        <span class="text-xs text-gray-400">dari bulan lalu</span>
-                    </div>
+                    <p class="text-xl font-bold text-dark">{{ $sla['mttr'] }}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Jam : Menit : Detik</p>
                 </div>
             </div>
 
@@ -180,7 +181,7 @@
             <div class="bg-white rounded-2xl border border-gray-100 p-5">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-sm font-semibold text-dark">Technician Performance</h3>
-                    <a href="#" class="text-xs text-primary font-medium hover:underline">Lihat Semua →</a>
+                    <a href="{{ route('technicians.index') }}" class="text-xs text-primary font-medium hover:underline">Lihat Semua →</a>
                 </div>
                 <table class="w-full text-xs">
                     <thead>
@@ -193,16 +194,8 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
-                        @php
-                            $technicians = $technicians ?? [
-                                ['name' => 'Ahmad', 'active' => 3, 'completed' => 42, 'sla' => '96%', 'status' => 'Online', 'statusColor' => 'success'],
-                                ['name' => 'Budi', 'active' => 2, 'completed' => 38, 'sla' => '94%', 'status' => 'Online', 'statusColor' => 'success'],
-                                ['name' => 'Dimas', 'active' => 4, 'completed' => 35, 'sla' => '91%', 'status' => 'Online', 'statusColor' => 'success'],
-                                ['name' => 'Rizky', 'active' => 1, 'completed' => 28, 'sla' => '89%', 'status' => 'On Task', 'statusColor' => 'warning'],
-                                ['name' => 'Fajar', 'active' => 3, 'completed' => 26, 'sla' => '87%', 'status' => 'Offline', 'statusColor' => 'danger'],
-                            ];
-                        @endphp
-                        @foreach($technicians as $tech)
+
+                        @forelse($technicians as $tech)
                             <tr class="hover:bg-gray-50">
                                 <td class="py-2.5">
                                     <div class="flex items-center gap-2">
@@ -222,7 +215,9 @@
                                     </span>
                                 </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr><td colspan="5" class="py-6 text-center text-gray-400">Belum ada data teknisi.</td></tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -233,39 +228,28 @@
                     <h3 class="text-sm font-semibold text-dark">Peta Operasional</h3>
                     <span class="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md">Semua Tim</span>
                 </div>
-                <div class="relative bg-emerald-50 rounded-xl h-56 flex items-center justify-center overflow-hidden">
-                    <!-- Placeholder Map -->
-                    <div class="text-center">
-                        <i data-lucide="map" class="w-12 h-12 text-emerald-300 mx-auto mb-2"></i>
-                        <p class="text-sm text-emerald-600 font-medium">Peta Operasional</p>
-                        <p class="text-xs text-emerald-400 mt-1">Situbondo • Besuki • Asembagus • Banyuglugur</p>
-                    </div>
+                <div id="ops-map" class="isolate relative rounded-xl h-64 w-full overflow-hidden border border-gray-100"></div>
+                @php
+                    $mapCount = collect($mapPoints)->countBy('type');
+                @endphp
+                <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-3 text-xs text-gray-500">
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:#10B981"></span> Teknisi Online ({{ $mapCount['technician'] ?? 0 }})</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:#EF4444"></span> Ticket ({{ $mapCount['ticket'] ?? 0 }})</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:#2563EB"></span> Customer ({{ $mapCount['customer'] ?? 0 }})</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:#A855F7"></span> Gudang ({{ $mapCount['warehouse'] ?? 0 }})</span>
                 </div>
-                <div class="flex items-center justify-center gap-4 mt-3 text-xs text-gray-500">
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-success"></span> Teknisi Online</span>
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-danger"></span> Ticket</span>
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-primary"></span> Customer</span>
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-500"></span> Gudang</span>
-                </div>
+                <p class="text-[10px] text-gray-400 text-center mt-1">Posisi berdasarkan kecamatan (perkiraan) sampai koordinat tersedia.</p>
             </div>
 
             <!-- Aktivitas Terbaru -->
             <div class="bg-white rounded-2xl border border-gray-100 p-5">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-sm font-semibold text-dark">Aktivitas Terbaru</h3>
-                    <a href="#" class="text-xs text-primary font-medium hover:underline">Lihat Semua →</a>
+
                 </div>
                 <div class="space-y-4">
-                    @php
-                        $activities = [
-                            ['time' => '10:15', 'icon' => 'check-circle', 'iconColor' => 'text-success', 'iconBg' => 'bg-emerald-50', 'title' => 'Ahmad menyelesaikan ticket #TK-1024', 'subtitle' => 'Internet restored • PT ABC'],
-                            ['time' => '09:43', 'icon' => 'package', 'iconColor' => 'text-warning', 'iconBg' => 'bg-amber-50', 'title' => 'Stok berkurang', 'subtitle' => 'ONT ZTE F670L (-1) • Ticket #TK-1024'],
-                            ['time' => '09:21', 'icon' => 'user-check', 'iconColor' => 'text-primary', 'iconBg' => 'bg-blue-50', 'title' => 'Ticket #TK-1025 ditugaskan ke Budi', 'subtitle' => 'Replace ONT • Customer #2391'],
-                            ['time' => '08:56', 'icon' => 'clipboard-list', 'iconColor' => 'text-info', 'iconBg' => 'bg-cyan-50', 'title' => 'Permintaan material baru', 'subtitle' => 'Ahmad • 5 item • Menunggu approval'],
-                            ['time' => '08:35', 'icon' => 'alert-triangle', 'iconColor' => 'text-danger', 'iconBg' => 'bg-red-50', 'title' => 'Ticket #TK-1023 overdue', 'subtitle' => 'SLA terlewati 1 jam'],
-                        ];
-                    @endphp
-                    @foreach($activities as $act)
+
+                    @forelse($activities as $act)
                         <div class="flex items-start gap-3">
                             <span class="text-xs text-gray-400 mt-0.5 w-10 shrink-0">{{ $act['time'] }}</span>
                             <div class="{{ $act['iconBg'] }} rounded-lg p-1.5 shrink-0">
@@ -276,7 +260,9 @@
                                 <p class="text-xs text-gray-400">{{ $act['subtitle'] }}</p>
                             </div>
                         </div>
-                    @endforeach
+                    @empty
+                        <p class="text-xs text-gray-400 text-center py-6">Belum ada aktivitas.</p>
+                    @endforelse
                 </div>
             </div>
 
@@ -291,7 +277,7 @@
             <div class="bg-white rounded-2xl border border-gray-100 p-5">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-sm font-semibold text-dark">Low Stock Items</h3>
-                    <a href="#" class="text-xs text-primary font-medium hover:underline">Lihat Semua →</a>
+                    <a href="{{ route('inventory.index') }}" class="text-xs text-primary font-medium hover:underline">Lihat Semua →</a>
                 </div>
                 <table class="w-full text-xs">
                     <thead>
@@ -304,16 +290,8 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
-                        @php
-                            $lowStocks = $lowStocks ?? [
-                                ['name' => 'ONT ZTE F670L', 'warehouse' => 'Gudang Utama', 'stock' => 4, 'min' => 10],
-                                ['name' => 'ONT Huawei HG8245H', 'warehouse' => 'Gudang Situbondo', 'stock' => 6, 'min' => 10],
-                                ['name' => 'RJ45 Connector', 'warehouse' => 'Gudang Utama', 'stock' => 42, 'min' => 100],
-                                ['name' => 'Fiber Patchcord', 'warehouse' => 'Gudang Besuki', 'stock' => 8, 'min' => 20],
-                                ['name' => 'Adapter 12V', 'warehouse' => 'Gudang Utama', 'stock' => 12, 'min' => 25],
-                            ];
-                        @endphp
-                        @foreach($lowStocks as $item)
+
+                        @forelse($lowStocks as $item)
                             <tr class="hover:bg-gray-50">
                                 <td class="py-2.5 font-medium text-dark">{{ $item['name'] }}</td>
                                 <td class="py-2.5 text-gray-500">{{ $item['warehouse'] }}</td>
@@ -323,7 +301,9 @@
                                     <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-danger">Low Stock</span>
                                 </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr><td colspan="5" class="py-6 text-center text-gray-400">Semua stok aman 🎉</td></tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -332,7 +312,7 @@
             <div class="bg-white rounded-2xl border border-gray-100 p-5">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-sm font-semibold text-dark">Ticket Terbaru</h3>
-                    <a href="#" class="text-xs text-primary font-medium hover:underline">Lihat Semua →</a>
+                    <a href="{{ route('tickets.index') }}" class="text-xs text-primary font-medium hover:underline">Lihat Semua →</a>
                 </div>
                 <table class="w-full text-xs">
                     <thead>
@@ -346,16 +326,8 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
-                        @php
-                            $tickets = $tickets ?? [
-                                ['id' => '#TK-1025', 'customer' => 'Arkanet', 'issue' => 'Replace ONT', 'priority' => 'High', 'priColor' => 'danger', 'tech' => 'Budi', 'status' => 'Open', 'stColor' => 'primary'],
-                                ['id' => '#TK-1024', 'customer' => 'PT ABC', 'issue' => 'Internet Down', 'priority' => 'High', 'priColor' => 'danger', 'tech' => 'Ahmad', 'status' => 'Resolved', 'stColor' => 'success'],
-                                ['id' => '#TK-1023', 'customer' => 'Office', 'issue' => 'Router Problem', 'priority' => 'Normal', 'priColor' => 'warning', 'tech' => 'Dimas', 'status' => 'In Progress', 'stColor' => 'info'],
-                                ['id' => '#TK-1022', 'customer' => 'Customer #2393', 'issue' => 'No Signal', 'priority' => 'Normal', 'priColor' => 'warning', 'tech' => 'Rizky', 'status' => 'Assigned', 'stColor' => 'primary'],
-                                ['id' => '#TK-1021', 'customer' => 'Cafe 99', 'issue' => 'Speed Low', 'priority' => 'Low', 'priColor' => 'success', 'tech' => '-', 'status' => 'Open', 'stColor' => 'primary'],
-                            ];
-                        @endphp
-                        @foreach($tickets as $t)
+
+                        @forelse($tickets as $t)
                             <tr class="hover:bg-gray-50">
                                 <td class="py-2.5 font-semibold text-primary">{{ $t['id'] }}</td>
                                 <td class="py-2.5 text-dark">{{ $t['customer'] }}</td>
@@ -376,7 +348,9 @@
                                     ">{{ $t['status'] }}</span>
                                 </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr><td colspan="6" class="py-6 text-center text-gray-400">Belum ada ticket.</td></tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -388,17 +362,19 @@
     <!-- ============================================ -->
     <!-- CHART.JS -->
     <!-- ============================================ -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <script>
         // ===== TICKET TREND (Line Chart) =====
         new Chart(document.getElementById('ticketTrendChart'), {
             type: 'line',
             data: {
-                labels: ['2 Okt', '3 Okt', '4 Okt', '5 Okt', '6 Okt', '7 Okt', '8 Okt'],
+                labels: @json($trend['labels']),
                 datasets: [
                     {
-                        label: 'Open',
-                        data: [30, 35, 28, 38, 42, 40, 42],
+                        label: 'Ticket Baru',
+                        data: @json($trend['open']),
                         borderColor: '#2563EB',
                         backgroundColor: 'rgba(37,99,235,0.1)',
                         fill: true,
@@ -408,7 +384,7 @@
                     },
                     {
                         label: 'In Progress',
-                        data: [12, 15, 18, 14, 16, 20, 18],
+                        data: @json($trend['progress']),
                         borderColor: '#06B6D4',
                         backgroundColor: 'transparent',
                         tension: 0.4,
@@ -417,7 +393,7 @@
                     },
                     {
                         label: 'Resolved',
-                        data: [20, 22, 25, 28, 30, 27, 31],
+                        data: @json($trend['resolved']),
                         borderColor: '#10B981',
                         backgroundColor: 'transparent',
                         tension: 0.4,
@@ -447,9 +423,9 @@
         new Chart(document.getElementById('ticketStatusChart'), {
             type: 'doughnut',
             data: {
-                labels: ['Open', 'Assigned', 'In Progress', 'Waiting', 'Resolved', 'Closed'],
+                labels: @json(collect($statusChart['items'])->pluck('status')),
                 datasets: [{
-                    data: [42, 18, 15, 8, 31, 27],
+                    data: @json(collect($statusChart['items'])->pluck('count')),
                     backgroundColor: ['#3B82F6', '#06B6D4', '#F59E0B', '#9CA3AF', '#10B981', '#334155'],
                     borderWidth: 0,
                 }]
@@ -461,6 +437,39 @@
                 plugins: { legend: { display: false } }
             }
         });
+
+        // ===== PETA OPERASIONAL (Leaflet + OpenStreetMap) =====
+        (function () {
+            const points = @json($mapPoints);
+            const map = L.map('ops-map', { scrollWheelZoom: false }).setView([-7.7064, 114.0094], 10);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            const colors = { technician: '#10B981', ticket: '#EF4444', customer: '#2563EB', warehouse: '#A855F7' };
+            const labels = { technician: 'Teknisi', ticket: 'Ticket', customer: 'Customer', warehouse: 'Gudang' };
+            const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const bounds = [];
+
+            points.forEach(p => {
+                L.circleMarker([p.lat, p.lng], {
+                    radius: p.type === 'warehouse' ? 8 : 6,
+                    color: '#fff', weight: 2,
+                    fillColor: colors[p.type] || '#64748B', fillOpacity: 0.95
+                })
+                .addTo(map)
+                .bindPopup(`<strong>${esc(p.name)}</strong><br><span style="color:#64748B">${labels[p.type]}${p.info ? ' • ' + esc(p.info) : ''}</span>`);
+                bounds.push([p.lat, p.lng]);
+            });
+
+            if (bounds.length > 1) map.fitBounds(bounds, { padding: [24, 24], maxZoom: 12 });
+
+            // aktifkan zoom scroll hanya setelah peta diklik, supaya scroll halaman tidak terganggu
+            map.on('click', () => map.scrollWheelZoom.enable());
+            map.on('mouseout', () => map.scrollWheelZoom.disable());
+        })();
 
         // ===== LIVE CLOCK =====
         setInterval(() => {

@@ -65,8 +65,9 @@
         </a>
 
         <a href="{{ route('reports.index') }}"
-   class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-colors {{ request()->routeIs('reports.index') ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:bg-gray-100 hover:text-dark' }}">
-    <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+   class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-colors
+   {{ request()->routeIs('reports.index') ? 'bg-primary text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 hover:text-dark' }}">
+    <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
     <span>Reports</span>
 </a>
 
