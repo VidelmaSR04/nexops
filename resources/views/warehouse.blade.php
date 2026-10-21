@@ -17,6 +17,15 @@
     @endphp
 
     <div class="space-y-6">
+        @if (session('success'))
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">{{ session('success') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                <p class="font-semibold">Data belum tersimpan:</p>
+                <ul class="mt-1 list-inside list-disc">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+            </div>
+        @endif
 
         {{-- 1. HEADER --}}
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -141,7 +150,7 @@
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap {{ $badge }}">{{ $wh['status'] }}</span>
                                     </td>
                                     <td class="py-3 pr-4 text-center">
-                                        <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" data-dummy-action="Menu Aksi {{ $wh['id'] }}">
+                                        <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" data-warehouse-action="edit" aria-label="Edit {{ $wh['name'] }}">
                                             <i data-lucide="more-vertical" class="w-4 h-4"></i>
                                         </button>
                                     </td>
@@ -235,7 +244,8 @@
                 </div>
                 <button type="button" class="btn-close-modal p-1 rounded-lg text-gray-400 hover:text-dark hover:bg-gray-100"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <form id="form-create-warehouse" class="p-5 space-y-3.5 text-xs">
+            <form id="form-create-warehouse" action="{{ route('warehouse.store') }}" method="POST" class="p-5 space-y-3.5 text-xs">
+                @csrf
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1" for="create-code">Kode Lokasi <span class="text-danger">*</span></label>

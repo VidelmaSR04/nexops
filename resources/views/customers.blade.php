@@ -507,18 +507,59 @@
             renderTable(customersData);
             if (currentSelectedCustomer) loadCustomerDetail(currentSelectedCustomer);
 
-            document.getElementById('searchInput').addEventListener('input', applyFilters);
-            document.getElementById('statusFilter').addEventListener('change', applyFilters);
-            document.getElementById('areaFilter').addEventListener('change', applyFilters);
+            document.getElementById('searchInput').addEventListener('input', () => {
+                customerPage = 1;
+                applyFilters();
+            });
+            document.getElementById('statusFilter').addEventListener('change', () => {
+                customerPage = 1;
+                applyFilters();
+            });
+            document.getElementById('areaFilter').addEventListener('change', () => {
+                customerPage = 1;
+                applyFilters();
+            });
             document.getElementById('resetFilterBtn').addEventListener('click', resetFilters);
             document.getElementById('selectAll').addEventListener('change', toggleSelectAll);
+            document.getElementById('totalVisibleCount').parentElement.nextElementSibling.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-customer-page]');
+                if (!button || button.disabled) return;
+                customerPage = Number(button.dataset.customerPage);
+                renderTable(getCurrentFilteredData());
+            });
 
             if (window.lucide) window.lucide.createIcons();
         });
 
+        const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+        }[character]));
+
+        async function requestJson(url, method, data) {
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: data ? JSON.stringify(data) : undefined,
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                const firstError = payload.errors ? Object.values(payload.errors).flat()[0] : null;
+                throw new Error(firstError || payload.message || 'Permintaan gagal diproses.');
+            }
+            return payload;
+        }
+
         function renderTable(data) {
             const tbody = document.getElementById('customerTableBody');
             tbody.innerHTML = '';
+            const pageCount = Math.max(1, Math.ceil(data.length / customersPerPage));
+            customerPage = Math.min(Math.max(customerPage, 1), pageCount);
+            const start = (customerPage - 1) * customersPerPage;
+            const visibleCustomers = data.slice(start, start + customersPerPage);
 
             if (data.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-gray-400">Tidak ada data OPD yang ditemukan.</td></tr>`;
@@ -526,9 +567,9 @@
                 return;
             }
 
-            document.getElementById('totalVisibleCount').innerText = data.length;
+            updateCustomerCount(start + 1, start + visibleCustomers.length, data.length);
 
-            data.forEach((cust, idx) => {
+            visibleCustomers.forEach((cust) => {
                 let badgeClass = 'bg-emerald-50 text-emerald-600';
                 if (cust.status === 'Baru') badgeClass = 'bg-blue-50 text-blue-600';
                 if (cust.status === 'Nonaktif') badgeClass = 'bg-red-50 text-red-600';
@@ -545,7 +586,7 @@
 
                 tr.innerHTML = `
                     <td class="pl-4 py-3" onclick="event.stopPropagation()">
-                        <input type="checkbox" class="row-checkbox rounded border-gray-300 text-primary focus:ring-primary/20" value="${cust.custNo}">
+                        <input type="checkbox" class="row-checkbox rounded border-gray-300 text-primary focus:ring-primary/20" value="${escapeHtml(cust.custNo)}">
                     </td>
                     <td class="py-3 pr-3">
                         <div class="flex items-center gap-2">
@@ -575,6 +616,27 @@
             });
 
             if (window.lucide) window.lucide.createIcons();
+            renderPagination(pageCount);
+        }
+
+        function updateCustomerCount(from, to, total) {
+            const visibleCount = from === 0 ? 0 : (to - from + 1);
+            customerCountLabel.innerHTML =
+                'Menampilkan <span id="totalVisibleCount">' + visibleCount + '</span> dari ' + total + ' total data';
+        }
+
+        function renderPagination(pageCount) {
+            const container = document.getElementById('totalVisibleCount').parentElement.nextElementSibling;
+            const buttonClass = 'w-7 h-7 rounded-lg border border-border text-secondary hover:bg-gray-50 flex items-center justify-center';
+            const activeClass = 'w-7 h-7 rounded-lg bg-primary text-white font-medium flex items-center justify-center';
+            const disabledClass = 'opacity-40 cursor-not-allowed';
+            let buttons = '<button type="button" data-customer-page="' + (customerPage - 1) + '" aria-label="Halaman sebelumnya" class="' + buttonClass + (customerPage <= 1 ? ' ' + disabledClass : '') + '"' + (customerPage <= 1 ? ' disabled' : '') + '><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i></button>';
+            for (let page = 1; page <= pageCount; page++) {
+                buttons += '<button type="button" data-customer-page="' + page + '" class="' + (page === customerPage ? activeClass : buttonClass) + '"' + (page === customerPage ? ' aria-current="page"' : '') + '>' + page + '</button>';
+            }
+            buttons += '<button type="button" data-customer-page="' + (customerPage + 1) + '" aria-label="Halaman berikutnya" class="' + buttonClass + (customerPage >= pageCount ? ' ' + disabledClass : '') + '"' + (customerPage >= pageCount ? ' disabled' : '') + '><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>';
+            container.innerHTML = buttons;
+            if (window.lucide) window.lucide.createIcons();
         }
 
         function selectCustomer(custNo) {
@@ -582,11 +644,26 @@
             if (found) {
                 currentSelectedCustomer = found;
                 loadCustomerDetail(found);
+                loadCustomerRecords(found);
                 renderTable(getCurrentFilteredData());
             }
         }
 
         function loadCustomerDetail(cust) {
+            if (!cust) {
+                document.getElementById('detailName').innerText = '';
+                document.getElementById('detailCustNo').innerText = '';
+                document.getElementById('valNik').innerText = '';
+                document.getElementById('valPhone').innerText = '';
+                document.getElementById('valEmail').innerText = '';
+                document.getElementById('valAddress').innerText = '';
+                document.getElementById('qiArea').innerText = '';
+                document.getElementById('qiPaket').innerText = '';
+                document.getElementById('qiTagihan').innerText = '';
+                document.getElementById('ticketTargetCustomer').value = '';
+                return;
+            }
+
             document.getElementById('detailAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cust.name)}&background=0D6EFD&color=fff`;
             document.getElementById('detailName').innerText = cust.name;
             document.getElementById('detailCustNo').innerText = cust.custNo;
@@ -606,10 +683,49 @@
 
             document.getElementById('qiArea').innerText = cust.area;
             document.getElementById('qiPaket').innerText = cust.paket;
-            document.getElementById('qiTagihan').innerText = cust.tagihan;
+            document.getElementById('qiTagihan').innerText = cust.tagihan || '—';
 
             const ticketTarget = document.getElementById('ticketTargetCustomer');
             if (ticketTarget) ticketTarget.value = `${cust.name} (${cust.custNo})`;
+        }
+
+        async function loadCustomerRecords(customer) {
+            const requestId = ++customerDetailRequest;
+            try {
+                const response = await fetch(customerBaseUrl + '/' + encodeURIComponent(customer.id), {
+                    headers: { 'Accept': 'application/json' },
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(payload.message || 'Detail pelanggan gagal dimuat.');
+                if (requestId !== customerDetailRequest || currentSelectedCustomer?.id !== customer.id) return;
+
+                const history = payload.data.ticket_history || [];
+                const historyPane = document.getElementById('tab-pane-riwayat');
+                historyPane.innerHTML = history.length
+                    ? '<div class="space-y-3 relative before:absolute before:inset-0 before:left-2 before:w-0.5 before:bg-gray-200">'
+                        + history.map((ticket) => '<div class="relative flex items-start gap-3 pl-6">'
+                            + '<span class="absolute left-1 top-1 w-2.5 h-2.5 rounded-full bg-primary ring-4 ring-white"></span>'
+                            + '<div><p class="font-semibold text-dark">Ticket ' + escapeHtml(ticket.ticket_number) + '</p>'
+                            + '<p class="text-[11px] text-secondary">' + escapeHtml(ticket.title) + ' · ' + escapeHtml(ticket.status) + '</p>'
+                            + '<p class="text-[11px] text-secondary">' + escapeHtml(ticket.created_at || '') + '</p></div></div>').join('')
+                        + '</div>'
+                    : '<p class="py-6 text-center text-secondary">Belum ada riwayat tiket.</p>';
+
+                const billingBody = document.querySelector('#tab-pane-tagihan tbody');
+                billingBody.innerHTML = '<tr><td colspan="4" class="p-3 text-secondary">Data riwayat tagihan belum tersedia.</td></tr>';
+
+                document.getElementById('tab-pane-dokumen').innerHTML =
+                    '<p class="py-6 text-center text-secondary">Belum ada dokumen pelanggan yang tersimpan.</p>';
+
+                const ticketCountRow = Array.from(document.querySelectorAll('#tab-pane-detail > div'))
+                    .find((row) => row.firstElementChild?.textContent.trim() === 'Ticket Aktif');
+                if (ticketCountRow) {
+                    ticketCountRow.lastElementChild.textContent =
+                        (payload.data.customer.active_tickets_count || 0) + ' Ticket';
+                }
+            } catch (error) {
+                if (requestId === customerDetailRequest) window.alert(error.message);
+            }
         }
 
         function applyFilters() {
@@ -623,7 +739,9 @@
                                    String(cust.reporter_contact || '').toLowerCase().includes(query) ||
                                    cust.nik.toLowerCase().includes(query) ||
                                    cust.custNo.toLowerCase().includes(query) ||
-                                   cust.address.toLowerCase().includes(query);
+                                   cust.address.toLowerCase().includes(query) ||
+                                   cust.phone.toLowerCase().includes(query) ||
+                                   cust.email.toLowerCase().includes(query);
                 const matchStatus = statusVal === "" || cust.status === statusVal;
                 const matchArea = areaVal === "" || cust.area === areaVal;
                 return matchQuery && matchStatus && matchArea;
@@ -643,7 +761,9 @@
                                    String(cust.reporter_contact || '').toLowerCase().includes(query) ||
                                    cust.nik.toLowerCase().includes(query) ||
                                    cust.custNo.toLowerCase().includes(query) ||
-                                   cust.address.toLowerCase().includes(query);
+                               cust.address.toLowerCase().includes(query) ||
+                               cust.phone.toLowerCase().includes(query) ||
+                               cust.email.toLowerCase().includes(query);
                 const matchStatus = statusVal === "" || cust.status === statusVal;
                 const matchArea = areaVal === "" || cust.area === areaVal;
                 return matchQuery && matchStatus && matchArea;
@@ -654,6 +774,7 @@
             document.getElementById('searchInput').value = '';
             document.getElementById('statusFilter').value = '';
             document.getElementById('areaFilter').value = '';
+            customerPage = 1;
             renderTable(customersData);
         }
 
@@ -674,12 +795,18 @@
             if (target) target.classList.remove('hidden');
         }
 
-        function updateCustomerStatusFromPanel(newStatus) {
-            if (currentSelectedCustomer) {
-                currentSelectedCustomer.status = newStatus;
-                renderTable(getCurrentFilteredData());
-                loadCustomerDetail(currentSelectedCustomer);
-                alert(`Simulasi: Status customer ${currentSelectedCustomer.name} diubah menjadi ${newStatus}.`);
+        async function updateCustomerStatusFromPanel(newStatus) {
+            if (!currentSelectedCustomer) return;
+            try {
+                await requestJson(
+                    customerBaseUrl + '/' + encodeURIComponent(currentSelectedCustomer.id) + '/status',
+                    'PATCH',
+                    { status: newStatus },
+                );
+                window.location.reload();
+            } catch (error) {
+                document.getElementById('quickStatusSelect').value = currentSelectedCustomer.status;
+                window.alert(error.message);
             }
         }
 
@@ -740,10 +867,27 @@
         function openDeactivateModal() { document.getElementById('modal-deactivate').classList.remove('hidden'); }
         function closeDeactivateModal() { document.getElementById('modal-deactivate').classList.add('hidden'); }
 
-        function handleSimulatedSubmit(event, type) {
+        async function handleSimulatedSubmit(event) {
             event.preventDefault();
-            alert('Simulasi Frontend: Data berhasil disimpan!');
-            closeAddModal();
+            const form = event.currentTarget;
+            const inputs = form.querySelectorAll('input');
+            const selects = form.querySelectorAll('select');
+            const values = {
+                name: inputs[0].value.trim(),
+                nik: inputs[1].value.trim(),
+                phone: inputs[3].value.trim(),
+                area: selects[0].value,
+                address: form.querySelector('textarea').value.trim(),
+                package_name: selects[1].value,
+                status: selects[2].value,
+            };
+
+            try {
+                await requestJson(customerBaseUrl, 'POST', values);
+                window.location.reload();
+            } catch (error) {
+                window.alert(error.message);
+            }
         }
 
         function handleTicketSubmit(event) {
@@ -752,13 +896,16 @@
             closeAssignModal();
         }
 
-        function confirmDeactivate() {
-            if (currentSelectedCustomer) {
-                currentSelectedCustomer.status = 'Nonaktif';
-                renderTable(getCurrentFilteredData());
-                loadCustomerDetail(currentSelectedCustomer);
-                alert(`Simulasi: Customer ${currentSelectedCustomer.name} dinonaktifkan.`);
-                closeDeactivateModal();
+        async function confirmDeactivate() {
+            if (!currentSelectedCustomer) return;
+            try {
+                await requestJson(
+                    customerBaseUrl + '/' + encodeURIComponent(currentSelectedCustomer.id),
+                    'DELETE',
+                );
+                window.location.reload();
+            } catch (error) {
+                window.alert(error.message);
             }
         }
 

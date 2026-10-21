@@ -24,6 +24,15 @@
         {{-- ============================================ --}}
         {{-- 1. HEADER INVENTORY                          --}}
         {{-- ============================================ --}}
+        @if (session('success'))
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">{{ session('success') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                <p class="font-semibold">Data belum tersimpan:</p>
+                <ul class="mt-1 list-inside list-disc">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+            </div>
+        @endif
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-dark tracking-tight">Inventory Peralatan</h1>
@@ -236,7 +245,7 @@
                                         {{ $item['location'] }}
                                     </td>
                                     <td class="py-3 pr-4 text-center">
-                                        <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" data-dummy-action="Menu Aksi {{ $item['id'] }}">
+                                        <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" data-product-action="edit" aria-label="Edit {{ $item['name'] }}">
                                             <i data-lucide="more-vertical" class="w-4 h-4"></i>
                                         </button>
                                     </td>
@@ -447,7 +456,8 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <form id="form-create-product" class="p-5 space-y-3.5 text-xs">
+            <form id="form-create-product" action="{{ route('inventory.store') }}" method="POST" class="p-5 space-y-3.5 text-xs">
+                @csrf
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">Kode Inventaris <span class="text-danger">*</span></label>
@@ -456,11 +466,13 @@
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Kategori <span class="text-danger">*</span></label>
-                        <select id="create-category" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <input type="text" id="create-category" name="category" list="inventory-categories" required
+                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <datalist id="inventory-categories">
                             @foreach ($categories as $cat)
-                                <option value="{{ $cat }}">{{ $cat }}</option>
+                                <option value="{{ $cat }}">
                             @endforeach
-                        </select>
+                        </datalist>
                     </div>
                 </div>
 
@@ -473,7 +485,7 @@
                 <div class="grid grid-cols-3 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">Satuan <span class="text-danger">*</span></label>
-                        <select id="create-unit" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <select id="create-unit" name="unit" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                             <option value="Unit">Unit</option>
                             <option value="Pcs">Pcs</option>
                             <option value="Pack">Pack</option>
@@ -551,7 +563,9 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <form id="form-edit-product" class="p-5 space-y-3.5 text-xs">
+            <form id="form-edit-product" method="POST" class="p-5 space-y-3.5 text-xs">
+                @csrf
+                @method('PUT')
                 <input type="hidden" id="edit-id-hidden">
 
                 <div class="grid grid-cols-2 gap-3">
@@ -562,11 +576,8 @@
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Kategori</label>
-                        <select id="edit-category" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
-                            @foreach ($categories as $cat)
-                                <option value="{{ $cat }}">{{ $cat }}</option>
-                            @endforeach
-                        </select>
+                        <input type="text" id="edit-category" name="category" list="inventory-categories" required
+                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                     </div>
                 </div>
 
@@ -579,7 +590,7 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">Satuan</label>
-                        <input type="text" id="edit-unit" required
+                        <input type="text" id="edit-unit" name="unit" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                     <div>
@@ -623,8 +634,17 @@
                 </div>
 
                 <div>
+                    <label class="block font-medium text-dark mb-1">Gudang untuk Penyesuaian Stok</label>
+                    <select id="edit-warehouse" name="warehouse_id" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        @foreach ($warehouses as $warehouse)
+                            <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
                     <label class="block font-medium text-dark mb-1">Deskripsi</label>
-                    <textarea id="edit-desc" rows="2.5"
+                    <textarea id="edit-desc" name="description" rows="2"
                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"></textarea>
                 </div>
 
@@ -640,6 +660,10 @@
     <div id="toast-notification"
          class="fixed bottom-5 right-5 z-50 hidden max-w-sm rounded-xl bg-dark text-white text-xs px-4 py-3 shadow-xl transition-all">
     </div>
+    <form id="form-delete-product" method="POST" class="hidden">
+        @csrf
+        @method('DELETE')
+    </form>
 
     {{-- ============================================ --}}
     {{-- 6. JAVASCRIPT LOGIC INTERAKTIF              --}}
@@ -885,6 +909,13 @@
                 });
             });
 
+            document.querySelectorAll('[data-product-action="edit"]').forEach(button => {
+                button.addEventListener('click', () => {
+                    button.closest('.product-row')?.click();
+                    document.getElementById('btn-edit-product').click();
+                });
+            });
+
             // Tutup Panel Detail
             document.getElementById('btn-close-detail').addEventListener('click', () => {
                 detailPanel.classList.add('hidden');
@@ -946,12 +977,14 @@
 
             // 5. Modal Edit Produk
             const editModal = document.getElementById('modal-edit-product');
+            const editForm = document.getElementById('form-edit-product');
             document.getElementById('btn-edit-product').addEventListener('click', () => {
                 const current = productMap[currentSelectedId];
                 if (!current) return;
 
                 document.getElementById('edit-id-hidden').value = current.id;
                 document.getElementById('edit-code').value = current.id;
+                editForm.action = `{{ url('/inventory') }}/${encodeURIComponent(current.id)}`;
                 document.getElementById('edit-name').value = current.name;
                 document.getElementById('edit-category').value = current.category;
                 document.getElementById('edit-unit').value = current.unit;

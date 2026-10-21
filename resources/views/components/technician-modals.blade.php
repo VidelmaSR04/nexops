@@ -1,7 +1,6 @@
 @props(['areas' => [], 'statuses' => []])
 
-{{-- Semua modal halaman Technicians (simulasi frontend, tidak ada request ke backend). --}}
-{{-- Dibuka/ditutup lewat JavaScript di resources/views/technicians.blade.php.           --}}
+{{-- Semua modal halaman Technicians, dibuka/ditutup lewat JavaScript di halaman teknisi. --}}
 
 @php
     $inputClass = 'w-full rounded-xl border border-border bg-white px-3 py-2 text-xs text-dark focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary';
@@ -64,6 +63,20 @@
                     </select>
                 </div>
             </div>
+            <div>
+                <p class="font-medium text-dark mb-1">Koordinat lokasi</p>
+                <p class="text-[11px] text-secondary mb-2">Masukkan koordinat GPS teknisi. Kosongkan keduanya jika belum tersedia.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label for="f-latitude" class="block font-medium text-dark mb-1">Latitude</label>
+                        <input id="f-latitude" type="number" step="any" min="-90" max="90" class="{{ $inputClass }}">
+                    </div>
+                    <div>
+                        <label for="f-longitude" class="block font-medium text-dark mb-1">Longitude</label>
+                        <input id="f-longitude" type="number" step="any" min="-180" max="180" class="{{ $inputClass }}">
+                    </div>
+                </div>
+            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label for="f-joined" class="block font-medium text-dark mb-1">Tanggal Bergabung</label>
@@ -108,7 +121,7 @@
 </div>
 
 {{-- ============================================ --}}
-{{-- MODAL: LIHAT LOKASI (SIMULASI)               --}}
+{{-- MODAL: LIHAT LOKASI                           --}}
 {{-- ============================================ --}}
 <div id="modal-location" class="tech-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 hidden" role="dialog" aria-modal="true" aria-labelledby="location-title">
     <div class="bg-white rounded-2xl border border-border shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
@@ -122,17 +135,10 @@
             </button>
         </div>
         <div class="p-5 space-y-3 text-xs">
-            {{-- Peta simulasi (tanpa GPS / API peta) --}}
-            <div class="relative h-56 rounded-xl border border-border overflow-hidden bg-[#EAF2FC]"
-                 style="background-image: linear-gradient(#D5E4F7 1px, transparent 1px), linear-gradient(90deg, #D5E4F7 1px, transparent 1px); background-size: 28px 28px;">
-                <div class="absolute left-0 right-0 top-1/2 h-3 -translate-y-1/2 bg-white/80 -rotate-6"></div>
-                <div class="absolute top-0 bottom-0 left-1/3 w-3 bg-white/80 rotate-12"></div>
-                <div id="location-pin" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full flex flex-col items-center">
-                    <span class="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] font-semibold shadow" id="location-pin-label"></span>
-                    <i data-lucide="map-pin" class="w-8 h-8 text-primary drop-shadow"></i>
-                </div>
+            <div class="relative h-56 rounded-xl border border-border overflow-hidden bg-surface">
+                <iframe id="location-map-frame" class="hidden w-full h-full border-0" title="Peta lokasi teknisi" loading="lazy" referrerpolicy="no-referrer"></iframe>
                 <div id="location-off" class="hidden absolute inset-0 bg-white/70 backdrop-blur-[1px] items-center justify-center text-secondary font-medium">
-                    Lokasi tidak tersedia
+                    Koordinat lokasi belum tersedia
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
@@ -141,11 +147,14 @@
                     <p id="location-area" class="font-semibold text-dark mt-0.5"></p>
                 </div>
                 <div class="rounded-xl bg-surface border border-border p-3">
-                    <p class="text-[11px] text-secondary">Pembaruan Terakhir</p>
-                    <p id="location-updated" class="font-semibold text-dark mt-0.5"></p>
+                    <p class="text-[11px] text-secondary">Koordinat Lokasi</p>
+                    <p id="location-coordinates" class="font-semibold text-dark mt-0.5 break-all"></p>
                 </div>
             </div>
-            <p class="text-[11px] text-secondary">Tampilan simulasi. Belum terhubung ke data GPS atau layanan peta.</p>
+            <p id="location-note" class="text-[11px] text-secondary"></p>
+            <div class="flex justify-end">
+                <a id="location-open-map" class="hidden text-primary font-semibold hover:underline" target="_blank" rel="noopener noreferrer">Buka peta lebih besar</a>
+            </div>
             <div class="pt-3 border-t border-border flex justify-end">
                 <button type="button" data-close-modal class="px-4 py-2 rounded-xl border border-border text-dark hover:bg-gray-50 font-medium">Tutup</button>
             </div>

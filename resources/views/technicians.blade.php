@@ -392,6 +392,24 @@
                 toastTimer = setTimeout(() => toast.classList.add('hidden'), 2600);
             }
 
+            async function requestJson(url, method, data) {
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: data ? JSON.stringify(data) : undefined,
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    const firstError = payload.errors ? Object.values(payload.errors).flat()[0] : null;
+                    throw new Error(firstError || payload.message || 'Permintaan gagal diproses.');
+                }
+                return payload;
+            }
+
             // ---------- Filter ----------
             function filtered() {
                 const q = state.search.toLowerCase().trim();
@@ -612,11 +630,13 @@
                 if (t) {
                     $('f-name').value = t.name; $('f-nik').value = t.code; $('f-role').value = t.role;
                     $('f-phone').value = t.phone; $('f-email').value = t.email; $('f-area').value = t.area;
+                    $('f-latitude').value = t.latitude ?? ''; $('f-longitude').value = t.longitude ?? '';
                     $('f-status').value = t.status; $('f-joined').value = t.joined_iso; $('f-exp').value = t.exp_years;
                 } else {
                     $('f-nik').value = 'TK' + pad(state.nextId);
                     $('f-role').value = 'Teknisi';
                     $('f-area').selectedIndex = 0;
+                    $('f-latitude').value = ''; $('f-longitude').value = '';
                     $('f-status').value = 'Available';
                     $('f-joined').value = new Date().toISOString().slice(0, 10);
                     $('f-exp').value = 0;
@@ -626,7 +646,7 @@
 
             $('f-nik').addEventListener('input', () => $('f-nik').setCustomValidity(''));
 
-            $('form-tech').addEventListener('submit', (e) => {
+            $('form-tech').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const code = $('f-nik').value.trim().toUpperCase();
                 const dup = state.data.some((x) => x.code.toLowerCase() === code.toLowerCase() && !(state.formMode === 'edit' && x.id === state.selectedId));
@@ -688,7 +708,7 @@
                 if (e.target.name === 'assign-ticket') $('assign-confirm').disabled = false;
             });
 
-            $('form-assign').addEventListener('submit', (e) => {
+            $('form-assign').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const picked = document.querySelector('input[name="assign-ticket"]:checked');
                 const t = current();
@@ -731,28 +751,36 @@
                 icon.className = 'mx-auto w-12 h-12 rounded-full flex items-center justify-center ' + (reactivate ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-danger');
                 $('confirm-title').textContent = (reactivate ? 'Aktifkan ' : 'Nonaktifkan ') + t.name + '?';
                 $('confirm-text').textContent = reactivate
-                    ? 'Status teknisi akan diubah menjadi Available (simulasi frontend).'
-                    : 'Status teknisi akan diubah menjadi Offline (simulasi frontend, data tidak disimpan).';
+                    ? 'Status teknisi akan diubah menjadi Available.'
+                    : 'Status teknisi akan diubah menjadi Offline. Riwayat tiket tetap disimpan.';
                 const warn = $('confirm-warning');
                 const showWarn = !reactivate && t.tickets > 0;
                 warn.classList.toggle('hidden', !showWarn);
-                warn.textContent = showWarn ? 'Teknisi ini masih memiliki ' + t.tickets + ' ticket aktif.' : '';
+                warn.textContent = showWarn
+                    ? 'Teknisi masih menangani ' + t.tickets + ' ticket aktif. Selesaikan atau batalkan penugasan terlebih dahulu.'
+                    : '';
                 const ok = $('confirm-ok');
                 ok.textContent = reactivate ? 'Ya, Aktifkan' : 'Ya, Nonaktifkan';
                 ok.className = 'px-4 py-2 rounded-xl text-white font-semibold shadow-sm ' + (reactivate ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-danger hover:bg-red-600');
+                ok.disabled = showWarn;
                 openModal('modal-confirm');
             }
 
-            $('confirm-ok').addEventListener('click', () => {
+            $('confirm-ok').addEventListener('click', async () => {
                 const t = current();
                 if (!t) return;
                 const reactivate = t.status === 'Offline';
                 const next = reactivate ? 'Available' : 'Offline';
-                t.history.unshift({ title: reactivate ? 'Teknisi diaktifkan' : 'Teknisi dinonaktifkan', desc: t.status + ' → ' + next, time: 'Baru saja' });
-                t.status = next;
-                closeModal('modal-confirm');
-                refreshAll();
-                showToast(t.name + (reactivate ? ' diaktifkan' : ' dinonaktifkan') + ' (simulasi frontend).');
+                try {
+                    if (reactivate) {
+                        await requestJson(technicianBaseUrl + '/' + encodeURIComponent(t.id) + '/status', 'PATCH', { status: next });
+                    } else {
+                        await requestJson(technicianBaseUrl + '/' + encodeURIComponent(t.id), 'DELETE');
+                    }
+                    window.location.reload();
+                } catch (error) {
+                    showToast(error.message);
+                }
             });
 
             // ---------- Event: toolbar ----------
@@ -831,13 +859,16 @@
                 if (b) openLocation(b.dataset.ticket);
             });
 
-            $('action-status').addEventListener('change', (e) => {
+            $('action-status').addEventListener('change', async (e) => {
                 const t = current();
                 if (!t || t.status === e.target.value) return;
-                t.history.unshift({ title: 'Status diubah', desc: t.status + ' → ' + e.target.value, time: 'Baru saja' });
-                t.status = e.target.value;
-                refreshAll();
-                showToast('Status ' + t.name + ' diubah menjadi ' + t.status + ' (simulasi frontend).');
+                try {
+                    await requestJson(technicianBaseUrl + '/' + encodeURIComponent(t.id) + '/status', 'PATCH', { status: e.target.value });
+                    window.location.reload();
+                } catch (error) {
+                    $('action-status').value = t.status;
+                    showToast(error.message);
+                }
             });
 
             // ---------- Keyboard & resize ----------

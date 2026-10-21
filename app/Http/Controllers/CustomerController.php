@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CustomerRequest;
 use App\Models\Customer;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -37,13 +41,24 @@ class CustomerController extends Controller
             'inactive' => $customers->where('status', 'Nonaktif')->count(),
         ];
 
+        if ($this->expectsJson($request)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Data pelanggan berhasil diambil.',
+                'data' => [
+                    'customers' => $customersList,
+                    'stats' => $stats,
+                ],
+            ]);
+        }
+
         return view('customers', [
             'customersData' => $customersList,
-            'stats'         => $stats,
+            'stats' => $stats,
         ]);
     }
 
-    public function store(Request $request)
+    public function show(Customer $customer): JsonResponse
     {
         $validated = $this->validateCustomer($request);
 

@@ -18,6 +18,8 @@ class Technician extends Model
         'name',
         'position',
         'area',
+        'latitude',
+        'longitude',
         'phone',
         'email',
         'status',
@@ -30,6 +32,8 @@ class Technician extends Model
         'joined_at' => 'date',
         'rating'    => 'decimal:1',
         'exp_years' => 'integer',
+        'latitude'  => 'float',
+        'longitude' => 'float',
     ];
 
     public function user(): BelongsTo
@@ -47,4 +51,3 @@ class Technician extends Model
         return $this->hasMany(TicketAssignment::class)->where('is_active', true);
     }
 }
-
