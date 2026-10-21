@@ -13,6 +13,10 @@ class InventoryItem extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const CONDITIONS = ['Baru', 'Baik', 'Perlu Perbaikan', 'Rusak'];
+
+    public const AVAILABILITIES = ['Tersedia', 'Sedang Digunakan', 'Sedang Diperbaiki', 'Hilang'];
+
     protected $fillable = [
         'sku',
         'name',
@@ -20,6 +24,8 @@ class InventoryItem extends Model
         'unit',
         'min_stock',
         'status',
+        'condition',
+        'availability',
         'serial_example',
         'description',
     ];

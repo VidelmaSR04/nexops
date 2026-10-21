@@ -18,13 +18,13 @@
         {{-- ============================================ --}}
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-dark tracking-tight">Ticket</h1>
-                <p class="text-secondary text-sm mt-0.5">Kelola dan pantau semua ticket operasional</p>
+                <h1 class="text-2xl font-bold text-dark tracking-tight">Ticketing</h1>
+                <p class="text-secondary text-sm mt-0.5">Layanan Pengaduan dan Penanganan Permasalahan TIK OPD</p>
             </div>
             <div>
                 <button type="button" id="btn-create-ticket" onclick="openTicketModal('create')" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-blue-700 shadow-sm transition-colors">
                     <i data-lucide="plus" class="w-4 h-4"></i>
-                    <span>Buat Ticket</span>
+                    <span>Buat Tiket</span>
                 </button>
             </div>
         </div>
@@ -33,24 +33,24 @@
         {{-- 2. SUMMARY CARDS                             --}}
         {{-- ============================================ --}}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {{-- Open --}}
+            {{-- Tiket Masuk --}}
             <div class="bg-white rounded-xl border border-border p-4.5 flex items-center gap-3.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
                 <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                     <i data-lucide="ticket" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <p class="text-xs text-secondary font-medium">Open</p>
+                    <p class="text-xs text-secondary font-medium">Tiket Masuk</p>
                     <p class="text-2xl font-bold text-dark mt-0.5">{{ $summary['open'] }}</p>
                 </div>
             </div>
 
             {{-- In Progress --}}
             <div class="bg-white rounded-xl border border-border p-4.5 flex items-center gap-3.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
-                <div class="w-11 h-11 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center shrink-0">
+                <div class="w-11 h-11 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
                     <i data-lucide="loader-2" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <p class="text-xs text-secondary font-medium">In Progress</p>
+                    <p class="text-xs text-secondary font-medium">Sedang Ditangani</p>
                     <p class="text-2xl font-bold text-dark mt-0.5">{{ $summary['in_progress'] }}</p>
                 </div>
             </div>
@@ -61,7 +61,7 @@
                     <i data-lucide="alert-circle" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <p class="text-xs text-secondary font-medium">Overdue</p>
+                    <p class="text-xs text-secondary font-medium">Melebihi Target Waktu</p>
                     <p class="text-2xl font-bold text-dark mt-0.5">{{ $summary['overdue'] }}</p>
                 </div>
             </div>
@@ -72,7 +72,7 @@
                     <i data-lucide="check-circle-2" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <p class="text-xs text-secondary font-medium">Resolved</p>
+                    <p class="text-xs text-secondary font-medium">Tiket Selesai</p>
                     <p class="text-2xl font-bold text-dark mt-0.5">{{ $summary['resolved'] }}</p>
                 </div>
             </div>
@@ -94,7 +94,7 @@
                         <div class="relative flex-1 min-w-[220px]">
                             <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
                             <input id="ticket-search" type="text"
-                                   placeholder="Cari nomor ticket, customer, atau masalah..."
+                                   placeholder="Cari no. tiket, OPD, pelapor, atau keluhan..."
                                    class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-border bg-surface focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
                         </div>
 
@@ -117,23 +117,23 @@
                         <select id="filter-status" class="text-xs rounded-lg border border-border bg-white px-2.5 py-1.5 text-dark">
                             <option value="">Semua Status</option>
                             <option value="Open">Open</option>
-                            <option value="Assigned">Assigned</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Waiting">Waiting</option>
-                            <option value="Resolved">Resolved</option>
-                            <option value="Closed">Closed</option>
+                            <option value="Assigned">Ditugaskan</option>
+                            <option value="In Progress">Sedang Ditangani</option>
+                            <option value="Waiting">Menunggu</option>
+                            <option value="Resolved">Selesai</option>
+                            <option value="Closed">Ditutup</option>
                         </select>
 
                         <select id="filter-priority" class="text-xs rounded-lg border border-border bg-white px-2.5 py-1.5 text-dark">
                             <option value="">Semua Prioritas</option>
-                            <option value="Low">Low</option>
+                            <option value="Low">Rendah</option>
                             <option value="Normal">Normal</option>
-                            <option value="High">High</option>
-                            <option value="Critical">Critical</option>
+                            <option value="High">Tinggi</option>
+                            <option value="Critical">Kritis</option>
                         </select>
 
                         <select id="filter-tech" class="text-xs rounded-lg border border-border bg-white px-2.5 py-1.5 text-dark">
-                            <option value="">Semua Teknisi</option>
+                            <option value="">Semua Petugas</option>
                             @foreach ($technicians as $tn)
                                 <option value="{{ $tn }}">{{ $tn }}</option>
                             @endforeach
@@ -155,13 +155,15 @@
                                 <th class="pl-4 py-3 w-8">
                                     <input id="check-all" type="checkbox" class="rounded border-gray-300 text-primary focus:ring-primary/20">
                                 </th>
-                                <th class="py-3 pr-3">No. Ticket</th>
-                                <th class="py-3 pr-3">Customer</th>
-                                <th class="py-3 pr-3">Judul</th>
+                                <th class="py-3 pr-3">No. Tiket</th>
+                                <th class="py-3 pr-3">OPD Pelapor</th>
+                                <th class="py-3 pr-3">Nama Pelapor</th>
+                                <th class="py-3 pr-3">Kontak Pelapor</th>
+                                <th class="py-3 pr-3">Keluhan / Permasalahan</th>
                                 <th class="py-3 pr-3">Prioritas</th>
                                 <th class="py-3 pr-3">Status</th>
-                                <th class="py-3 pr-3">Teknisi</th>
-                                <th class="py-3 pr-3 whitespace-nowrap">Tanggal</th>
+                                <th class="py-3 pr-3">Petugas Teknis</th>
+                                <th class="py-3 pr-3 whitespace-nowrap">Tanggal Laporan</th>
                                 <th class="py-3 pr-4 text-center w-8">Aksi</th>
                             </tr>
                         </thead>
@@ -172,7 +174,7 @@
                                     data-status="{{ $t['status'] }}"
                                     data-priority="{{ $t['priority'] }}"
                                     data-tech="{{ $t['tech'] }}"
-                                    data-search="{{ strtolower($t['id'] . ' ' . $t['customer'] . ' ' . $t['title'] . ' ' . $t['subtitle']) }}">
+                                    data-search="{{ strtolower($t['id'] . ' ' . $t['customer'] . ' ' . ($t['reporter_name'] ?? '') . ' ' . ($t['reporter_contact'] ?? '') . ' ' . $t['title'] . ' ' . $t['subtitle']) }}">
                                     <td class="pl-4 py-3">
                                         <input type="checkbox" class="row-checkbox rounded border-gray-300 text-primary focus:ring-primary/20">
                                     </td>
@@ -182,6 +184,20 @@
                                     <td class="py-3 pr-3">
                                         <p class="font-medium text-dark">{{ $t['customer'] }}</p>
                                         <p class="text-[11px] text-secondary">{{ $t['location'] }}</p>
+                                    </td>
+                                    <td class="py-3 pr-3">
+                                        @if (($t['reporter_name'] ?? '-') !== '-')
+                                            <p class="font-medium text-dark">{{ $t['reporter_name'] }}</p>
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-3 pr-3 whitespace-nowrap">
+                                        @if (($t['reporter_contact'] ?? '-') !== '-' && $t['reporter_contact'] !== '')
+                                            <span class="text-dark">{{ $t['reporter_contact'] }}</span>
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
                                     </td>
                                     <td class="py-3 pr-3">
                                         <p class="font-medium text-dark">{{ $t['title'] }}</p>
@@ -220,7 +236,6 @@
                                                 <button type="button" onclick="openTicketModal('edit', {{ $t['db_id'] }})"
                                                         class="block w-full px-4 py-2 text-left text-sm text-dark hover:bg-gray-100">Edit</button>
 
-                                                <form action="{{ route('tickets.destroy', $t['db_id']) }}" method="POST" class="block w-full"
                                                     <form action="{{ route('tickets.destroy', $t['db_id']) }}" method="POST" class="block w-full"
                                                         onsubmit="return confirmDelete(event, this, '{{ $t['id'] }}')">
                                                     @csrf
@@ -235,7 +250,7 @@
                             @endforeach
 
                             <tr id="empty-state-row" class="hidden">
-                                <td colspan="9" class="py-12 text-center text-gray-400">
+                                <td colspan="11" class="py-12 text-center text-gray-400">
                                     <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-gray-300"></i>
                                     Tidak ada tiket yang cocok dengan pencarian / filter.
                                 </td>
@@ -289,22 +304,22 @@
                 {{-- Informasi Ringkas 4 Kolom Horizontal --}}
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-xl bg-surface border border-border/80 text-xs mb-4">
                     <div>
-                        <p class="text-[10px] text-secondary uppercase font-semibold">Customer</p>
+                        <p class="text-[10px] text-secondary uppercase font-semibold">OPD Pelapor</p>
                         <p id="detail-card-customer" class="font-bold text-dark mt-0.5 truncate">-</p>
                         <p id="detail-card-location" class="text-[10px] text-secondary">-</p>
                     </div>
                     <div>
-                        <p class="text-[10px] text-secondary uppercase font-semibold">Technician</p>
+                        <p class="text-[10px] text-secondary uppercase font-semibold">Petugas Kominfo</p>
                         <p id="detail-card-tech" class="font-bold text-dark mt-0.5 truncate">-</p>
                         <p id="detail-tech-state" class="text-[10px] text-emerald-600 font-medium">-</p>
                     </div>
                     <div>
-                        <p class="text-[10px] text-secondary uppercase font-semibold">Asset</p>
+                        <p class="text-[10px] text-secondary uppercase font-semibold">Aset TIK</p>
                         <p id="detail-card-asset" class="font-bold text-dark mt-0.5 truncate">-</p>
                         <p id="detail-card-serial" class="text-[10px] text-secondary truncate">SN: -</p>
                     </div>
                     <div>
-                        <p class="text-[10px] text-secondary uppercase font-semibold">Priority</p>
+                        <p class="text-[10px] text-secondary uppercase font-semibold">Prioritas</p>
                         <p id="detail-card-priority" class="font-bold text-red-600 mt-0.5">-</p>
                         <p class="text-[10px] text-secondary">Prioritas</p>
                     </div>
@@ -313,9 +328,9 @@
                 {{-- 4 Tab Navigation --}}
                 <div class="flex border-b border-border text-xs font-semibold mb-4 gap-6" id="panel-tabs">
                     <button type="button" class="tab-btn pb-2.5 border-b-2 border-primary text-primary transition-colors" data-target="tab-detail">Detail</button>
-                    <button type="button" class="tab-btn pb-2.5 border-b-2 border-transparent text-secondary hover:text-dark transition-colors" data-target="tab-material">Material</button>
-                    <button type="button" class="tab-btn pb-2.5 border-b-2 border-transparent text-secondary hover:text-dark transition-colors" data-target="tab-activity">Activity</button>
-                    <button type="button" class="tab-btn pb-2.5 border-b-2 border-transparent text-secondary hover:text-dark transition-colors" data-target="tab-attachment">Attachment</button>
+                    <button type="button" class="tab-btn pb-2.5 border-b-2 border-transparent text-secondary hover:text-dark transition-colors" data-target="tab-material">Material & Perangkat</button>
+                    <button type="button" class="tab-btn pb-2.5 border-b-2 border-transparent text-secondary hover:text-dark transition-colors" data-target="tab-activity">Aktivitas</button>
+                    <button type="button" class="tab-btn pb-2.5 border-b-2 border-transparent text-secondary hover:text-dark transition-colors" data-target="tab-attachment">Lampiran</button>
                 </div>
 
                 {{-- Konten Tab Panel --}}
@@ -325,7 +340,7 @@
                     <div id="tab-detail" class="tab-pane space-y-3.5">
                         <div class="space-y-2.5 text-xs">
                             <div>
-                                <span class="text-secondary text-[11px] block">Nomor Ticket:</span>
+                                <span class="text-secondary text-[11px] block">Nomor Tiket:</span>
                                 <span id="info-ticket-id" class="font-semibold text-dark">-</span>
                             </div>
                             <div>
@@ -340,21 +355,25 @@
                             </div>
                             <div class="grid grid-cols-2 gap-3 pt-1">
                                 <div>
-                                    <span class="text-secondary text-[11px] block">Customer:</span>
+                                    <span class="text-secondary text-[11px] block">OPD Pelapor:</span>
                                     <span id="info-customer" class="font-medium text-dark">-</span>
                                 </div>
                                 <div>
-                                    <span class="text-secondary text-[11px] block">Teknisi:</span>
+                                    <span class="text-secondary text-[11px] block">Nama Pelapor:</span>
+                                    <span id="info-reporter" class="font-medium text-dark">-</span>
+                                </div>
+                                <div>
+                                    <span class="text-secondary text-[11px] block">Petugas Teknis:</span>
                                     <span id="info-tech" class="font-medium text-dark">-</span>
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-3 pt-1">
                                 <div>
-                                    <span class="text-secondary text-[11px] block">Created By:</span>
-                                    <span id="info-creator" class="font-medium text-dark">-</span>
+                                    <span class="text-secondary text-[11px] block">Kontak Pelapor:</span>
+                                    <span id="info-reporter-contact" class="font-medium text-dark">-</span>
                                 </div>
                                 <div>
-                                    <span class="text-secondary text-[11px] block">SLA Due:</span>
+                                    <span class="text-secondary text-[11px] block">Target Selesai:</span>
                                     <span id="info-sla-due" class="font-medium text-dark">-</span>
                                 </div>
                             </div>
@@ -388,24 +407,24 @@
                         <p class="font-semibold text-dark text-xs">Status & Aksi</p>
                         <select id="action-status-select" class="w-full text-xs rounded-lg border border-border bg-white px-3 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-primary/20">
                             <option value="Open">Open</option>
-                            <option value="Assigned">Assigned</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Waiting">Waiting</option>
-                            <option value="Resolved">Resolved</option>
-                            <option value="Closed">Closed</option>
+                            <option value="Assigned">Ditugaskan</option>
+                            <option value="In Progress">Sedang Ditangani</option>
+                            <option value="Waiting">Menunggu</option>
+                            <option value="Resolved">Selesai</option>
+                            <option value="Closed">Ditutup</option>
                         </select>
                         <div class="grid grid-cols-2 gap-2">
                             <button type="button" id="btn-assign-tech" class="col-span-2 py-2 px-3 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-blue-700 shadow-sm transition-colors text-center">
-                                Assign Teknisi
+                                Tugaskan Petugas
                             </button>
                             <button type="button" id="btn-update-status" class="py-2 px-3 rounded-lg bg-white border border-border text-dark text-xs font-medium hover:bg-gray-50 transition-colors text-center">
                                 Ubah Status
                             </button>
                             <button type="button" id="btn-edit-ticket" class="py-2 px-3 rounded-lg bg-white border border-border text-dark text-xs font-medium hover:bg-gray-50 transition-colors text-center">
-                                Edit Ticket
+                                Edit Tiket
                             </button>
                             <button type="button" id="btn-close-ticket" class="col-span-2 py-2 px-3 rounded-lg bg-white border border-red-200 text-danger text-xs font-medium hover:bg-red-50 transition-colors text-center">
-                                Tutup Ticket
+                                Tutup Tiket
                             </button>
                         </div>
                     </div>
@@ -415,14 +434,14 @@
                         <p class="font-semibold text-dark text-xs">Quick Info</p>
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-secondary text-[11px]">Customer:</p>
+                                <p class="text-secondary text-[11px]">OPD Pelapor:</p>
                                 <p id="quick-customer" class="font-medium text-dark">-</p>
                             </div>
                             <a href="{{ route('customers.index') }}" class="text-primary text-[11px] font-semibold hover:underline">Lihat Detail</a>
                         </div>
                         <div class="flex items-center justify-between border-t border-gray-200/60 pt-2">
                             <div>
-                                <p class="text-secondary text-[11px]">Asset Terkait:</p>
+                                <p class="text-secondary text-[11px]">Aset TIK Terkait:</p>
                                 <p id="quick-asset" class="font-medium text-dark">-</p>
                             </div>
                             <a href="{{ route('assets.index') }}" class="text-primary text-[11px] font-semibold hover:underline">Lihat Detail</a>
@@ -445,8 +464,8 @@
     <div class="bg-white rounded-2xl border border-border shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
         <div class="p-4 border-b border-border flex items-start justify-between gap-3 sticky top-0 bg-white rounded-t-2xl">
             <div>
-                <h3 id="ticket-modal-title" class="text-base font-bold text-dark">Buat Ticket</h3>
-                <p id="ticket-modal-sub" class="text-secondary text-xs mt-0.5">Isi informasi ticket operasional</p>
+                <h3 id="ticket-modal-title" class="text-base font-bold text-dark">Buat Tiket</h3>
+                <p id="ticket-modal-sub" class="text-secondary text-xs mt-0.5">Isi informasi pengaduan dari OPD</p>
             </div>
             <button type="button" data-close-ticket-modal class="p-1.5 rounded-lg text-gray-400 hover:text-dark hover:bg-gray-100" aria-label="Tutup">
                 <i data-lucide="x" class="w-5 h-5"></i>
@@ -460,8 +479,24 @@
             <div id="ticket-form-errors" class="hidden rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-700 space-y-0.5"></div>
 
             <div>
-                <label for="tf-customer" class="block font-medium text-dark mb-1">Customer</label>
-                <input id="tf-customer" type="text" name="customer_name" required maxlength="255" class="{{ $modalInput }}">
+                <label for="tf-customer" class="block font-medium text-dark mb-1">OPD Pelapor</label>
+                <select id="tf-customer" name="customer_id" required class="{{ $modalInput }}">
+                    <option value="">Pilih OPD</option>
+                    @foreach ($opds as $opd)
+                        <option value="{{ $opd->id }}" data-reporter="{{ $opd->reporter_name }}" data-contact="{{ $opd->reporter_contact }}">{{ $opd->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label for="tf-reporter" class="block font-medium text-dark mb-1">Nama Pelapor</label>
+                    <input id="tf-reporter" type="text" name="reporter_name" required maxlength="150" placeholder="Nama staf OPD" class="{{ $modalInput }}">
+                </div>
+                <div>
+                    <label for="tf-contact" class="block font-medium text-dark mb-1">Kontak Pelapor</label>
+                    <input id="tf-contact" type="text" name="reporter_contact" maxlength="50" placeholder="No. HP / WhatsApp" class="{{ $modalInput }}">
+                </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -472,8 +507,8 @@
                 <div>
                     <label for="tf-priority" class="block font-medium text-dark mb-1">Prioritas</label>
                     <select id="tf-priority" name="priority" required class="{{ $modalInput }}">
-                        @foreach (['Low', 'Normal', 'High', 'Critical'] as $priority)
-                            <option value="{{ $priority }}" @selected($priority === 'Normal')>{{ $priority }}</option>
+                        @foreach (['Low' => 'Rendah', 'Normal' => 'Normal', 'High' => 'Tinggi', 'Critical' => 'Kritis'] as $priority => $priorityLabel)
+                            <option value="{{ $priority }}" @selected($priority === 'Normal')>{{ $priorityLabel }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -587,7 +622,7 @@
 
             askConfirm({
                 title: 'Hapus ticket?',
-                message: `Ticket ${label} akan dihapus dari daftar.`,
+                message: `Tiket ${label} akan dihapus dari daftar.`,
                 confirmText: 'Ya, hapus',
                 variant: 'danger',
             }).then(ok => { if (ok) form.submit(); }); // form.submit() tidak memicu onsubmit lagi
@@ -687,6 +722,7 @@
             const ticketSubmitBtn = document.getElementById('ticket-form-submit');
             const ticketStoreUrl = @json(route('tickets.store'));
             const ticketUpdateUrl = @json(route('tickets.update', ['ticket' => '__ID__']));
+            const opdContacts = @json($opds->keyBy('id')->map(fn ($opd) => ['reporter_name' => $opd->reporter_name, 'reporter_contact' => $opd->reporter_contact]));
 
             function clearTicketErrors() {
                 ticketFormErrors.classList.add('hidden');
@@ -723,8 +759,12 @@
                     ticketMethodInput.disabled = false;
 
                     const blank = v => (v === '-' || v == null) ? '' : v;
-                    document.getElementById('tf-customer').value = blank(t.customer);
+                    const opdOption = Array.from(document.getElementById('tf-customer').options)
+                        .find(option => option.textContent === t.customer);
+                    document.getElementById('tf-customer').value = t.customer_id || opdOption?.value || '';
                     document.getElementById('tf-location').value = blank(t.location);
+                    document.getElementById('tf-reporter').value = blank(t.reporter_name);
+                    document.getElementById('tf-contact').value = blank(t.reporter_contact);
                     document.getElementById('tf-priority').value = t.priority;
                     document.getElementById('tf-title').value = blank(t.title);
                     document.getElementById('tf-description').value = blank(t.description);
@@ -732,7 +772,7 @@
                     document.getElementById('tf-asset').value = blank(t.asset);
                 } else {
                     title.textContent = 'Buat Ticket';
-                    sub.textContent = 'Isi informasi ticket operasional';
+                    sub.textContent = 'Isi informasi pengaduan dari OPD';
                     ticketSubmitBtn.textContent = 'Simpan Ticket';
                     ticketForm.action = ticketStoreUrl;
                     ticketMethodInput.disabled = true;
@@ -747,6 +787,14 @@
                 setTimeout(() => document.getElementById(focusId)?.focus(), 50);
             }
             window.openTicketModal = openTicketModal;
+
+            document.getElementById('tf-customer').addEventListener('change', (event) => {
+                const contact = opdContacts[event.target.value];
+                if (contact) {
+                    document.getElementById('tf-reporter').value = contact.reporter_name || '';
+                    document.getElementById('tf-contact').value = contact.reporter_contact || '';
+                }
+            });
 
             ticketForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -901,13 +949,15 @@
 
                 document.getElementById('detail-card-customer').textContent = t.customer;
                 document.getElementById('info-customer').textContent = `${t.customer} (${t.location})`;
+                document.getElementById('info-reporter').textContent = t.reporter_name || '-';
+                document.getElementById('info-reporter-contact').textContent = (t.reporter_contact && t.reporter_contact !== '-') ? t.reporter_contact : '-';
                 document.getElementById('quick-customer').textContent = t.customer;
                 document.getElementById('detail-card-location').textContent = t.location;
 
                 document.getElementById('detail-card-tech').textContent = t.tech;
                 document.getElementById('info-tech').textContent = t.tech;
                 document.getElementById('detail-tech-state').textContent = t.tech === '-' ? 'Belum ditugaskan' : 'Ditugaskan';
-                document.getElementById('info-creator').textContent = t.creator;
+                const creatorEl = document.getElementById('info-creator'); if (creatorEl) creatorEl.textContent = t.creator;
 
                 document.getElementById('detail-card-asset').textContent = t.asset;
                 document.getElementById('quick-asset').textContent = t.asset;

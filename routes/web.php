@@ -44,11 +44,11 @@ Route::post('/inventory', [InventoryController::class, 'store'])
     ->middleware(['auth', 'verified'])
     ->name('inventory.store');
 
-Route::put('/inventory/{sku}', [InventoryController::class, 'update'])
+Route::put('/inventory/{id}', [InventoryController::class, 'update'])
     ->middleware(['auth', 'verified'])
     ->name('inventory.update');
 
-Route::delete('/inventory/{sku}', [InventoryController::class, 'destroy'])
+Route::delete('/inventory/{id}', [InventoryController::class, 'destroy'])
     ->middleware(['auth', 'verified'])
     ->name('inventory.destroy');
 
@@ -147,14 +147,6 @@ Route::post('/customers', [CustomerController::class, 'store'])
 Route::put('/customers/{customer}', [CustomerController::class, 'update'])
     ->middleware(['auth', 'verified'])
     ->name('customers.update');
-
-Route::patch('/customers/{customer}/status', [CustomerController::class, 'updateStatus'])
-    ->middleware(['auth', 'verified'])
-    ->name('customers.update-status');
-
-Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])
-    ->middleware(['auth', 'verified'])
-    ->name('customers.destroy');
 
 Route::view('/reports', 'reports')
     ->middleware(['auth', 'verified'])

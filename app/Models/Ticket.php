@@ -17,6 +17,8 @@ class Ticket extends Model
         'ticket_number',
         'customer_id',
         'customer_name',
+        'reporter_name',
+        'reporter_contact',
         'asset_id',
         'created_by',
         'assigned_tech_name',
@@ -74,4 +76,3 @@ class Ticket extends Model
         return $this->hasMany(TicketAttachment::class);
     }
 }
-

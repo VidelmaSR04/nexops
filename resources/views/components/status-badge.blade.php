@@ -11,8 +11,17 @@
     ];
 
     $classes = $statusClasses[$status] ?? 'bg-gray-100 text-gray-600 border border-gray-200';
+
+    $labels = [
+        'Open' => 'Open',
+        'Assigned' => 'Ditugaskan',
+        'In Progress' => 'Sedang Ditangani',
+        'Waiting' => 'Menunggu',
+        'Resolved' => 'Selesai',
+        'Closed' => 'Ditutup',
+    ];
 @endphp
 
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap {{ $classes }}">
-    {{ $status }}
+    {{ $labels[$status] ?? $status }}
 </span>

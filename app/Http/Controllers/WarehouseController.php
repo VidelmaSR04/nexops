@@ -2,280 +2,175 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\InventoryItem;
-use App\Models\StockMovement;
+use App\Models\Asset;
+use App\Models\Ticket;
 use App\Models\Warehouse;
-use App\Models\WarehouseStock;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
+/**
+ * Lokasi OPD (sebelumnya Warehouse).
+ * Tabel yang dipakai tetap `warehouses`: code = Kode Lokasi, name = Nama OPD, address = Alamat.
+ */
 class WarehouseController extends Controller
 {
     public function index()
     {
-        $warehouses = Warehouse::with(['stocks.inventoryItem.category'])
-            ->orderBy('code')
+        $warehouseModels = Warehouse::orderBy('code')->get();
+
+        // Jumlah aset per lokasi (satu query, bukan per baris)
+        $assetCounts = Asset::selectRaw('warehouse_id, COUNT(*) as total')
+            ->whereNotNull('warehouse_id')
+            ->groupBy('warehouse_id')
+            ->pluck('total', 'warehouse_id');
+
+        // Riwayat perbaikan: tiket yang customer_name-nya sama dengan nama OPD
+        $names = $warehouseModels->pluck('name')->filter()->unique()->all();
+        $ticketsByOpd = Ticket::whereIn('customer_name', $names)
+            ->latest()
             ->get()
-            ->map(function ($warehouse) {
-                $stocks = $warehouse->stocks->filter(fn ($stock) => $stock->inventoryItem);
-                $usedStock = $stocks->sum('quantity');
+            ->groupBy('customer_name');
 
-                $stockItems = $stocks->map(function ($stock) {
-                    return [
-                        'sku' => $stock->inventoryItem->sku,
-                        'name' => $stock->inventoryItem->name,
-                        'category' => $stock->inventoryItem->category?->name ?? 'General',
-                        'qty' => $stock->quantity,
-                        'unit' => $stock->inventoryItem->unit,
-                    ];
-                })->values()->toArray();
+        $warehouses = $warehouseModels->map(function ($w) use ($assetCounts, $ticketsByOpd) {
+            $repairs = ($ticketsByOpd[$w->name] ?? collect())
+                ->take(5)
+                ->map(fn ($t) => [
+                    'ticket'     => $t->ticket_number,
+                    'date'       => $t->created_at?->format('d M Y') ?? '-',
+                    'complaint'  => $t->title ?? '-',
+                    'technician' => $t->assigned_tech_name ?: 'Belum ditugaskan',
+                    'status'     => $t->status ?? '-',
+                ])
+                ->values()
+                ->toArray();
 
-                $history = StockMovement::with('inventoryItem')
-                    ->where(function ($query) use ($warehouse) {
-                        $query->where('warehouse_id', $warehouse->id)
-                            ->orWhere('to_warehouse_id', $warehouse->id);
-                    })
-                    ->latest()
-                    ->take(5)
-                    ->get()
-                    ->map(function ($movement) use ($warehouse) {
-                        $isIncomingTransfer = $movement->type === 'Transfer' && (int) $movement->to_warehouse_id === $warehouse->id;
-                        $title = $isIncomingTransfer ? 'Transfer masuk' : match ($movement->type) {
-                            'Masuk' => 'Penerimaan',
-                            'Keluar' => 'Pengeluaran',
-                            'Transfer' => 'Transfer',
-                            default => 'Mutasi stok',
-                        };
+            return [
+                'id'           => $w->code,
+                'name'         => $w->name,
+                'location'     => $w->address ?? '-',
+                'status'       => $w->status ?? 'Aktif',
+                'assets_count' => (int) ($assetCounts[$w->id] ?? 0),
+                'repairs'      => $repairs,
+            ];
+        })->toArray();
 
-                        return [
-                            'title' => $title.' '.($movement->inventoryItem?->name ?? 'Barang'),
-                            'date' => $movement->created_at?->format('d M Y H:i') ?? '-',
-                            'desc' => $movement->quantity.' item · '.($movement->reference ?? 'Tanpa referensi').' · '.($movement->user_name ?? 'Staff'),
-                        ];
-                    })->values()->toArray();
+        return view('warehouse', ['warehouses' => $warehouses]);
+    }
 
-                return [
-                    'id' => $warehouse->code,
-                    'name' => $warehouse->name,
-                    'location' => $warehouse->address ?? $warehouse->area ?? '-',
-                    'area' => $warehouse->area ?? '-',
-                    'capacity' => $warehouse->capacity,
-                    'available_stock' => max(0, $warehouse->capacity - $usedStock),
-                    'used_stock' => $usedStock,
-                    'status' => $warehouse->status,
-                    'manager' => $warehouse->manager_name ?? '-',
-                    'manager_role' => $warehouse->manager_role ?? 'Warehouse Staff',
-                    'categories_count' => $stocks->pluck('inventoryItem.category_id')->filter()->unique()->count(),
-                    'description' => $warehouse->description ?? '',
-                    'stock_items' => $stockItems,
-                    'history' => $history,
-                    'docs' => [],
-                ];
-            })
-            ->toArray();
+    public function store(Request $request): JsonResponse|RedirectResponse
+    {
+        $data = $request->validate($this->rules());
 
-        $totalCapacity = Warehouse::sum('capacity');
-        $totalUsed = WarehouseStock::whereHas('inventoryItem')->sum('quantity');
+        try {
+            $warehouse = new Warehouse();
+            $warehouse->forceFill($this->attributes($data, true))->save();
+        } catch (\Throwable $e) {
+            Log::error('WarehouseController@store: ' . $e->getMessage());
+            return $this->fail($request, 'Gagal menyimpan lokasi.');
+        }
 
-        $summary = [
-            'total_warehouses' => count($warehouses),
-            'total_capacity' => $totalCapacity,
-            'available_stock' => max(0, $totalCapacity - $totalUsed),
-            'used_stock' => $totalUsed,
+        return $this->ok($request, 'Lokasi berhasil ditambahkan.', $warehouse);
+    }
+
+    public function update(Request $request, string $code): JsonResponse|RedirectResponse
+    {
+        $warehouse = Warehouse::where('code', $code)->firstOrFail();
+        $data = $request->validate($this->rules($warehouse->id));
+
+        try {
+            $warehouse->forceFill($this->attributes($data))->save();
+        } catch (\Throwable $e) {
+            Log::error('WarehouseController@update: ' . $e->getMessage());
+            return $this->fail($request, 'Gagal memperbarui lokasi.');
+        }
+
+        return $this->ok($request, 'Lokasi berhasil diperbarui.', $warehouse);
+    }
+
+    public function destroy(Request $request, string $code): JsonResponse|RedirectResponse
+    {
+        $warehouse = Warehouse::where('code', $code)->firstOrFail();
+
+        // Lindungi data: lokasi yang masih dipakai tidak boleh dihapus
+        $hasAssets = Asset::where('warehouse_id', $warehouse->id)->exists();
+        $hasStocks = $warehouse->stocks()->exists();
+
+        if ($hasAssets || $hasStocks) {
+            return $this->fail(
+                $request,
+                'Lokasi masih memiliki aset atau stok, pindahkan atau hapus datanya terlebih dahulu.',
+                422
+            );
+        }
+
+        try {
+            $warehouse->delete();
+        } catch (\Throwable $e) {
+            Log::error('WarehouseController@destroy: ' . $e->getMessage());
+            return $this->fail($request, 'Gagal menghapus lokasi.');
+        }
+
+        return $this->ok($request, 'Lokasi berhasil dihapus.');
+    }
+
+    // ------------------------------------------------------------------
+    // Helper
+    // ------------------------------------------------------------------
+
+    private function rules(?int $ignoreId = null): array
+    {
+        return [
+            'code'    => 'required|string|max:30|unique:warehouses,code' . ($ignoreId ? ',' . $ignoreId : ''),
+            'name'    => 'required|string|max:255',
+            'address' => 'required|string|max:255',
+            'status'  => 'required|in:Aktif,Maintenance,Nonaktif',
+        ];
+    }
+
+    /** forceFill dipakai agar tidak bergantung pada $fillable. */
+    private function attributes(array $data, bool $creating = false): array
+    {
+        $attrs = [
+            'code'    => $data['code'],
+            'name'    => $data['name'],
+            'address' => $data['address'],
+            'status'  => $data['status'],
         ];
 
-        return view('warehouse', [
-            'warehouses' => $warehouses,
-            'summary' => $summary,
-            'locations' => Warehouse::query()->whereNotNull('area')->distinct()->orderBy('area')->pluck('area'),
-            'statuses' => ['Aktif', 'Maintenance', 'Nonaktif'],
-            'warehouseOptions' => Warehouse::orderBy('name')->get(['id', 'name']),
-            'inventoryItems' => InventoryItem::orderBy('name')->get(['id', 'sku', 'name', 'unit']),
-            'warehousePreview' => $this->nextCode(),
-        ]);
+        // Kolom lama gudang: beri nilai aman saat membuat lokasi baru (tidak menimpa data lama)
+        if ($creating && Schema::hasColumn('warehouses', 'capacity')) {
+            $attrs['capacity'] = 0;
+        }
+
+        return $attrs;
     }
 
-    public function store(Request $request)
+    private function ok(Request $request, string $message, ?Warehouse $warehouse = null): JsonResponse|RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'address' => ['required', 'string', 'max:255'],
-            'area' => ['required', 'string', 'max:60'],
-            'capacity' => ['required', 'integer', 'min:1'],
-            'status' => ['required', 'in:Aktif,Maintenance,Nonaktif'],
-            'manager_name' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-        ]);
-
-        Warehouse::create([
-            'code' => $this->nextCode(),
-            'name' => $validated['name'],
-            'address' => $validated['address'],
-            'area' => $validated['area'],
-            'capacity' => $validated['capacity'],
-            'status' => $validated['status'],
-            'manager_name' => $validated['manager_name'] ?? null,
-            'manager_role' => $validated['manager_name'] ? 'Warehouse Staff' : null,
-            'description' => $validated['description'] ?? null,
-        ]);
-
-        return redirect()->route('warehouse.index')->with('success', 'Gudang berhasil ditambahkan.');
-    }
-
-    public function update(Request $request, Warehouse $warehouse)
-    {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'address' => ['required', 'string', 'max:255'],
-            'area' => ['required', 'string', 'max:60'],
-            'capacity' => ['required', 'integer', 'min:1'],
-            'status' => ['required', 'in:Aktif,Maintenance,Nonaktif'],
-            'manager_name' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-        ]);
-
-        $currentStock = $warehouse->stocks()->whereHas('inventoryItem')->sum('quantity');
-        if ($validated['capacity'] < $currentStock) {
-            throw ValidationException::withMessages([
-                'capacity' => 'Kapasitas tidak boleh lebih kecil dari total stok yang sedang tersimpan ('.$currentStock.').',
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message'   => $message,
+                'warehouse' => $warehouse ? [
+                    'id'       => $warehouse->code,
+                    'name'     => $warehouse->name,
+                    'location' => $warehouse->address,
+                    'status'   => $warehouse->status,
+                ] : null,
             ]);
         }
 
-        $warehouse->update([
-            'name' => $validated['name'],
-            'address' => $validated['address'],
-            'area' => $validated['area'],
-            'capacity' => $validated['capacity'],
-            'status' => $validated['status'],
-            'manager_name' => $validated['manager_name'] ?? null,
-            'manager_role' => $validated['manager_name'] ? 'Warehouse Staff' : null,
-            'description' => $validated['description'] ?? null,
-        ]);
-
-        return redirect()->route('warehouse.index')->with('success', 'Data gudang berhasil diperbarui.');
+        return back()->with('success', $message);
     }
 
-    public function destroy(Warehouse $warehouse)
+    private function fail(Request $request, string $message, int $status = 500): JsonResponse|RedirectResponse
     {
-        $hasInventory = $warehouse->stocks()
-            ->where('quantity', '>', 0)
-            ->whereHas('inventoryItem')
-            ->exists();
-        $hasAssets = $warehouse->assets()->exists();
-
-        if ($hasInventory || $hasAssets) {
-            throw ValidationException::withMessages([
-                'warehouse' => 'Gudang tidak dapat dihapus karena masih memiliki stok inventaris atau aset. Pindahkan stok/aset terlebih dahulu.',
-            ]);
+        if ($request->expectsJson()) {
+            return response()->json(['message' => $message], $status);
         }
 
-        $warehouse->delete();
-
-        return redirect()->route('warehouse.index')->with('success', 'Gudang berhasil dihapus.');
-    }
-
-    public function updateStatus(Request $request, Warehouse $warehouse)
-    {
-        $validated = $request->validate([
-            'status' => ['required', 'in:Aktif,Maintenance,Nonaktif'],
-        ]);
-
-        $warehouse->update(['status' => $validated['status']]);
-
-        return redirect()->route('warehouse.index')->with('success', 'Status gudang berhasil diperbarui.');
-    }
-
-    public function storeMovement(Request $request, Warehouse $warehouse)
-    {
-        $validated = $request->validate([
-            'inventory_item_id' => ['required', 'integer', Rule::exists('inventory_items', 'id')->whereNull('deleted_at')],
-            'type' => ['required', 'in:Masuk,Keluar,Transfer'],
-            'quantity' => ['required', 'integer', 'min:1'],
-            'to_warehouse_id' => ['required_if:type,Transfer', 'nullable', 'integer', Rule::exists('warehouses', 'id')->whereNull('deleted_at')],
-            'reference' => ['nullable', 'string', 'max:255'],
-            'note' => ['nullable', 'string'],
-        ]);
-
-        $item = InventoryItem::findOrFail($validated['inventory_item_id']);
-        $quantity = (int) $validated['quantity'];
-
-        DB::transaction(function () use ($request, $warehouse, $item, $validated, $quantity) {
-            $sourceStock = WarehouseStock::firstOrCreate(
-                ['warehouse_id' => $warehouse->id, 'inventory_item_id' => $item->id],
-                ['quantity' => 0, 'min_quantity' => $item->min_stock]
-            );
-
-            if (in_array($validated['type'], ['Keluar', 'Transfer'], true) && $sourceStock->quantity < $quantity) {
-                throw ValidationException::withMessages([
-                    'quantity' => 'Stok gudang tidak mencukupi untuk mutasi yang diminta.',
-                ]);
-            }
-
-            $destinationId = null;
-            if ($validated['type'] === 'Transfer') {
-                $destinationId = (int) ($validated['to_warehouse_id'] ?? 0);
-                if ($destinationId === $warehouse->id) {
-                    throw ValidationException::withMessages([
-                        'to_warehouse_id' => 'Gudang tujuan harus berbeda dari gudang asal.',
-                    ]);
-                }
-
-                $destination = Warehouse::findOrFail($destinationId);
-                $destinationUsed = $destination->stocks()->whereHas('inventoryItem')->sum('quantity');
-                if ($destinationUsed + $quantity > $destination->capacity) {
-                    throw ValidationException::withMessages([
-                        'quantity' => 'Kapasitas gudang tujuan tidak mencukupi.',
-                    ]);
-                }
-
-                $destinationStock = WarehouseStock::firstOrCreate(
-                    ['warehouse_id' => $destination->id, 'inventory_item_id' => $item->id],
-                    ['quantity' => 0, 'min_quantity' => $item->min_stock]
-                );
-                $sourceStock->decrement('quantity', $quantity);
-                $destinationStock->increment('quantity', $quantity);
-            } elseif ($validated['type'] === 'Masuk') {
-                $warehouseUsed = $warehouse->stocks()->whereHas('inventoryItem')->sum('quantity');
-                if ($warehouseUsed + $quantity > $warehouse->capacity) {
-                    throw ValidationException::withMessages([
-                        'quantity' => 'Kapasitas gudang tidak mencukupi untuk stok masuk.',
-                    ]);
-                }
-
-                $sourceStock->increment('quantity', $quantity);
-            } else {
-                $sourceStock->decrement('quantity', $quantity);
-            }
-
-            StockMovement::create([
-                'inventory_item_id' => $item->id,
-                'warehouse_id' => $warehouse->id,
-                'to_warehouse_id' => $destinationId,
-                'type' => $validated['type'],
-                'quantity' => $quantity,
-                'reference' => $validated['reference'] ?? null,
-                'user_id' => $request->user()?->id,
-                'user_name' => $request->user()?->name,
-                'note' => $validated['note'] ?? null,
-            ]);
-
-            $total = (int) $item->stocks()->sum('quantity');
-            $item->update([
-                'status' => $total === 0 ? 'Habis' : ($total <= $item->min_stock ? 'Low Stock' : 'Aktif'),
-            ]);
-        });
-
-        return redirect()->route('warehouse.index')->with('success', 'Mutasi stok berhasil dicatat.');
-    }
-
-    private function nextCode(): string
-    {
-        $highest = Warehouse::withTrashed()->pluck('code')->map(function ($code) {
-            return preg_match('/^WH-(\d+)$/', $code, $matches) ? (int) $matches[1] : 0;
-        })->max() ?? 0;
-
-        return 'WH-'.str_pad((string) ($highest + 1), 3, '0', STR_PAD_LEFT);
+        return back()->withInput()->with('error', $message);
     }
 }

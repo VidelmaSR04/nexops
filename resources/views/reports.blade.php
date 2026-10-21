@@ -1,450 +1,475 @@
 <x-app-layout>
+    {{--
+        Laporan NEXOPS.
+        Sumber data tunggal: variabel $reportTickets (array tiket, satu baris per tiket) dari controller.
+        Bentuk tiap baris:
+          id, created_at (Y-m-d), resolved_at (Y-m-d|null), due_at (Y-m-d|null, batas SLA),
+          category, opd, technician_code, technician_name, rating (angka|null)
+        Seluruh kartu dan grafik dihitung di browser dari array ini, jadi angkanya selalu konsisten.
+        Jika $reportTickets belum dikirim, halaman memakai data PREVIEW yang dibuat di browser
+        (ditandai banner) dan sama sekali bukan data produksi.
+    --}}
     <div class="space-y-6">
 
-        {{-- 1. HEADER REPORTS --}}
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {{-- 1. HEADER --}}
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-dark tracking-tight">Reports</h1>
-                <p class="text-secondary text-sm mt-0.5">Lihat laporan dan analisis data operasional</p>
+                <h1 class="text-2xl font-bold text-dark tracking-tight">Laporan</h1>
+                <p class="text-secondary text-sm mt-0.5">Lihat laporan dan analisis data operasional layanan TIK.</p>
             </div>
-            <div class="flex flex-wrap items-center gap-3">
-                <select id="report-period-select" class="text-xs rounded-xl border border-border bg-white px-3 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-primary/20">
-                    <option value="7">7 Hari Terakhir</option>
-                    <option value="30" selected>30 Hari Terakhir</option>
-                    <option value="month">Bulan Ini</option>
-                    <option value="prev_month">Bulan Sebelumnya</option>
-                    <option value="custom">Rentang Tanggal Khusus</option>
-                </select>
-
+            <div class="flex flex-wrap items-center gap-2.5">
+                <div id="custom-range" class="hidden items-center gap-1.5 text-xs">
+                    <input type="date" id="range-from" aria-label="Tanggal mulai" class="rounded-xl border border-border bg-white px-2.5 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    <span class="text-secondary">–</span>
+                    <input type="date" id="range-to" aria-label="Tanggal akhir" class="rounded-xl border border-border bg-white px-2.5 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-primary/20">
+                </div>
+                <div class="relative">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-secondary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                    <select id="report-period-select" aria-label="Periode laporan"
+                            class="text-xs rounded-xl border border-border bg-white pl-8 pr-3 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <option value="7">7 Hari Terakhir</option>
+                        <option value="30" selected>30 Hari Terakhir</option>
+                        <option value="month">Bulan Ini</option>
+                        <option value="prev_month">Bulan Sebelumnya</option>
+                        <option value="custom">Rentang Tanggal Khusus</option>
+                    </select>
+                </div>
                 <button type="button" id="btn-download-report"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-xs font-medium hover:bg-blue-700 shadow-sm transition-colors cursor-pointer">
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-xs font-medium hover:bg-blue-700 shadow-sm transition-colors">
                     <i data-lucide="download" class="w-4 h-4"></i>
                     <span>Download Laporan</span>
                 </button>
             </div>
         </div>
 
+        <div id="preview-banner" class="hidden items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-700">
+            <i data-lucide="info" class="w-4 h-4 shrink-0 mt-px"></i>
+            <p>Data preview untuk melihat tampilan. Laporan belum terhubung ke database dan angka di bawah bukan data produksi.</p>
+        </div>
+
         {{-- 2. KARTU STATISTIK --}}
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-white rounded-xl border border-border p-4.5 flex items-center gap-3.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
-                <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                    <i data-lucide="ticket" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <p class="text-xs text-secondary font-medium">Total Ticket</p>
-                    <div class="flex items-baseline gap-2 mt-0.5">
-                        <p class="text-2xl font-bold text-dark">248</p>
-                        <span class="text-[10px] font-semibold text-emerald-600 flex items-center"><i data-lucide="arrow-up-right" class="w-3 h-3"></i> +12%</span>
-                    </div>
-                    <p class="text-[10px] text-gray-400 mt-0.5">vs periode sebelumnya</p>
-                </div>
-            </div>
+        <div id="stat-cards" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
 
-            <div class="bg-white rounded-xl border border-border p-4.5 flex items-center gap-3.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
-                <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                    <i data-lucide="check-circle-2" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <p class="text-xs text-secondary font-medium">Ticket Selesai</p>
-                    <div class="flex items-baseline gap-2 mt-0.5">
-                        <p class="text-2xl font-bold text-dark">198</p>
-                        <span class="text-[10px] font-semibold text-emerald-600 flex items-center"><i data-lucide="arrow-up-right" class="w-3 h-3"></i> +8%</span>
+        {{-- 3. BARIS 1: TREN + LOKASI OPD --}}
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+            <section class="lg:col-span-3 bg-white rounded-2xl border border-border shadow-[0_2px_6px_rgba(0,0,0,0.02)] p-5 relative">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h2 class="text-sm font-bold text-dark">Tren Tiket</h2>
+                        <p class="text-xs text-secondary mt-0.5">Perkembangan tiket masuk dan selesai dalam periode terpilih.</p>
                     </div>
-                    <p class="text-[10px] text-gray-400 mt-0.5">vs periode sebelumnya</p>
+                    <div class="flex items-center gap-4 text-[11px] text-secondary">
+                        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:#2563EB"></span>Tiket Masuk</span>
+                        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:#10B981"></span>Tiket Selesai</span>
+                    </div>
                 </div>
-            </div>
+                <div id="chart-trend" class="mt-3 min-h-[240px]"></div>
+            </section>
 
-            <div class="bg-white rounded-xl border border-border p-4.5 flex items-center gap-3.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
-                <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                    <i data-lucide="clock" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <p class="text-xs text-secondary font-medium">Ticket Pending</p>
-                    <div class="flex items-baseline gap-2 mt-0.5">
-                        <p class="text-2xl font-bold text-dark">42</p>
-                        <span class="text-[10px] font-semibold text-red-600 flex items-center"><i data-lucide="arrow-down-right" class="w-3 h-3"></i> -3%</span>
-                    </div>
-                    <p class="text-[10px] text-gray-400 mt-0.5">vs periode sebelumnya</p>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl border border-border p-4.5 flex items-center gap-3.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
-                <div class="w-11 h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
-                    <i data-lucide="alert-circle" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <p class="text-xs text-secondary font-medium">Ticket Overdue</p>
-                    <div class="flex items-baseline gap-2 mt-0.5">
-                        <p class="text-2xl font-bold text-dark">8</p>
-                        <span class="text-[10px] font-semibold text-emerald-600 flex items-center"><i data-lucide="arrow-down-right" class="w-3 h-3"></i> -2%</span>
-                    </div>
-                    <p class="text-[10px] text-gray-400 mt-0.5">vs periode sebelumnya</p>
-                </div>
-            </div>
+            <section class="lg:col-span-2 bg-white rounded-2xl border border-border shadow-[0_2px_6px_rgba(0,0,0,0.02)] p-5 relative">
+                <h2 class="text-sm font-bold text-dark">Tiket per Lokasi OPD</h2>
+                <p class="text-xs text-secondary mt-0.5">Distribusi tiket berdasarkan lokasi OPD.</p>
+                <div id="chart-opd" class="mt-4 min-h-[200px]"></div>
+            </section>
         </div>
 
-        {{-- 3. GRAFIK TREN TICKET --}}
-        <div class="bg-white rounded-2xl border border-border p-5 shadow-[0_2px_6px_rgba(0,0,0,0.02)]">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-                <div>
-                    <h3 class="text-base font-bold text-dark">Tren Ticket</h3>
-                    <p class="text-secondary text-xs">Perbandingan ticket masuk dan selesai harian</p>
-                </div>
-                <div class="flex items-center gap-4 text-xs font-medium">
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-3 h-3 rounded-full bg-primary inline-block"></span>
-                        <span class="text-dark">Ticket Masuk</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
-                        <span class="text-dark">Ticket Selesai</span>
-                    </div>
-                </div>
-            </div>
+        {{-- 4. BARIS 2: KATEGORI + TEKNISI + STATUS --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <section class="bg-white rounded-2xl border border-border shadow-[0_2px_6px_rgba(0,0,0,0.02)] p-5 relative">
+                <h2 class="text-sm font-bold text-dark">Tiket per Kategori</h2>
+                <p class="text-xs text-secondary mt-0.5">Kategori masalah yang paling sering terjadi.</p>
+                <div id="chart-category" class="mt-4 min-h-[220px]"></div>
+            </section>
 
-            <div class="relative w-full h-64 bg-surface rounded-xl border border-border/60 p-4 flex items-end justify-between gap-2 overflow-x-auto">
-                <div class="absolute inset-x-4 top-6 border-b border-gray-200/60"></div>
-                <div class="absolute inset-x-4 top-16 border-b border-gray-200/60"></div>
-                <div class="absolute inset-x-4 top-28 border-b border-gray-200/60"></div>
-                <div class="absolute inset-x-4 top-38 border-b border-gray-200/60"></div>
+            <section class="bg-white rounded-2xl border border-border shadow-[0_2px_6px_rgba(0,0,0,0.02)] p-5">
+                <h2 class="text-sm font-bold text-dark">Performa Teknisi</h2>
+                <p class="text-xs text-secondary mt-0.5">Top 5 teknisi dengan penyelesaian tiket terbanyak.</p>
+                <div id="tech-ranking" class="mt-3"></div>
+            </section>
 
-                <div class="relative z-10 flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                    <div class="flex items-end gap-1.5 w-full justify-center h-48">
-                        <div style="height: 40%" class="w-3 bg-primary rounded-t-md"></div>
-                        <div style="height: 35%" class="w-3 bg-emerald-500 rounded-t-md"></div>
-                    </div>
-                    <span class="text-[10px] text-secondary font-medium">01 Okt</span>
-                </div>
-                <div class="relative z-10 flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                    <div class="flex items-end gap-1.5 w-full justify-center h-48">
-                        <div style="height: 60%" class="w-3 bg-primary rounded-t-md"></div>
-                        <div style="height: 50%" class="w-3 bg-emerald-500 rounded-t-md"></div>
-                    </div>
-                    <span class="text-[10px] text-secondary font-medium">05 Okt</span>
-                </div>
-                <div class="relative z-10 flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                    <div class="flex items-end gap-1.5 w-full justify-center h-48">
-                        <div style="height: 45%" class="w-3 bg-primary rounded-t-md"></div>
-                        <div style="height: 45%" class="w-3 bg-emerald-500 rounded-t-md"></div>
-                    </div>
-                    <span class="text-[10px] text-secondary font-medium">10 Okt</span>
-                </div>
-                <div class="relative z-10 flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                    <div class="flex items-end gap-1.5 w-full justify-center h-48">
-                        <div style="height: 75%" class="w-3 bg-primary rounded-t-md"></div>
-                        <div style="height: 70%" class="w-3 bg-emerald-500 rounded-t-md"></div>
-                    </div>
-                    <span class="text-[10px] text-secondary font-medium">15 Okt</span>
-                </div>
-                <div class="relative z-10 flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                    <div class="flex items-end gap-1.5 w-full justify-center h-48">
-                        <div style="height: 50%" class="w-3 bg-primary rounded-t-md"></div>
-                        <div style="height: 55%" class="w-3 bg-emerald-500 rounded-t-md"></div>
-                    </div>
-                    <span class="text-[10px] text-secondary font-medium">20 Okt</span>
-                </div>
-                <div class="relative z-10 flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                    <div class="flex items-end gap-1.5 w-full justify-center h-48">
-                        <div style="height: 70%" class="w-3 bg-primary rounded-t-md"></div>
-                        <div style="height: 60%" class="w-3 bg-emerald-500 rounded-t-md"></div>
-                    </div>
-                    <span class="text-[10px] text-secondary font-medium">25 Okt</span>
-                </div>
-                <div class="relative z-10 flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                    <div class="flex items-end gap-1.5 w-full justify-center h-48">
-                        <div style="height: 40%" class="w-3 bg-primary rounded-t-md"></div>
-                        <div style="height: 45%" class="w-3 bg-emerald-500 rounded-t-md"></div>
-                    </div>
-                    <span class="text-[10px] text-secondary font-medium">30 Okt</span>
-                </div>
-            </div>
+            <section class="md:col-span-2 xl:col-span-1 bg-white rounded-2xl border border-border shadow-[0_2px_6px_rgba(0,0,0,0.02)] p-5 relative">
+                <h2 class="text-sm font-bold text-dark">Status Tiket</h2>
+                <p class="text-xs text-secondary mt-0.5">Persentase status tiket dalam periode terpilih.</p>
+                <div id="chart-status" class="mt-4 min-h-[200px]"></div>
+            </section>
         </div>
-
-        {{-- 4. GRID GRAFIK (LOKASI & KATEGORI) --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div class="bg-white rounded-2xl border border-border p-5 shadow-[0_2px_6px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-                <div>
-                    <h3 class="text-base font-bold text-dark">Ticket per Lokasi</h3>
-                    <p class="text-secondary text-xs">Distribusi ticket berdasarkan wilayah operasional</p>
-                </div>
-                <div class="flex flex-col sm:flex-row items-center justify-around gap-6 my-6">
-                    <div class="relative w-40 h-40 flex items-center justify-center">
-                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                            <path class="text-gray-100" stroke-width="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path class="text-primary" stroke-dasharray="42, 100" stroke-width="4" stroke-dashoffset="0" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path class="text-emerald-500" stroke-dasharray="32, 100" stroke-width="4" stroke-dashoffset="-42" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path class="text-amber-500" stroke-dasharray="26, 100" stroke-width="4" stroke-dashoffset="-74" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                        </svg>
-                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                            <span class="text-xs text-secondary font-medium">Total</span>
-                            <strong class="text-lg font-bold text-dark">248</strong>
-                        </div>
-                    </div>
-
-                    <div class="space-y-2.5 text-xs w-full sm:w-auto">
-                        <div class="flex items-center justify-between sm:justify-start gap-4">
-                            <div class="flex items-center gap-2">
-                                <span class="w-3 h-3 rounded-full bg-primary inline-block"></span>
-                                <span class="text-dark font-medium">Situbondo</span>
-                            </div>
-                            <span class="text-secondary font-semibold">42% (104)</span>
-                        </div>
-                        <div class="flex items-center justify-between sm:justify-start gap-4">
-                            <div class="flex items-center gap-2">
-                                <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
-                                <span class="text-dark font-medium">Besuki</span>
-                            </div>
-                            <span class="text-secondary font-semibold">32% (79)</span>
-                        </div>
-                        <div class="flex items-center justify-between sm:justify-start gap-4">
-                            <div class="flex items-center gap-2">
-                                <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
-                                <span class="text-dark font-medium">Lapangan</span>
-                            </div>
-                            <span class="text-secondary font-semibold">26% (65)</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-2xl border border-border p-5 shadow-[0_2px_6px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-                <div>
-                    <h3 class="text-base font-bold text-dark">Ticket per Kategori</h3>
-                    <p class="text-secondary text-xs">Kategori masalah yang paling sering terjadi</p>
-                </div>
-                <div class="space-y-3 my-4 text-xs">
-                    <div>
-                        <div class="flex justify-between font-medium text-dark mb-1">
-                            <span>Internet</span>
-                            <span>86 ticket</span>
-                        </div>
-                        <div class="w-full h-2.5 bg-surface rounded-full overflow-hidden border border-border/60">
-                            <div class="bg-primary h-full rounded-full" style="width: 86%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between font-medium text-dark mb-1">
-                            <span>Perangkat</span>
-                            <span>62 ticket</span>
-                        </div>
-                        <div class="w-full h-2.5 bg-surface rounded-full overflow-hidden border border-border/60">
-                            <div class="bg-emerald-500 h-full rounded-full" style="width: 62%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between font-medium text-dark mb-1">
-                            <span>Jaringan</span>
-                            <span>48 ticket</span>
-                        </div>
-                        <div class="w-full h-2.5 bg-surface rounded-full overflow-hidden border border-border/60">
-                            <div class="bg-amber-500 h-full rounded-full" style="width: 48%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between font-medium text-dark mb-1">
-                            <span>Power</span>
-                            <span>32 ticket</span>
-                        </div>
-                        <div class="w-full h-2.5 bg-surface rounded-full overflow-hidden border border-border/60">
-                            <div class="bg-cyan-500 h-full rounded-full" style="width: 32%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between font-medium text-dark mb-1">
-                            <span>Lainnya</span>
-                            <span>20 ticket</span>
-                        </div>
-                        <div class="w-full h-2.5 bg-surface rounded-full overflow-hidden border border-border/60">
-                            <div class="bg-gray-400 h-full rounded-full" style="width: 20%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- 5. TABEL TEKNISI & STATUS TICKET --}}
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
-            <div class="xl:col-span-2 bg-white rounded-2xl border border-border p-5 shadow-[0_2px_6px_rgba(0,0,0,0.02)]">
-                <div class="mb-4">
-                    <h3 class="text-base font-bold text-dark">Performa Teknisi</h3>
-                    <p class="text-secondary text-xs">Top 5 teknisi dengan penyelesaian ticket terbanyak</p>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-xs text-left">
-                        <thead>
-                            <tr class="text-secondary bg-[#FAFCFF] border-b border-border font-medium text-[11px] uppercase tracking-wider">
-                                <th class="py-3 pl-3 w-12 text-center">Peringkat</th>
-                                <th class="py-3 pr-3">Nama Teknisi</th>
-                                <th class="py-3 pr-3 text-center">Ticket Selesai</th>
-                                <th class="py-3 pr-3 text-center">Rating</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            <tr class="hover:bg-blue-50/40 transition-colors">
-                                <td class="py-3 pl-3 text-center font-bold text-primary">#1</td>
-                                <td class="py-3 pr-3">
-                                    <div class="flex items-center gap-2.5">
-                                        <img src="https://ui-avatars.com/api/?name=Budi+Santoso&background=0D6EFD&color=fff" class="w-7 h-7 rounded-full shrink-0">
-                                        <span class="font-semibold text-dark">Budi Santoso</span>
-                                    </div>
-                                </td>
-                                <td class="py-3 pr-3 text-center font-bold text-dark">28</td>
-                                <td class="py-3 pr-3 text-center">
-                                    <div class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-semibold">
-                                        <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i>
-                                        <span>4.8</span>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-blue-50/40 transition-colors">
-                                <td class="py-3 pl-3 text-center font-bold text-primary">#2</td>
-                                <td class="py-3 pr-3">
-                                    <div class="flex items-center gap-2.5">
-                                        <img src="https://ui-avatars.com/api/?name=Ahmad+Fauzi&background=0D6EFD&color=fff" class="w-7 h-7 rounded-full shrink-0">
-                                        <span class="font-semibold text-dark">Ahmad Fauzi</span>
-                                    </div>
-                                </td>
-                                <td class="py-3 pr-3 text-center font-bold text-dark">24</td>
-                                <td class="py-3 pr-3 text-center">
-                                    <div class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-semibold">
-                                        <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i>
-                                        <span>4.6</span>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-blue-50/40 transition-colors">
-                                <td class="py-3 pl-3 text-center font-bold text-primary">#3</td>
-                                <td class="py-3 pr-3">
-                                    <div class="flex items-center gap-2.5">
-                                        <img src="https://ui-avatars.com/api/?name=Dimas+Priyanto&background=0D6EFD&color=fff" class="w-7 h-7 rounded-full shrink-0">
-                                        <span class="font-semibold text-dark">Dimas Priyanto</span>
-                                    </div>
-                                </td>
-                                <td class="py-3 pr-3 text-center font-bold text-dark">22</td>
-                                <td class="py-3 pr-3 text-center">
-                                    <div class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-semibold">
-                                        <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i>
-                                        <span>4.7</span>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-blue-50/40 transition-colors">
-                                <td class="py-3 pl-3 text-center font-bold text-primary">#4</td>
-                                <td class="py-3 pr-3">
-                                    <div class="flex items-center gap-2.5">
-                                        <img src="https://ui-avatars.com/api/?name=Rizky+Maulana&background=0D6EFD&color=fff" class="w-7 h-7 rounded-full shrink-0">
-                                        <span class="font-semibold text-dark">Rizky Maulana</span>
-                                    </div>
-                                </td>
-                                <td class="py-3 pr-3 text-center font-bold text-dark">18</td>
-                                <td class="py-3 pr-3 text-center">
-                                    <div class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-semibold">
-                                        <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i>
-                                        <span>4.5</span>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-blue-50/40 transition-colors">
-                                <td class="py-3 pl-3 text-center font-bold text-primary">#5</td>
-                                <td class="py-3 pr-3">
-                                    <div class="flex items-center gap-2.5">
-                                        <img src="https://ui-avatars.com/api/?name=Fajar+Ramadhan&background=0D6EFD&color=fff" class="w-7 h-7 rounded-full shrink-0">
-                                        <span class="font-semibold text-dark">Fajar Ramadhan</span>
-                                    </div>
-                                </td>
-                                <td class="py-3 pr-3 text-center font-bold text-dark">16</td>
-                                <td class="py-3 pr-3 text-center">
-                                    <div class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-semibold">
-                                        <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i>
-                                        <span>4.4</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-2xl border border-border p-5 shadow-[0_2px_6px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-                <div>
-                    <h3 class="text-base font-bold text-dark">Status Ticket</h3>
-                    <p class="text-secondary text-xs">Persentase status ticket keseluruhan</p>
-                </div>
-                <div class="my-4 flex flex-col items-center justify-center">
-                    <div class="relative w-36 h-36 flex items-center justify-center my-2">
-                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                            <path class="text-gray-100" stroke-width="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path class="text-emerald-500" stroke-dasharray="79, 100" stroke-width="4" stroke-dashoffset="0" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path class="text-amber-500" stroke-dasharray="17, 100" stroke-width="4" stroke-dashoffset="-79" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path class="text-red-500" stroke-dasharray="4, 100" stroke-width="4" stroke-dashoffset="-96" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                        </svg>
-                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                            <span class="text-xs text-secondary font-medium">Total</span>
-                            <strong class="text-lg font-bold text-dark">248</strong>
-                        </div>
-                    </div>
-                </div>
-                <div class="space-y-2 text-xs pt-2 border-t border-border">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
-                            <span class="text-dark font-medium">Selesai</span>
-                        </div>
-                        <span class="text-secondary font-semibold">79% (198)</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
-                            <span class="text-dark font-medium">Pending</span>
-                        </div>
-                        <span class="text-secondary font-semibold">17% (42)</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
-                            <span class="text-dark font-medium">Overdue</span>
-                        </div>
-                        <span class="text-secondary font-semibold">4% (8)</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
 
+    <div id="chart-tooltip" class="hidden fixed z-50 pointer-events-none rounded-lg bg-dark text-white text-[11px] px-2.5 py-1.5 shadow-lg"></div>
     <div id="toast-notification" class="fixed bottom-5 right-5 z-50 hidden max-w-sm rounded-xl bg-dark text-white text-xs px-4 py-3 shadow-xl transition-all"></div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            let toastTimer;
-            function showToast(message) {
-                const toast = document.getElementById('toast-notification');
-                toast.textContent = message;
-                toast.classList.remove('hidden');
-                clearTimeout(toastTimer);
-                toastTimer = setTimeout(() => toast.classList.add('hidden'), 2500);
-            }
+    document.addEventListener('DOMContentLoaded', function () {
+        // ======================================================
+        // Data
+        // ======================================================
+        const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        const C = { blue: '#2563EB', green: '#10B981', orange: '#F59E0B', red: '#EF4444', grid: '#E5E7EB', axis: '#6B7280' };
+        const PALETTE = ['#2563EB', '#10B981', '#F59E0B', '#8B5CF6', '#06B6D4', '#94A3B8'];
 
-            document.getElementById('report-period-select').addEventListener('change', function(e) {
-                const val = e.target.options[e.target.selectedIndex].text;
-                showToast(`Periode laporan diperbarui ke: ${val}`);
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const pad2 = (n) => String(n).padStart(2, '0');
+        const ymd = (d) => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+        const parseYmd = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+        const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+        const diffDays = (a, b) => Math.round((b - a) / 86400000);
+        const fmtShort = (d) => d.getDate() + ' ' + MON[d.getMonth()];
+        const fmtLong = (d) => d.getDate() + ' ' + MON[d.getMonth()] + ' ' + d.getFullYear();
+        const pctText = (v) => v.toFixed(1).replace('.', ',') + '%';
+        const initials = (n) => String(n).trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const todayStr = ymd(today);
+
+        // Data PREVIEW (deterministik). Hanya dipakai bila controller belum mengirim $reportTickets.
+        function previewTickets() {
+            let seed = 20261021;
+            const rnd = () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+            const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+            const spread = (pairs) => shuffle(pairs.flatMap(([v, n]) => Array(n).fill(v)));
+            const cats = spread([['Internet', 86], ['Perangkat', 62], ['Jaringan', 48], ['Power', 32], ['Lainnya', 20]]);
+            const opds = spread([['Dinas Pendidikan dan Kebudayaan', 52], ['Dinas Kesehatan', 47], ['Sekretariat Daerah', 41], ['Dinas Sosial', 33],
+                ['Kantor Kecamatan Situbondo', 28], ['Dinas Pariwisata', 18], ['Inspektorat', 16], ['Dinas Perhubungan', 13]]);
+            const states = spread([['selesai', 198], ['pending', 42], ['overdue', 8]]);
+            const techs = [['TK001', 'Budi Santoso'], ['TK002', 'Ahmad Fauzi'], ['TK003', 'Dimas Priyanto'], ['TK004', 'Rizky Maulana'], ['TK005', 'Fajar Ramadhan'], ['TK006', 'Siti Nurhaliza']];
+            const techPool = spread([[0, 60], [1, 52], [2, 44], [3, 38], [4, 30], [5, 24]]);
+            const SLA = 7;
+            const out = [];
+            states.forEach((st, i) => {
+                let age;
+                if (st === 'pending') age = Math.floor(rnd() * (SLA + 1));        // masih di dalam batas SLA
+                else if (st === 'overdue') age = SLA + 1 + Math.floor(rnd() * (29 - SLA)); // sudah lewat SLA
+                else age = Math.floor(rnd() * 30);
+                const created = addDays(today, -age);
+                let resolved = null;
+                if (st === 'selesai') { resolved = addDays(created, Math.floor(rnd() * 4)); if (resolved > today) resolved = today; }
+                const [code, name] = techs[techPool[i]];
+                out.push({ created_at: ymd(created), resolved_at: resolved ? ymd(resolved) : null, due_at: ymd(addDays(created, SLA)),
+                    category: cats[i], opd: opds[i], technician_code: code, technician_name: name, rating: null });
             });
+            out.sort((a, b) => a.created_at.localeCompare(b.created_at));
+            out.forEach((t, i) => { t.id = 'TK-' + (1001 + i); });
+            return out;
+        }
 
-            document.getElementById('btn-download-report').addEventListener('click', function() {
-                const csvContent = "data:text/csv;charset=utf-8,ID Ticket,Kategori,Lokasi,Status,Teknisi\nTK-1001,Internet,Situbondo,Selesai,Budi Santoso\nTK-1002,Perangkat,Besuki,Pending,Ahmad Fauzi";
-                const encodedUri = encodeURI(csvContent);
-                const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", "laporan-operasional-nexops.csv");
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                showToast("Berhasil mengunduh laporan-operasional-nexops.csv");
-            });
+        const serverData = @json($reportTickets ?? null);
+        const isPreview = !Array.isArray(serverData);
+        const TICKETS = isPreview ? previewTickets() : serverData;
+        if (isPreview) { $('preview-banner').classList.remove('hidden'); $('preview-banner').classList.add('flex'); }
 
-            if (window.lucide) {
-                window.lucide.createIcons();
+        // ======================================================
+        // Periode
+        // ======================================================
+        function getPeriod() {
+            const v = $('report-period-select').value;
+            let start, end = today;
+            if (v === '7') start = addDays(today, -6);
+            else if (v === '30') start = addDays(today, -29);
+            else if (v === 'month') start = new Date(today.getFullYear(), today.getMonth(), 1);
+            else if (v === 'prev_month') { start = new Date(today.getFullYear(), today.getMonth() - 1, 1); end = new Date(today.getFullYear(), today.getMonth(), 0); }
+            else {
+                start = $('range-from').value ? parseYmd($('range-from').value) : addDays(today, -29);
+                end = $('range-to').value ? parseYmd($('range-to').value) : today;
             }
+            return { start, end };
+        }
+        const inRange = (s, a, b) => !!s && s >= ymd(a) && s <= ymd(b);
+
+        // Klasifikasi saling eksklusif: selesai / pending (belum lewat SLA) / overdue (belum selesai dan lewat SLA)
+        const classify = (t) => t.resolved_at ? 'selesai' : ((t.due_at && t.due_at < todayStr) ? 'overdue' : 'pending');
+        function summarize(list) {
+            const s = { total: list.length, selesai: 0, pending: 0, overdue: 0 };
+            list.forEach((t) => { s[classify(t)]++; });
+            return s;
+        }
+
+        // ======================================================
+        // Util tampilan
+        // ======================================================
+        let toastTimer;
+        function showToast(m) { const t = $('toast-notification'); t.textContent = m; t.classList.remove('hidden'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add('hidden'), 2800); }
+
+        const tip = $('chart-tooltip');
+        function showTip(e, html) {
+            tip.innerHTML = html; tip.classList.remove('hidden');
+            const pad = 12, w = tip.offsetWidth, h = tip.offsetHeight;
+            let x = e.clientX + pad, y = e.clientY + pad;
+            if (x + w > window.innerWidth - 8) x = e.clientX - w - pad;
+            if (y + h > window.innerHeight - 8) y = e.clientY - h - pad;
+            tip.style.left = Math.max(8, x) + 'px'; tip.style.top = Math.max(8, y) + 'px';
+        }
+        const hideTip = () => tip.classList.add('hidden');
+        const emptyState = (msg) => '<div class="h-full min-h-[180px] flex flex-col items-center justify-center text-center text-gray-400 text-xs"><i data-lucide="bar-chart-2" class="w-8 h-8 mb-2 text-gray-300"></i>' + esc(msg || 'Tidak ada data pada periode ini.') + '</div>';
+        const refreshIcons = () => { if (window.lucide) window.lucide.createIcons(); };
+
+        function niceTicks(max) {
+            if (max <= 0) return { top: 4, step: 1 };
+            const raw = max / 4, mag = Math.pow(10, Math.floor(Math.log10(raw))), n = raw / mag;
+            const step = (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * mag;
+            return { top: Math.ceil(max / step) * step, step };
+        }
+
+        // Pasang tooltip pada elemen yang membawa data-tip
+        function bindTips(root) {
+            root.querySelectorAll('[data-tip]').forEach((el) => {
+                el.addEventListener('mousemove', (e) => showTip(e, el.getAttribute('data-tip')));
+                el.addEventListener('mouseleave', hideTip);
+            });
+        }
+
+        // ======================================================
+        // Kartu statistik
+        // ======================================================
+        function renderCards(cur, prev) {
+            const defs = [
+                { key: 'total', label: 'Total Tiket', sub: 'Seluruh tiket pada periode', icon: 'ticket', color: 'bg-blue-50 text-blue-600', good: null },
+                { key: 'selesai', label: 'Tiket Selesai', sub: 'Sudah selesai ditangani', icon: 'check-circle-2', color: 'bg-emerald-50 text-emerald-600', good: true },
+                { key: 'pending', label: 'Tiket Pending', sub: 'Belum selesai, masih dalam batas SLA', icon: 'clock', color: 'bg-amber-50 text-amber-600', good: false },
+                { key: 'overdue', label: 'Tiket Overdue', sub: 'Belum selesai dan melewati SLA', icon: 'alert-triangle', color: 'bg-red-50 text-red-600', good: false },
+            ];
+            $('stat-cards').innerHTML = defs.map((d) => {
+                const p = prev[d.key], v = cur[d.key];
+                let delta = '<span class="text-gray-400">Belum ada data pembanding</span>';
+                if (p > 0) {
+                    const ch = ((v - p) / p) * 100;
+                    const up = ch > 0, same = ch === 0;
+                    const tone = same || d.good === null ? 'text-secondary' : ((up === d.good) ? 'text-emerald-600' : 'text-red-600');
+                    delta = '<span class="font-semibold ' + tone + '">' + (same ? '' : (up ? '▲ ' : '▼ ')) + pctText(Math.abs(ch)) + '</span> <span class="text-gray-400">dari periode sebelumnya</span>';
+                }
+                return '<div class="bg-white rounded-xl border border-border p-4.5 flex items-center gap-3.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">'
+                    + '<div class="w-11 h-11 rounded-xl ' + d.color + ' flex items-center justify-center shrink-0"><i data-lucide="' + d.icon + '" class="w-5 h-5"></i></div>'
+                    + '<div class="min-w-0"><p class="text-xs text-secondary font-medium">' + d.label + '</p>'
+                    + '<p class="text-2xl font-bold text-dark mt-0.5">' + v.toLocaleString('id-ID') + '</p>'
+                    + '<p class="text-[11px] mt-0.5">' + delta + '</p></div></div>';
+            }).join('');
+        }
+
+        // ======================================================
+        // Line chart: Tren Tiket
+        // ======================================================
+        function buildBuckets(start, end) {
+            const days = diffDays(start, end) + 1, out = [];
+            if (days <= 62) {
+                for (let i = 0; i < days; i++) { const d = addDays(start, i); out.push({ from: ymd(d), to: ymd(d), label: fmtShort(d), title: fmtLong(d) }); }
+            } else if (days <= 200) {
+                for (let s = new Date(start); s <= end; s = addDays(s, 7)) {
+                    const e = addDays(s, 6) > end ? end : addDays(s, 6);
+                    out.push({ from: ymd(s), to: ymd(e), label: fmtShort(s), title: fmtShort(s) + ' – ' + fmtLong(e) });
+                }
+            } else {
+                for (let s = new Date(start.getFullYear(), start.getMonth(), 1); s <= end; s = new Date(s.getFullYear(), s.getMonth() + 1, 1)) {
+                    const from = s < start ? start : s, last = new Date(s.getFullYear(), s.getMonth() + 1, 0), to = last > end ? end : last;
+                    out.push({ from: ymd(from), to: ymd(to), label: MON[s.getMonth()] + ' ' + String(s.getFullYear()).slice(2), title: MON[s.getMonth()] + ' ' + s.getFullYear() });
+                }
+            }
+            return out;
+        }
+
+        function renderTrend(start, end) {
+            const box = $('chart-trend');
+            const inPeriodAny = TICKETS.some((t) => inRange(t.created_at, start, end) || inRange(t.resolved_at, start, end));
+            if (!inPeriodAny) { box.innerHTML = emptyState(); refreshIcons(); return; }
+
+            const bk = buildBuckets(start, end).map((b) => ({
+                ...b,
+                masuk: TICKETS.filter((t) => t.created_at >= b.from && t.created_at <= b.to).length,
+                selesai: TICKETS.filter((t) => t.resolved_at && t.resolved_at >= b.from && t.resolved_at <= b.to).length,
+            }));
+            const W = 640, H = 250, L = 34, R = 12, T = 12, B = 30, pw = W - L - R, ph = H - T - B;
+            const max = Math.max(...bk.map((b) => Math.max(b.masuk, b.selesai)));
+            const { top, step } = niceTicks(max);
+            const n = bk.length;
+            const X = (i) => n === 1 ? L + pw / 2 : L + (i * pw) / (n - 1);
+            const Y = (v) => T + ph - (v / top) * ph;
+
+            let g = '';
+            for (let v = 0; v <= top; v += step) {
+                g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="' + C.grid + '" stroke-width="1"/>'
+                   + '<text x="' + (L - 6) + '" y="' + (Y(v) + 3) + '" text-anchor="end" font-size="10" fill="' + C.axis + '">' + v + '</text>';
+            }
+            const every = Math.ceil(n / 8);
+            bk.forEach((b, i) => { if (i % every === 0 || i === n - 1) g += '<text x="' + X(i) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="10" fill="' + C.axis + '">' + esc(b.label) + '</text>'; });
+
+            const path = (k) => bk.map((b, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(b[k]).toFixed(1)).join(' ');
+            const area = (k) => path(k) + ' L' + X(n - 1).toFixed(1) + ' ' + Y(0) + ' L' + X(0).toFixed(1) + ' ' + Y(0) + ' Z';
+            const r = n > 40 ? 2 : 3;
+            const dots = (k, col) => bk.map((b, i) => '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(b[k]).toFixed(1) + '" r="' + r + '" fill="#fff" stroke="' + col + '" stroke-width="1.5"/>').join('');
+            const hw = n === 1 ? pw : pw / (n - 1);
+            const hits = bk.map((b, i) => '<rect class="hit" x="' + (X(i) - hw / 2).toFixed(1) + '" y="' + T + '" width="' + hw.toFixed(1) + '" height="' + ph + '" fill="transparent" data-i="' + i
+                + '" data-tip="<b>' + esc(b.title) + '</b><br>Tiket Masuk: ' + b.masuk + '<br>Tiket Selesai: ' + b.selesai + '"/>').join('');
+
+            box.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="w-full h-auto" role="img" aria-label="Grafik tren tiket masuk dan selesai">'
+                + '<defs><linearGradient id="gBlue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + C.blue + '" stop-opacity=".12"/><stop offset="1" stop-color="' + C.blue + '" stop-opacity="0"/></linearGradient>'
+                + '<linearGradient id="gGreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + C.green + '" stop-opacity=".12"/><stop offset="1" stop-color="' + C.green + '" stop-opacity="0"/></linearGradient></defs>'
+                + g
+                + '<path d="' + area('masuk') + '" fill="url(#gBlue)"/><path d="' + area('selesai') + '" fill="url(#gGreen)"/>'
+                + '<path d="' + path('masuk') + '" fill="none" stroke="' + C.blue + '" stroke-width="2" stroke-linejoin="round"/>'
+                + '<path d="' + path('selesai') + '" fill="none" stroke="' + C.green + '" stroke-width="2" stroke-linejoin="round"/>'
+                + dots('masuk', C.blue) + dots('selesai', C.green) + hits + '</svg>';
+            bindTips(box);
+        }
+
+        // ======================================================
+        // Donut chart (dipakai Lokasi OPD dan Status Tiket)
+        // ======================================================
+        function renderDonut(box, segs, centerLabel) {
+            const total = segs.reduce((a, s) => a + s.value, 0);
+            if (!total) { box.innerHTML = emptyState(); refreshIcons(); return; }
+            let cum = 0;
+            const rings = segs.filter((s) => s.value > 0).map((s) => {
+                const pct = (s.value / total) * 100;
+                const el = '<circle cx="21" cy="21" r="15.9155" fill="none" stroke="' + s.color + '" stroke-width="5" stroke-dasharray="' + pct.toFixed(3) + ' ' + (100 - pct).toFixed(3)
+                    + '" stroke-dashoffset="' + (-cum).toFixed(3) + '" transform="rotate(-90 21 21)" class="cursor-pointer" data-tip="<b>' + esc(s.label) + '</b><br>' + s.value.toLocaleString('id-ID') + ' tiket (' + pctText(pct) + ')"/>';
+                cum += pct; return el;
+            }).join('');
+            const legend = segs.map((s) => '<li class="flex items-center gap-2 py-1.5"><span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:' + s.color + '"></span>'
+                + '<span class="flex-1 min-w-0 truncate text-dark" title="' + esc(s.label) + '">' + esc(s.label) + '</span>'
+                + '<span class="text-secondary w-12 text-right">' + pctText((s.value / total) * 100) + '</span>'
+                + '<span class="font-semibold text-dark w-9 text-right">' + s.value.toLocaleString('id-ID') + '</span></li>').join('');
+            box.innerHTML = '<div class="flex flex-col sm:flex-row items-center gap-5">'
+                + '<div class="relative w-40 h-40 shrink-0"><svg viewBox="0 0 42 42" class="w-full h-full" role="img" aria-label="' + esc(centerLabel) + '"><circle cx="21" cy="21" r="15.9155" fill="none" stroke="#F1F5F9" stroke-width="5"/>' + rings + '</svg>'
+                + '<div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"><span class="text-2xl font-bold text-dark leading-none">' + total.toLocaleString('id-ID') + '</span><span class="text-[11px] text-secondary mt-1">' + esc(centerLabel) + '</span></div></div>'
+                + '<ul class="flex-1 min-w-0 w-full text-xs divide-y divide-gray-100">' + legend + '</ul></div>';
+            bindTips(box);
+        }
+
+        function topGroups(list, keyFn, max) {
+            const m = new Map();
+            list.forEach((t) => { const k = keyFn(t) || 'Tidak diketahui'; m.set(k, (m.get(k) || 0) + 1); });
+            let arr = [...m].sort((a, b) => b[1] - a[1]);
+            if (arr.length > max) {
+                const rest = arr.slice(max - 1);
+                const restSum = rest.reduce((a, r) => a + r[1], 0);
+                arr = arr.slice(0, max - 1);
+                const ex = arr.find((r) => r[0] === 'Lainnya');
+                if (ex) ex[1] += restSum; else arr.push(['Lainnya', restSum]);
+            }
+            return arr;
+        }
+
+        function renderOpd(list) {
+            const g = topGroups(list, (t) => t.opd, 6);
+            renderDonut($('chart-opd'), g.map(([label, value], i) => ({ label, value, color: PALETTE[i % PALETTE.length] })), 'Total Tiket');
+        }
+
+        function renderStatus(cur) {
+            renderDonut($('chart-status'), [
+                { label: 'Selesai', value: cur.selesai, color: C.green },
+                { label: 'Pending', value: cur.pending, color: C.orange },
+                { label: 'Overdue', value: cur.overdue, color: C.red },
+            ], 'Total Tiket');
+        }
+
+        // ======================================================
+        // Bar chart: Tiket per Kategori
+        // ======================================================
+        function renderCategory(list) {
+            const box = $('chart-category');
+            if (!list.length) { box.innerHTML = emptyState(); refreshIcons(); return; }
+            const g = topGroups(list, (t) => t.category, 5);
+            const total = list.length;
+            const W = 420, H = 250, L = 30, R = 8, T = 22, B = 34, pw = W - L - R, ph = H - T - B;
+            const { top, step } = niceTicks(Math.max(...g.map((r) => r[1])));
+            const Y = (v) => T + ph - (v / top) * ph;
+            let s = '';
+            for (let v = 0; v <= top; v += step) {
+                s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="' + C.grid + '"/>'
+                   + '<text x="' + (L - 5) + '" y="' + (Y(v) + 3) + '" text-anchor="end" font-size="10" fill="' + C.axis + '">' + v + '</text>';
+            }
+            const slot = pw / g.length, bw = Math.min(40, slot * 0.55);
+            g.forEach(([label, v], i) => {
+                const x = L + slot * i + (slot - bw) / 2, y = Y(v), h = T + ph - y, r = Math.min(6, bw / 2, h);
+                const name = label.length > 11 ? label.slice(0, 10) + '…' : label;
+                const tipHtml = '<b>' + esc(label) + '</b><br>' + v.toLocaleString('id-ID') + ' tiket (' + pctText((v / total) * 100) + ')';
+                if (h > 0) s += '<path d="M' + x + ',' + (T + ph) + ' V' + (y + r) + ' Q' + x + ',' + y + ' ' + (x + r) + ',' + y + ' H' + (x + bw - r) + ' Q' + (x + bw) + ',' + y + ' ' + (x + bw) + ',' + (y + r) + ' V' + (T + ph) + ' Z" fill="' + C.blue + '" class="cursor-pointer" data-tip="' + tipHtml + '"/>';
+                s += '<text x="' + (x + bw / 2) + '" y="' + (y - 6) + '" text-anchor="middle" font-size="11" font-weight="600" fill="#0F172A">' + v + '</text>'
+                   + '<text x="' + (x + bw / 2) + '" y="' + (H - 12) + '" text-anchor="middle" font-size="10" fill="' + C.axis + '">' + esc(name) + '</text>';
+            });
+            box.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="w-full h-auto" role="img" aria-label="Grafik jumlah tiket per kategori">' + s + '</svg>';
+            bindTips(box);
+        }
+
+        // ======================================================
+        // Tabel: Performa Teknisi
+        // ======================================================
+        function renderTechs(start, end) {
+            const box = $('tech-ranking');
+            const m = new Map();
+            TICKETS.filter((t) => inRange(t.resolved_at, start, end) && t.technician_code).forEach((t) => {
+                const r = m.get(t.technician_code) || { code: t.technician_code, name: t.technician_name || t.technician_code, count: 0, rs: 0, rn: 0 };
+                r.count++;
+                if (t.rating != null) { r.rs += Number(t.rating); r.rn++; }
+                m.set(t.technician_code, r);
+            });
+            const rows = [...m.values()].sort((a, b) => b.count - a.count).slice(0, 5);
+            if (!rows.length) { box.innerHTML = emptyState('Belum ada tiket selesai pada periode ini.'); refreshIcons(); return; }
+            const colors = ['bg-blue-100 text-blue-700', 'bg-emerald-100 text-emerald-700', 'bg-amber-100 text-amber-700', 'bg-rose-100 text-rose-700', 'bg-violet-100 text-violet-700'];
+            box.innerHTML = '<table class="w-full text-xs"><thead><tr class="text-secondary text-[11px] border-b border-border"><th class="py-2 text-left font-medium w-8">No.</th><th class="py-2 text-left font-medium">Nama Teknisi</th><th class="py-2 text-right font-medium">Jumlah Tiket</th><th class="py-2 text-right font-medium w-16">Rating</th></tr></thead><tbody class="divide-y divide-gray-100">'
+                + rows.map((r, i) => {
+                    const rating = r.rn ? '<span class="inline-flex items-center gap-1 font-medium text-dark"><i data-lucide="star" class="w-3.5 h-3.5 text-amber-400 fill-amber-400"></i>' + (r.rs / r.rn).toFixed(1) + '</span>' : '<span class="text-gray-400">–</span>';
+                    return '<tr><td class="py-2.5 text-secondary">' + (i + 1) + '</td>'
+                        + '<td class="py-2.5"><div class="flex items-center gap-2.5 min-w-0"><span class="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0 ' + colors[i % colors.length] + '">' + esc(initials(r.name)) + '</span>'
+                        + '<div class="min-w-0"><p class="font-medium text-dark truncate">' + esc(r.name) + '</p><p class="text-[11px] text-secondary">' + esc(r.code) + '</p></div></div></td>'
+                        + '<td class="py-2.5 text-right font-semibold text-dark">' + r.count + '</td><td class="py-2.5 text-right">' + rating + '</td></tr>';
+                }).join('') + '</tbody></table>';
+            refreshIcons();
+        }
+
+        // ======================================================
+        // Render semua (satu sumber data, satu periode)
+        // ======================================================
+        let current = { start: today, end: today, list: [] };
+        function renderAll() {
+            const { start, end } = getPeriod();
+            if (start > end) { showToast('Tanggal mulai tidak boleh setelah tanggal akhir.'); return; }
+            const len = diffDays(start, end) + 1;
+            const pEnd = addDays(start, -1), pStart = addDays(pEnd, -(len - 1));
+            const list = TICKETS.filter((t) => inRange(t.created_at, start, end));
+            const prevList = TICKETS.filter((t) => inRange(t.created_at, pStart, pEnd));
+            const cur = summarize(list);
+            current = { start, end, list };
+
+            renderCards(cur, summarize(prevList));
+            renderTrend(start, end);
+            renderOpd(list);
+            renderCategory(list);
+            renderTechs(start, end);
+            renderStatus(cur);
+            refreshIcons();
+        }
+
+        // ======================================================
+        // Event
+        // ======================================================
+        $('report-period-select').addEventListener('change', (e) => {
+            const custom = e.target.value === 'custom';
+            $('custom-range').classList.toggle('hidden', !custom);
+            $('custom-range').classList.toggle('flex', custom);
+            if (custom) {
+                $('range-to').value = ymd(today); $('range-from').value = ymd(addDays(today, -29));
+            }
+            renderAll();
         });
+        ['range-from', 'range-to'].forEach((id) => { $(id).max = ymd(today); $(id).addEventListener('change', renderAll); });
+
+        // Download: CSV berisi baris tiket yang sama dengan yang dipakai kartu dan grafik pada periode terpilih.
+        $('btn-download-report').addEventListener('click', () => {
+            const rows = current.list;
+            if (!rows.length) { showToast('Tidak ada data pada periode ini untuk diunduh.'); return; }
+            const cell = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+            const head = ['No. Tiket', 'Tanggal Dibuat', 'Tanggal Selesai', 'Batas Waktu (SLA)', 'Kategori', 'OPD', 'Kode Teknisi', 'Teknisi', 'Status'];
+            const body = rows.map((t) => [t.id, t.created_at, t.resolved_at || '', t.due_at || '', t.category, t.opd, t.technician_code || '', t.technician_name || '',
+                ({ selesai: 'Selesai', pending: 'Pending', overdue: 'Overdue' })[classify(t)]].map(cell).join(','));
+            const csv = '\uFEFF' + [head.map(cell).join(','), ...body].join('\r\n');
+            const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+            const a = document.createElement('a');
+            a.href = url; a.download = (isPreview ? 'preview-' : '') + 'laporan-tiket-' + ymd(current.start) + '_' + ymd(current.end) + '.csv';
+            document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+            showToast(isPreview ? 'CSV berisi data preview, bukan data produksi.' : 'Laporan diunduh (' + rows.length + ' tiket).');
+        });
+
+        renderAll();
+    });
     </script>
 </x-app-layout>

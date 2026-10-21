@@ -8,12 +8,12 @@ use App\Models\Customer;
 use App\Models\Technician;
 use App\Models\Ticket;
 use App\Models\TicketAssignment;
-use App\Models\TicketMaterial;
-use App\Models\TicketAttachment;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class TicketController extends Controller
 {
@@ -23,7 +23,7 @@ class TicketController extends Controller
     public function index()
     {
         try {
-            \Log::info('TicketController@index started');
+            Log::info('TicketController@index started');
 
             $tickets = Ticket::with(['customer', 'asset', 'creator', 'materials', 'attachments', 'technicians'])
                 ->latest()
@@ -65,9 +65,12 @@ class TicketController extends Controller
 
                 return [
                     'db_id'       => $tk->id,
+                    'customer_id' => $tk->customer_id,
                     'id'          => '#' . $tk->ticket_number,
                     'customer'    => $tk->customer_name ?? ($tk->customer?->name ?? '-'),
                     'location'    => $tk->location ?? ($tk->customer?->area ?? '-'),
+                    'reporter_name'    => $tk->reporter_name ?? $tk->customer?->reporter_name ?? '-',
+                    'reporter_contact' => $tk->reporter_contact ?? $tk->customer?->reporter_contact ?? '-',
                     'title'       => $tk->title,
                     'subtitle'    => $tk->subtitle ?? $tk->title,
                     'priority'    => $tk->priority,
@@ -103,20 +106,21 @@ class TicketController extends Controller
 
             if ($tickets->isNotEmpty()) {
                 $first = $tickets->first();
-                \Log::info('First ticket type: '.get_class($first).', id: '.$first->id);
+                Log::info('First ticket type: '.get_class($first).', id: '.$first->id);
             } else {
-                \Log::info('Raw tickets collection is empty');
+                Log::info('Raw tickets collection is empty');
             }
-            \Log::info('Raw tickets count: '.count($rawTickets));
+            Log::info('Raw tickets count: '.count($rawTickets));
 
             return view('tickets', [
                 'rawTickets'  => $rawTickets,
                 'summary'     => $summary,
                 'technicians' => $techList,
+                'opds'        => Customer::where('type', 'opd')->orderBy('name')->get(),
             ]);
         } catch (\Exception $e) {
-            \Log::error('TicketController@index exception: '.$e->getMessage());
-            \Log::error($e->getTraceAsString());
+            Log::error('TicketController@index exception: '.$e->getMessage());
+            Log::error($e->getTraceAsString());
             // Optionally rethrow or return an error view
             throw $e;
         }
@@ -130,6 +134,7 @@ class TicketController extends Controller
 
         return view('tickets.create', [
             'technicians' => $technicians,
+            'opds' => Customer::where('type', 'opd')->orderBy('name')->get(),
         ]);
     }
 
@@ -139,8 +144,11 @@ class TicketController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'customer_name'      => 'required|string|max:255',
+            'customer_id'        => ['nullable', 'required_without:customer_name', Rule::exists('customers', 'id')->where('type', 'opd')->whereNull('deleted_at')],
+            'customer_name'      => 'nullable|required_without:customer_id|string|max:255',
             'location'           => 'required|string|max:100',
+            'reporter_name'      => 'required|string|max:150',
+            'reporter_contact'   => 'nullable|string|max:50',
             'priority'           => 'required|in:Low,Normal,High,Critical',
             'title'              => 'required|string|max:255',
             'description'        => 'nullable|string',
@@ -167,7 +175,9 @@ class TicketController extends Controller
         $slaDueAt = Carbon::now()->addHours($slaHours);
 
         // 3. Cari Relasi Customer jika cocok
-        $customer = Customer::where('name', 'like', '%' . $validated['customer_name'] . '%')->first();
+        $customer = !empty($validated['customer_id'])
+            ? Customer::findOrFail($validated['customer_id'])
+            : Customer::where('name', $validated['customer_name'])->first();
 
         // 4. Cari Relasi Aset jika cocok
         $asset = null;
@@ -184,7 +194,7 @@ class TicketController extends Controller
         $ticket = Ticket::create([
             'ticket_number'      => $ticketNumber,
             'customer_id'        => $customer?->id,
-            'customer_name'      => $validated['customer_name'],
+            'customer_name'      => $customer?->name ?? $validated['customer_name'],
             'asset_id'           => $asset?->id,
             'created_by'         => Auth::id() ?? 1,
             'assigned_tech_name' => $assignedTechName !== '-' ? $assignedTechName : null,
@@ -192,6 +202,8 @@ class TicketController extends Controller
             'subtitle'           => $validated['title'],
             'description'        => $validated['description'] ?? 'Tiket dibuat melalui sistem.',
             'location'           => $validated['location'],
+            'reporter_name'      => $validated['reporter_name'],
+            'reporter_contact'   => $validated['reporter_contact'] ?? null,
             'priority'           => $validated['priority'],
             'status'             => $status,
             'sla_due_at'         => $slaDueAt,
@@ -360,6 +372,8 @@ class TicketController extends Controller
     {
         $ticket = Ticket::with(['customer', 'asset', 'technicians'])->where('id', $id)->orWhere('ticket_number', $id)->firstOrFail();
         $technicians = Technician::pluck('name')->all();
+        $opds = Customer::where('type', 'opd')->orderBy('name')->get();
+        $selectedOpdId = $ticket->customer_id ?? $opds->firstWhere('name', $ticket->customer_name)?->id;
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -368,6 +382,8 @@ class TicketController extends Controller
                 'data'    => [
                     'ticket' => $ticket,
                     'technicians' => $technicians,
+                    'opds' => $opds,
+                    'selectedOpdId' => $selectedOpdId,
                 ],
             ]);
         }
@@ -375,6 +391,8 @@ class TicketController extends Controller
         return view('tickets.edit', [
             'ticket' => $ticket,
             'technicians' => $technicians,
+            'opds' => $opds,
+            'selectedOpdId' => $selectedOpdId,
         ]);
     }
 
@@ -384,8 +402,11 @@ class TicketController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'customer_name'      => 'required|string|max:255',
+            'customer_id'        => ['nullable', 'required_without:customer_name', Rule::exists('customers', 'id')->where('type', 'opd')->whereNull('deleted_at')],
+            'customer_name'      => 'nullable|required_without:customer_id|string|max:255',
             'location'           => 'required|string|max:100',
+            'reporter_name'      => 'required|string|max:150',
+            'reporter_contact'   => 'nullable|string|max:50',
             'priority'           => 'required|in:Low,Normal,High,Critical',
             'title'              => 'required|string|max:255',
             'description'        => 'nullable|string',
@@ -411,7 +432,9 @@ class TicketController extends Controller
         }
 
         // 3. Cari Relasi Customer jika cocok
-        $customer = Customer::where('name', 'like', '%' . $validated['customer_name'] . '%')->first();
+        $customer = !empty($validated['customer_id'])
+            ? Customer::findOrFail($validated['customer_id'])
+            : Customer::where('name', $validated['customer_name'])->first();
 
         // 4. Cari Relasi Aset jika cocok
         $asset = null;
@@ -426,12 +449,14 @@ class TicketController extends Controller
 
         $ticket->update([
             'customer_id'        => $customer?->id,
-            'customer_name'      => $validated['customer_name'],
+            'customer_name'      => $customer?->name ?? $validated['customer_name'],
             'asset_id'           => $asset?->id,
             'title'              => $validated['title'],
             'subtitle'           => $validated['title'],
             'description'        => $validated['description'] ?? 'Tiket diperbarui melalui sistem.',
             'location'           => $validated['location'],
+            'reporter_name'      => $validated['reporter_name'],
+            'reporter_contact'   => $validated['reporter_contact'] ?? null,
             'priority'           => $validated['priority'],
             'status'             => $status,
             'sla_due_at'         => $slaDueAt,
