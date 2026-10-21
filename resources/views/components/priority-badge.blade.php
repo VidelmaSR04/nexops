@@ -9,8 +9,15 @@
     ];
 
     $classes = $priorityClasses[$priority] ?? 'bg-gray-100 text-gray-600 border border-gray-200';
+
+    $labels = [
+        'Low' => 'Rendah',
+        'Normal' => 'Normal',
+        'High' => 'Tinggi',
+        'Critical' => 'Kritis',
+    ];
 @endphp
 
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap {{ $classes }}">
-    {{ $priority }}
+    {{ $labels[$priority] ?? $priority }}
 </span>

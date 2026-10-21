@@ -16,9 +16,27 @@
             @method('PUT')
 
             <div>
-                <label for="customer_name" class="mb-1 block text-sm font-medium text-dark">Customer</label>
-                <input id="customer_name" type="text" name="customer_name" value="{{ old('customer_name', $ticket->customer_name) }}" required maxlength="255" class="w-full rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
-                @error('customer_name') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                <label for="customer_id" class="mb-1 block text-sm font-medium text-dark">OPD Pelapor</label>
+                <select id="customer_id" name="customer_id" required class="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm">
+                    <option value="">Pilih OPD</option>
+                    @foreach ($opds as $opd)
+                        <option value="{{ $opd->id }}" data-reporter="{{ $opd->reporter_name }}" data-contact="{{ $opd->reporter_contact }}" @selected(old('customer_id', $selectedOpdId) == $opd->id)>{{ $opd->name }}</option>
+                    @endforeach
+                </select>
+                @error('customer_id') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label for="reporter_name" class="mb-1 block text-sm font-medium text-dark">Nama Pelapor</label>
+                    <input id="reporter_name" type="text" name="reporter_name" value="{{ old('reporter_name', $ticket->reporter_name ?? $ticket->customer?->reporter_name) }}" required maxlength="150" class="w-full rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    @error('reporter_name') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label for="reporter_contact" class="mb-1 block text-sm font-medium text-dark">Kontak Pelapor</label>
+                    <input id="reporter_contact" type="text" name="reporter_contact" value="{{ old('reporter_contact', $ticket->reporter_contact ?? $ticket->customer?->reporter_contact) }}" maxlength="50" class="w-full rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    @error('reporter_contact') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
@@ -74,4 +92,11 @@
             </div>
         </form>
     </div>
+    <script>
+        document.getElementById('customer_id').addEventListener('change', function () {
+            const option = this.selectedOptions[0];
+            document.getElementById('reporter_name').value = option?.dataset.reporter || '';
+            document.getElementById('reporter_contact').value = option?.dataset.contact || '';
+        });
+    </script>
 </x-app-layout>

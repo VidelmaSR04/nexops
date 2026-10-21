@@ -1,17 +1,23 @@
 <x-app-layout>
     <div class="space-y-6">
 
+        @if (session('success'))
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">
+                {{ session('success') }}
+            </div>
+        @endif
+
         {{-- 1. HEADER CUSTOMERS --}}
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-dark tracking-tight">Customers</h1>
-                <p class="text-secondary text-sm mt-0.5">Kelola data pelanggan dan informasi layanan</p>
+                <h1 class="text-2xl font-bold text-dark tracking-tight">Data OPD</h1>
+                <p class="text-secondary text-sm mt-0.5">Kelola OPD serta informasi pelapor dan kontaknya</p>
             </div>
             <div>
                 <button type="button" id="btn-open-add-modal"
                         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-blue-700 shadow-sm transition-colors cursor-pointer">
                     <i data-lucide="user-plus" class="w-4 h-4"></i>
-                    <span>Tambah Customer</span>
+                    <span>Tambah OPD</span>
                 </button>
             </div>
         </div>
@@ -24,7 +30,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-secondary font-medium">Total Customer</p>
-                    <p class="text-2xl font-bold text-dark mt-0.5">1,248</p>
+                    <p class="text-2xl font-bold text-dark mt-0.5">{{ number_format($stats['total']) }}</p>
                 </div>
             </div>
 
@@ -34,7 +40,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-secondary font-medium">Pelanggan Aktif</p>
-                    <p class="text-2xl font-bold text-dark mt-0.5">1,102</p>
+                    <p class="text-2xl font-bold text-dark mt-0.5">{{ number_format($stats['active']) }}</p>
                 </div>
             </div>
 
@@ -44,7 +50,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-secondary font-medium">Pelanggan Baru</p>
-                    <p class="text-2xl font-bold text-dark mt-0.5">86</p>
+                    <p class="text-2xl font-bold text-dark mt-0.5">{{ number_format($stats['new']) }}</p>
                 </div>
             </div>
 
@@ -54,7 +60,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-secondary font-medium">Pelanggan Nonaktif</p>
-                    <p class="text-2xl font-bold text-dark mt-0.5">60</p>
+                    <p class="text-2xl font-bold text-dark mt-0.5">{{ number_format($stats['inactive']) }}</p>
                 </div>
             </div>
         </div>
@@ -104,7 +110,9 @@
                                 <th class="pl-4 py-3 w-8">
                                     <input id="selectAll" type="checkbox" class="rounded border-gray-300 text-primary focus:ring-primary/20">
                                 </th>
-                                <th class="py-3 pr-3">Customer</th>
+                                <th class="py-3 pr-3">OPD</th>
+                                <th class="py-3 pr-3">Nama Pelapor</th>
+                                <th class="py-3 pr-3">Kontak Pelapor</th>
                                 <th class="py-3 pr-3">NIK</th>
                                 <th class="py-3 pr-3">No. Pelanggan</th>
                                 <th class="py-3 pr-3">Area</th>
@@ -121,7 +129,7 @@
 
                 {{-- Pagination --}}
                 <div class="p-3.5 border-t border-border flex flex-wrap items-center justify-between gap-3 text-xs">
-                    <p class="text-secondary">Menampilkan <span id="totalVisibleCount">10</span> dari 1,248 total data</p>
+                    <p class="text-secondary">Menampilkan <span id="totalVisibleCount">0</span> dari <span id="totalCustomerCount">{{ $stats['total'] }}</span> total data</p>
                     <div class="flex items-center gap-1">
                         <button type="button" class="w-7 h-7 rounded-lg border border-border flex items-center justify-center text-secondary hover:bg-gray-50">
                             <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
@@ -141,7 +149,7 @@
             <aside class="w-full xl:w-[480px] 2xl:w-[520px] bg-white rounded-2xl border border-border shadow-[0_2px_6px_rgba(0,0,0,0.02)] p-5 shrink-0 xl:sticky xl:top-20">
 
                 <div class="flex items-center justify-between pb-4 border-b border-border mb-4">
-                    <h3 class="text-base font-bold text-dark">Panel Detail Pelanggan</h3>
+                    <h3 class="text-base font-bold text-dark">Detail OPD</h3>
                     <button type="button" onclick="resetDetailPanel()" class="p-1 rounded-lg text-gray-400 hover:text-dark hover:bg-gray-100">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
@@ -220,6 +228,14 @@
                         <div class="flex justify-between py-1 border-b border-gray-100">
                             <span class="text-secondary">Nomor Telepon</span>
                             <span id="valPhone" class="font-medium text-dark">0812 3456 7890</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-gray-100">
+                            <span class="text-secondary">Nama Pelapor</span>
+                            <span id="valReporter" class="font-medium text-dark">-</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-gray-100">
+                            <span class="text-secondary">Kontak Pelapor</span>
+                            <span id="valReporterContact" class="font-medium text-dark">-</span>
                         </div>
                         <div class="flex justify-between py-1 border-b border-gray-100">
                             <span class="text-secondary">Email</span>
@@ -331,49 +347,66 @@
     <div id="modal-add-customer" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs hidden">
         <div class="bg-white rounded-2xl border border-border shadow-2xl max-w-lg w-full overflow-hidden">
             <div class="p-4 border-b border-border flex items-center justify-between">
-                <h3 class="text-base font-bold text-dark">Tambah Customer Baru</h3>
+                <h3 id="customer-form-title" class="text-base font-bold text-dark">Tambah OPD</h3>
                 <button type="button" onclick="closeAddModal()" class="p-1 rounded-lg text-gray-400 hover:text-dark hover:bg-gray-100">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <form onsubmit="handleSimulatedSubmit(event, 'add')" class="p-5 space-y-3.5 text-xs">
+            <form id="customer-form" method="POST" action="{{ route('customers.store') }}" class="p-5 space-y-3.5 text-xs">
+                @csrf
+                <input type="hidden" name="_method" id="customer-form-method" value="PUT" disabled>
+                <input type="hidden" name="_customer_id" id="customer-form-id" value="{{ old('_customer_id') }}">
+                <input type="hidden" name="type" value="opd">
+                @if ($errors->any())
+                    <div class="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-700">
+                        @foreach ($errors->all() as $error)
+                            <p>{{ $error }}</p>
+                        @endforeach
+                    </div>
+                @endif
                 <div>
-                    <label class="block font-medium text-dark mb-1">Nama Lengkap</label>
-                    <input type="text" required placeholder="Contoh: Rian Utama" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    <label class="block font-medium text-dark mb-1">Nama OPD</label>
+                    <input id="customer-name" type="text" name="name" value="{{ old('name') }}" required maxlength="255" placeholder="Contoh: Dinas Komunikasi dan Informatika" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium text-dark mb-1">Nama Pelapor</label>
+                        <input id="customer-reporter-name" type="text" name="reporter_name" value="{{ old('reporter_name') }}" maxlength="150" placeholder="Nama staf OPD" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-dark mb-1">Kontak Pelapor</label>
+                        <input id="customer-reporter-contact" type="text" name="reporter_contact" value="{{ old('reporter_contact') }}" maxlength="50" placeholder="No. HP / WhatsApp" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">NIK</label>
-                        <input type="text" required placeholder="NIK001011" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                        <input id="customer-nik" type="text" name="nik" value="{{ old('nik') }}" placeholder="Opsional" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">No. Pelanggan</label>
-                        <input type="text" value="CST0011" readonly class="w-full rounded-xl border border-border bg-gray-50 px-3 py-2 text-xs text-secondary">
+                        <p class="rounded-xl border border-border bg-gray-50 px-3 py-2 text-xs text-secondary">Kode dibuat otomatis saat disimpan</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">Nomor Telepon</label>
-                        <input type="text" required placeholder="081299887766" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                        <input id="customer-phone" type="text" name="phone" value="{{ old('phone') }}" placeholder="Nomor telepon OPD" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Area</label>
-                        <select class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
-                            <option value="Situbondo">Situbondo</option>
-                            <option value="Besuki">Besuki</option>
-                            <option value="Lapangan">Lapangan</option>
-                            <option value="Banyuglugur">Banyuglugur</option>
-                        </select>
+                        <input id="customer-area" type="text" name="area" value="{{ old('area') }}" placeholder="Area OPD" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                     </div>
                 </div>
                 <div>
                     <label class="block font-medium text-dark mb-1">Alamat Lengkap</label>
-                    <textarea rows="2" required placeholder="Nama jalan, nomor rumah..." class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"></textarea>
+                    <textarea id="customer-address" name="address" rows="2" placeholder="Alamat kantor OPD..." class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"></textarea>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">Paket Layanan</label>
-                        <select class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <select id="customer-package" name="package_name" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                            <option value="">Tidak ada</option>
                             <option value="50 Mbps">50 Mbps</option>
                             <option value="100 Mbps">100 Mbps</option>
                             <option value="200 Mbps">200 Mbps</option>
@@ -382,15 +415,16 @@
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Status</label>
-                        <select class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <select id="customer-status" name="status" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                             <option value="Aktif">Aktif</option>
                             <option value="Baru">Baru</option>
+                            <option value="Nonaktif">Nonaktif</option>
                         </select>
                     </div>
                 </div>
                 <div class="pt-3 border-t border-border flex items-center justify-end gap-2">
                     <button type="button" onclick="closeAddModal()" class="px-3.5 py-2 rounded-xl border border-border text-secondary hover:bg-gray-50 font-medium">Batal</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-primary text-white font-semibold hover:bg-blue-700 shadow-sm">Simpan Customer</button>
+                    <button id="customer-form-submit" type="submit" class="px-4 py-2 rounded-xl bg-primary text-white font-semibold hover:bg-blue-700 shadow-sm">Simpan OPD</button>
                 </div>
             </form>
         </div>
@@ -461,11 +495,17 @@
             { id: 10, name: "Irfan Hidayat", nik: "NIK001010", custNo: "CST0010", area: "Besuki", status: "Aktif", paket: "100 Mbps", phone: "081299990000", email: "irfan.hidayat@email.com", address: "Jl. Pelabuhan No. 22, Besuki", tagihan: "Rp450.000" }
         ];
 
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            })[char]);
+        }
+
         let currentSelectedCustomer = customersData[2] || customersData[0] || null;
 
         document.addEventListener("DOMContentLoaded", function() {
             renderTable(customersData);
-            loadCustomerDetail(currentSelectedCustomer);
+            if (currentSelectedCustomer) loadCustomerDetail(currentSelectedCustomer);
 
             document.getElementById('searchInput').addEventListener('input', applyFilters);
             document.getElementById('statusFilter').addEventListener('change', applyFilters);
@@ -481,7 +521,7 @@
             tbody.innerHTML = '';
 
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-gray-400">Tidak ada data customer yang ditemukan.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-gray-400">Tidak ada data OPD yang ditemukan.</td></tr>`;
                 document.getElementById('totalVisibleCount').innerText = 0;
                 return;
             }
@@ -510,18 +550,25 @@
                     <td class="py-3 pr-3">
                         <div class="flex items-center gap-2">
                             <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(cust.name)}&background=random" class="w-8 h-8 rounded-full shrink-0">
-                            <span class="font-semibold text-dark">${cust.name}</span>
+                            <span class="font-semibold text-dark">${escapeHtml(cust.name)}</span>
                         </div>
                     </td>
+                    <td class="py-3 pr-3 text-dark">${escapeHtml(cust.reporter_name || '-')}</td>
+                    <td class="py-3 pr-3 text-dark">${escapeHtml(cust.reporter_contact || '-')}</td>
                     <td class="py-3 pr-3 text-secondary">${cust.nik}</td>
                     <td class="py-3 pr-3 font-bold text-primary">${cust.custNo}</td>
                     <td class="py-3 pr-3 text-dark">${cust.area}</td>
                     <td class="py-3 pr-3"><span class="px-2.5 py-1 rounded-full text-[11px] font-semibold ${badgeClass}">${cust.status}</span></td>
                     <td class="py-3 pr-3 text-dark font-medium">${cust.paket}</td>
                     <td class="py-3 pr-4 text-center">
-                        <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" onclick="selectCustomer('${cust.custNo}')">
-                            <i data-lucide="eye" class="w-4 h-4"></i>
-                        </button>
+                        <div class="flex justify-center gap-1">
+                            <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" onclick="event.stopPropagation(); selectCustomer('${cust.custNo}')" aria-label="Lihat detail OPD">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                            <button type="button" class="p-1 rounded-md text-gray-400 hover:text-primary hover:bg-blue-50" onclick="event.stopPropagation(); openEditModal(${Number(cust.id)})" aria-label="Edit OPD">
+                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                            </button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -552,6 +599,8 @@
 
             document.getElementById('valNik').innerText = cust.nik;
             document.getElementById('valPhone').innerText = cust.phone;
+            document.getElementById('valReporter').innerText = cust.reporter_name || '-';
+            document.getElementById('valReporterContact').innerText = cust.reporter_contact || '-';
             document.getElementById('valEmail').innerText = cust.email;
             document.getElementById('valAddress').innerText = cust.address;
 
@@ -570,6 +619,8 @@
 
             const filtered = customersData.filter(cust => {
                 const matchQuery = cust.name.toLowerCase().includes(query) ||
+                                   String(cust.reporter_name || '').toLowerCase().includes(query) ||
+                                   String(cust.reporter_contact || '').toLowerCase().includes(query) ||
                                    cust.nik.toLowerCase().includes(query) ||
                                    cust.custNo.toLowerCase().includes(query) ||
                                    cust.address.toLowerCase().includes(query);
@@ -588,6 +639,8 @@
 
             return customersData.filter(cust => {
                 const matchQuery = cust.name.toLowerCase().includes(query) ||
+                                   String(cust.reporter_name || '').toLowerCase().includes(query) ||
+                                   String(cust.reporter_contact || '').toLowerCase().includes(query) ||
                                    cust.nik.toLowerCase().includes(query) ||
                                    cust.custNo.toLowerCase().includes(query) ||
                                    cust.address.toLowerCase().includes(query);
@@ -631,9 +684,55 @@
         }
 
         // Modal Handlers
-        function openAddModal() { document.getElementById('modal-add-customer').classList.remove('hidden'); }
+        const customerForm = document.getElementById('customer-form');
+        const customerMethodInput = document.getElementById('customer-form-method');
+        const customerUpdateUrl = @json(route('customers.update', ['customer' => '__ID__']));
+
+        function openAddModal() {
+            customerForm.reset();
+            customerForm.action = @json(route('customers.store'));
+            customerMethodInput.disabled = true;
+            document.getElementById('customer-form-id').value = '';
+            document.getElementById('customer-form-title').innerText = 'Tambah OPD';
+            document.getElementById('customer-form-submit').innerText = 'Simpan OPD';
+            document.getElementById('modal-add-customer').classList.remove('hidden');
+        }
+
+        function openEditModal(id) {
+            const customer = customersData.find(item => Number(item.id) === Number(id));
+            if (!customer) return;
+
+            const blank = value => value === '-' || value == null ? '' : value;
+            customerForm.action = customerUpdateUrl.replace('__ID__', customer.id);
+            customerMethodInput.disabled = false;
+            document.getElementById('customer-form-id').value = customer.id;
+            document.getElementById('customer-form-title').innerText = `Edit OPD: ${customer.name}`;
+            document.getElementById('customer-form-submit').innerText = 'Simpan Perubahan';
+            document.getElementById('customer-name').value = customer.name;
+            document.getElementById('customer-reporter-name').value = blank(customer.reporter_name);
+            document.getElementById('customer-reporter-contact').value = blank(customer.reporter_contact);
+            document.getElementById('customer-nik').value = blank(customer.nik);
+            document.getElementById('customer-phone').value = blank(customer.phone);
+            document.getElementById('customer-area').value = blank(customer.area);
+            document.getElementById('customer-address').value = blank(customer.address);
+            document.getElementById('customer-package').value = blank(customer.package_name);
+            document.getElementById('customer-status').value = customer.status;
+            document.getElementById('modal-add-customer').classList.remove('hidden');
+        }
+
         function closeAddModal() { document.getElementById('modal-add-customer').classList.add('hidden'); }
         document.getElementById('btn-open-add-modal').addEventListener('click', openAddModal);
+        @if ($errors->any())
+            const failedCustomerId = @json(old('_customer_id'));
+            const previousCustomerValues = @json(old());
+            if (failedCustomerId) openEditModal(failedCustomerId);
+            else openAddModal();
+            ['name', 'reporter_name', 'reporter_contact', 'nik', 'phone', 'area', 'address', 'package_name', 'status'].forEach(name => {
+                if (Object.prototype.hasOwnProperty.call(previousCustomerValues, name)) {
+                    customerForm.elements[name].value = previousCustomerValues[name] || '';
+                }
+            });
+        @endif
 
         function openAssignTicketModal() { document.getElementById('modal-assign-ticket').classList.remove('hidden'); }
         function closeAssignModal() { document.getElementById('modal-assign-ticket').classList.add('hidden'); }

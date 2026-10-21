@@ -4,254 +4,19 @@
     {{-- DATA DUMMY ASSETS (Frontend Prototype)        --}}
     {{-- ============================================ --}}
     @php
-        $assets = $assets ?? [
-            [
-                'id' => 'AST-001',
-                'name' => 'ONT ZTE F670L',
-                'category' => 'Modem/ONT',
-                'serial' => 'ZTE001234',
-                'location' => 'Gudang Utama',
-                'status' => 'Aktif',
-                'vendor' => 'ZTE',
-                'purchase_date' => '12 Januari 2024',
-                'warranty' => '12 Bulan',
-                'description' => 'ONT ZTE F670L untuk layanan internet dengan kecepatan tinggi dan stabil.',
-                'specs' => 'GPON, 4x Gigabit Ethernet, 2x POTS, Dual-Band Wi-Fi 2.4/5GHz',
-                'icon' => 'router',
-                'history' => [
-                    ['title' => 'Asset didaftarkan', 'date' => '12 Jan 2024 10:00', 'desc' => 'Penerimaan barang dari vendor ZTE.'],
-                    ['title' => 'Status asset diperbarui', 'date' => '15 Mar 2024 14:30', 'desc' => 'Pengujian kualitas fungsi operasional selesai.'],
-                    ['title' => 'Asset menjalani maintenance', 'date' => '08 Okt 2026 09:15', 'desc' => 'Pemeriksaan berkala firmware dan kestabilan transmisi optik.'],
-                ],
-                'related_tickets' => 3,
-                'related_devices' => 1,
-                'docs' => [
-                    ['name' => 'Manual Book ONT ZTE F670L.pdf', 'size' => '2.4 MB'],
-                    ['name' => 'Faktur & Kartu Garansi Resmi.pdf', 'size' => '1.1 MB'],
-                ],
-            ],
-            [
-                'id' => 'AST-002',
-                'name' => 'ONT Huawei HG8245H',
-                'category' => 'Modem/ONT',
-                'serial' => 'HUA001567',
-                'location' => 'Gudang Situbondo',
-                'status' => 'Aktif',
-                'vendor' => 'Huawei',
-                'purchase_date' => '15 Februari 2024',
-                'warranty' => '12 Bulan',
-                'description' => 'EchoLife HG8245H GPON terminal pelanggan dengan keandalan transmisi tinggi.',
-                'specs' => '4 GE ports, 2 POTS ports, 1 USB port, Wi-Fi 802.11b/g/n',
-                'icon' => 'router',
-                'history' => [
-                    ['title' => 'Asset didaftarkan', 'date' => '15 Feb 2024 11:20', 'desc' => 'Diterima di Gudang Situbondo.'],
-                    ['title' => 'Pemeriksaan Awal', 'date' => '16 Feb 2024 09:00', 'desc' => 'Lolos QC kelayakan perangkat.'],
-                ],
-                'related_tickets' => 1,
-                'related_devices' => 0,
-                'docs' => [
-                    ['name' => 'Panduan Teknis HG8245H.pdf', 'size' => '1.8 MB'],
-                ],
-            ],
-            [
-                'id' => 'AST-003',
-                'name' => 'Router Mikrotik',
-                'category' => 'Perangkat Jaringan',
-                'serial' => 'MTK001890',
-                'location' => 'Gudang Utama',
-                'status' => 'Aktif',
-                'vendor' => 'Mikrotik',
-                'purchase_date' => '10 Januari 2024',
-                'warranty' => '24 Bulan',
-                'description' => 'RouterBOARD hEX RB750Gr3 untuk manajemen bandwidth dan routing core cabang.',
-                'specs' => 'Dual Core 880MHz, 256MB RAM, 5x Gigabit LAN, RouterOS Level 4',
-                'icon' => 'network',
-                'history' => [
-                    ['title' => 'Asset didaftarkan', 'date' => '10 Jan 2024 09:00', 'desc' => 'Pembelian batch Router kantor.'],
-                    ['title' => 'Konfigurasi Baseline', 'date' => '12 Jan 2024 13:00', 'desc' => 'Konfigurasi VLAN & firewall security.'],
-                ],
-                'related_tickets' => 2,
-                'related_devices' => 3,
-                'docs' => [
-                    ['name' => 'Backup Config Baseline.rsc', 'size' => '85 KB'],
-                ],
-            ],
-            [
-                'id' => 'AST-004',
-                'name' => 'Switch 24 Port',
-                'category' => 'Perangkat Jaringan',
-                'serial' => 'SW001234',
-                'location' => 'Gudang Besuki',
-                'status' => 'Maintenance',
-                'vendor' => 'TP-Link',
-                'purchase_date' => '20 Maret 2024',
-                'warranty' => '12 Bulan',
-                'description' => 'Switch Gigabit 24 Port Managed sedang dilakukan pemeriksaan daya port PoE.',
-                'specs' => '24x 10/100/1000Mbps RJ45 PoE+, 4x Gigabit SFP Slots',
-                'icon' => 'server',
-                'history' => [
-                    ['title' => 'Asset didaftarkan', 'date' => '20 Mar 2024 14:00', 'desc' => 'Distribusi unit ke Gudang Besuki.'],
-                    ['title' => 'Masuk Maintenance', 'date' => '07 Okt 2026 16:20', 'desc' => 'Port 17-20 mengalami penurunan voltase PoE.'],
-                ],
-                'related_tickets' => 1,
-                'related_devices' => 1,
-                'docs' => [
-                    ['name' => 'Laporan Diagnostik Port.pdf', 'size' => '650 KB'],
-                ],
-            ],
-            [
-                'id' => 'AST-005',
-                'name' => 'Server Dell R730',
-                'category' => 'Server',
-                'serial' => 'SVR001567',
-                'location' => 'Ruang Server',
-                'status' => 'Aktif',
-                'vendor' => 'Dell',
-                'purchase_date' => '05 Januari 2023',
-                'warranty' => '36 Bulan',
-                'description' => 'Server rackmount 2U untuk sistem aplikasi operasional dan basis data.',
-                'specs' => '2x Intel Xeon E5-2680 v4, 128GB DDR4 ECC, 4x 1.2TB SAS 10K RAID 10',
-                'icon' => 'database',
-                'history' => [
-                    ['title' => 'Server Commissioning', 'date' => '05 Jan 2023 08:30', 'desc' => 'Pemasangan di Rack 02 Data Center.'],
-                    ['title' => 'Maintenance Tahunan', 'date' => '10 Jan 2024 22:00', 'desc' => 'Thermal paste renewal dan pembersihan debu.'],
-                ],
-                'related_tickets' => 0,
-                'related_devices' => 4,
-                'docs' => [
-                    ['name' => 'Dell R730 Deployment Sheet.pdf', 'size' => '3.5 MB'],
-                ],
-            ],
-            [
-                'id' => 'AST-006',
-                'name' => 'Laptop Technician',
-                'category' => 'Laptop',
-                'serial' => 'LAP001890',
-                'location' => 'Gudang Utama',
-                'status' => 'Aktif',
-                'vendor' => 'Lenovo',
-                'purchase_date' => '12 Mei 2024',
-                'warranty' => '24 Bulan',
-                'description' => 'Laptop operasional teknisi lapangan untuk commissioning OLT dan analisis sinyal.',
-                'specs' => 'Intel Core i5-12450H, 16GB DDR4, 512GB SSD NVMe, RJ45 Gigabit',
-                'icon' => 'laptop',
-                'history' => [
-                    ['title' => 'Serah Terima Inventaris', 'date' => '12 Mei 2024 10:00', 'desc' => 'Diberikan ke tim teknisi lapangan.'],
-                ],
-                'related_tickets' => 4,
-                'related_devices' => 0,
-                'docs' => [
-                    ['name' => 'Form Tanda Terima Inventaris.pdf', 'size' => '420 KB'],
-                ],
-            ],
-            [
-                'id' => 'AST-007',
-                'name' => 'Kabel FO 12 Core',
-                'category' => 'Kabel',
-                'serial' => 'FOO001234',
-                'location' => 'Gudang Besuki',
-                'status' => 'Aktif',
-                'vendor' => 'Fiberhome',
-                'purchase_date' => '18 Juni 2024',
-                'warranty' => '6 Bulan',
-                'description' => 'Kabel fiber optik 12 core outdoor aerial untuk jalur backbone distribusi.',
-                'specs' => 'Single Mode G.652D, Loose Tube, Kawat Baja Seling Kuat',
-                'icon' => 'cable',
-                'history' => [
-                    ['title' => 'Penerimaan Drum Kabel', 'date' => '18 Jun 2024 11:00', 'desc' => 'Panjang 2000 meter utuh dalam roll kayu.'],
-                ],
-                'related_tickets' => 0,
-                'related_devices' => 2,
-                'docs' => [
-                    ['name' => 'Hasil Uji OTDR Spool.pdf', 'size' => '980 KB'],
-                ],
-            ],
-            [
-                'id' => 'AST-008',
-                'name' => 'ODP Box',
-                'category' => 'Perangkat FO',
-                'serial' => 'ODP001567',
-                'location' => 'Lokasi Lapangan',
-                'status' => 'Rusak',
-                'vendor' => 'Fiberstar',
-                'purchase_date' => '08 Agustus 2023',
-                'warranty' => 'Expired',
-                'description' => 'Box ODP pole-mount retak fisik akibat tertimpa dahan pohon, dalam antrean penggantian.',
-                'specs' => '16 Core Optical Distribution Box, IP65 Waterproof Lock',
-                'icon' => 'box',
-                'history' => [
-                    ['title' => 'Pemasangan Tiang', 'date' => '10 Agu 2023 15:00', 'desc' => 'Dipasang di Tiang Cluster Besuki.'],
-                    ['title' => 'Laporan Kerusakan', 'date' => '08 Okt 2026 08:30', 'desc' => 'Dilaporkan rusak fisik oleh tim patroli.'],
-                ],
-                'related_tickets' => 2,
-                'related_devices' => 1,
-                'docs' => [
-                    ['name' => 'Foto Kerusakan Lapangan.jpg', 'size' => '1.5 MB'],
-                ],
-            ],
-            [
-                'id' => 'AST-009',
-                'name' => 'Tool Kit',
-                'category' => 'Peralatan',
-                'serial' => 'TKT001890',
-                'location' => 'Gudang Utama',
-                'status' => 'Aktif',
-                'vendor' => 'Jonard Tools',
-                'purchase_date' => '22 Februari 2024',
-                'warranty' => '12 Bulan',
-                'description' => 'Satu set toolkit penyambungan fiber optik, cleaver presisi, dan visual fault locator.',
-                'specs' => 'Optical Power Meter, VFL 10mW, Stripper CFS-2, Precision Cleaver',
-                'icon' => 'wrench',
-                'history' => [
-                    ['title' => 'Registrasi Alat', 'date' => '22 Feb 2024 09:30', 'desc' => 'Kelengkapan mata pisau dan baterai verified.'],
-                ],
-                'related_tickets' => 5,
-                'related_devices' => 0,
-                'docs' => [
-                    ['name' => 'Sertifikat Kalibrasi OPM.pdf', 'size' => '510 KB'],
-                ],
-            ],
-            [
-                'id' => 'AST-010',
-                'name' => 'Kamera CCTV',
-                'category' => 'Keamanan',
-                'serial' => 'CCTV001234',
-                'location' => 'Kantor',
-                'status' => 'Aktif',
-                'vendor' => 'Hikvision',
-                'purchase_date' => '11 November 2023',
-                'warranty' => '24 Bulan',
-                'description' => 'Kamera IP surveillance outdoor 4MP untuk pengawasan keamanan pintu masuk gudang.',
-                'specs' => '4MP IP Bullet Camera, 30m IR Night Vision, PoE, IP67 Weatherproof',
-                'icon' => 'video',
-                'history' => [
-                    ['title' => 'Instalasi CCTV', 'date' => '11 Nov 2023 16:00', 'desc' => 'Terkoneksi ke NVR Ruang Security.'],
-                ],
-                'related_tickets' => 0,
-                'related_devices' => 1,
-                'docs' => [
-                    ['name' => 'Diagram Koneksi NVR.pdf', 'size' => '730 KB'],
-                ],
-            ],
-        ];
+        // Data dari AssetController@index. Jika belum ada, tampil kosong (tanpa data dummy).
+        $assets = $assets ?? [];
 
         $summary = $summary ?? [
-            'total_asset' => 1284,
-            'active'      => 1167,
-            'maintenance' => 72,
-            'damaged'     => 45,
+            'total_asset' => 0,
+            'active'      => 0,
+            'maintenance' => 0,
+            'broken'      => 0,
         ];
 
-        $categories = $categories ?? [
-            'Modem/ONT',
-            'Perangkat Jaringan',
-            'Server',
-            'Laptop',
-            'Kabel',
-            'Perangkat FO',
-            'Peralatan',
-            'Keamanan',
-        ];
+        // Kategori & OPD diambil dari data aset yang ada (tidak ada daftar fiktif).
+        $categories = $categories ?? collect($assets)->pluck('category')->filter()->unique()->sort()->values()->all();
+        $opds = $opds ?? collect($assets)->pluck('opd')->filter(fn ($v) => $v && $v !== '-')->unique()->sort()->values()->all();
 
         $statuses = [
             'Aktif',
@@ -360,19 +125,26 @@
 
                         <select id="asset-sort"
                                 class="text-xs rounded-xl border border-border bg-white px-3 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-primary/20">
-                            <option value="code_asc">Kode Asset (A-Z)</option>
-                            <option value="code_desc">Kode Asset (Z-A)</option>
-                            <option value="name_asc">Nama Asset (A-Z)</option>
+                            <option value="code_asc">Kode Aset (A-Z)</option>
+                            <option value="code_desc">Kode Aset (Z-A)</option>
+                            <option value="name_asc">Nama Perangkat (A-Z)</option>
                             <option value="status_asc">Status</option>
                         </select>
                     </div>
 
                     {{-- Dropdown Panel Filter Tambahan --}}
-                    <div id="filter-dropdown-panel" class="hidden grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-gray-100">
+                    <div id="filter-dropdown-panel" class="hidden grid-cols-1 sm:grid-cols-4 gap-2.5 pt-2 border-t border-gray-100">
                         <select id="filter-category" class="text-xs rounded-lg border border-border bg-white px-2.5 py-1.5 text-dark">
                             <option value="">Semua Kategori</option>
                             @foreach ($categories as $cat)
                                 <option value="{{ $cat }}">{{ $cat }}</option>
+                            @endforeach
+                        </select>
+
+                        <select id="filter-opd" class="text-xs rounded-lg border border-border bg-white px-2.5 py-1.5 text-dark">
+                            <option value="">Semua OPD</option>
+                            @foreach ($opds as $opdName)
+                                <option value="{{ $opdName }}">{{ $opdName }}</option>
                             @endforeach
                         </select>
 
@@ -398,10 +170,10 @@
                                 <th class="pl-4 py-3 w-8">
                                     <input id="check-all" type="checkbox" class="rounded border-gray-300 text-primary focus:ring-primary/20">
                                 </th>
-                                <th class="py-3 pr-3">Kode Asset</th>
-                                <th class="py-3 pr-3">Nama Asset</th>
+                                <th class="py-3 pr-3 whitespace-nowrap">Kode Aset</th>
+                                <th class="py-3 pr-3 min-w-[160px]">Nama Perangkat</th>
                                 <th class="py-3 pr-3">Kategori</th>
-                                <th class="py-3 pr-3">Serial Number</th>
+                                <th class="py-3 pr-3">OPD</th>
                                 <th class="py-3 pr-3">Lokasi</th>
                                 <th class="py-3 pr-3 text-center">Status</th>
                                 <th class="py-3 pr-4 text-center w-8">Aksi</th>
@@ -423,8 +195,9 @@
                                     data-category="{{ $item['category'] }}"
                                     data-serial="{{ $item['serial'] }}"
                                     data-location="{{ $item['location'] }}"
+                                    data-opd="{{ $item['opd'] ?? '-' }}"
                                     data-status="{{ $item['status'] }}"
-                                    data-search="{{ strtolower($item['id'] . ' ' . $item['name'] . ' ' . $item['category'] . ' ' . $item['serial'] . ' ' . $item['location']) }}">
+                                    data-search="{{ strtolower($item['id'] . ' ' . $item['name'] . ' ' . $item['category'] . ' ' . $item['serial'] . ' ' . ($item['opd'] ?? '') . ' ' . $item['location']) }}">
                                     <td class="pl-4 py-3">
                                         <input type="checkbox" class="row-checkbox rounded border-gray-300 text-primary focus:ring-primary/20">
                                     </td>
@@ -433,15 +206,15 @@
                                     </td>
                                     <td class="py-3 pr-3">
                                         <p class="font-medium text-dark">{{ $item['name'] }}</p>
-                                        <p class="text-[11px] text-secondary">{{ $item['vendor'] }}</p>
+                                        <p class="text-[11px] text-secondary">{{ $item['vendor'] ?? '-' }}</p>
                                     </td>
                                     <td class="py-3 pr-3 whitespace-nowrap">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-200/50">
                                             {{ $item['category'] }}
                                         </span>
                                     </td>
-                                    <td class="py-3 pr-3 whitespace-nowrap font-mono text-dark">
-                                        {{ $item['serial'] }}
+                                    <td class="py-3 pr-3 text-dark">
+                                        {{ $item['opd'] ?? '-' }}
                                     </td>
                                     <td class="py-3 pr-3 whitespace-nowrap text-secondary">
                                         {{ $item['location'] }}
@@ -459,7 +232,7 @@
                                 </tr>
                             @endforeach
 
-                            <tr id="empty-state-row" class="hidden">
+                            <tr id="empty-state-row" class="{{ count($assets) ? 'hidden' : '' }}">
                                 <td colspan="8" class="py-12 text-center text-gray-400">
                                     <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-gray-300"></i>
                                     Tidak ada aset yang cocok dengan kriteria pencarian / filter.
@@ -498,19 +271,16 @@
                 {{-- Header Detail Panel --}}
                 <div class="flex items-start justify-between pb-4 border-b border-border">
                     <div class="flex items-start gap-3.5">
-                        <div class="w-12 h-12 rounded-xl bg-blue-50 text-primary flex items-center justify-center shrink-0 border border-blue-200/50">
-                            <i data-lucide="router" id="detail-asset-icon" class="w-6 h-6"></i>
-                        </div>
                         <div class="space-y-0.5">
                             <div class="flex items-center gap-2">
-                                <span id="detail-asset-id" class="text-lg font-bold text-primary">AST-001</span>
+                                <span id="detail-asset-id" class="text-lg font-bold text-primary">-</span>
                                 <span id="detail-status-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-200/60">Aktif</span>
                             </div>
-                            <h2 id="detail-asset-name" class="text-base font-bold text-dark">ONT ZTE F670L</h2>
+                            <h2 id="detail-asset-name" class="text-base font-bold text-dark">Pilih aset</h2>
                             <p class="text-xs text-secondary flex items-center gap-1.5">
-                                <span id="detail-asset-category">Modem/ONT</span>
+                                <span id="detail-asset-category">-</span>
                                 <span>•</span>
-                                <span class="font-mono text-dark" id="detail-asset-serial">ZTE001234</span>
+                                <span class="font-mono text-dark" id="detail-asset-serial">-</span>
                             </p>
                         </div>
                     </div>
@@ -526,17 +296,17 @@
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-xl bg-surface border border-border/80 text-xs my-4">
                     <div>
                         <p class="text-[10px] text-secondary uppercase font-semibold">Vendor</p>
-                        <p id="detail-card-vendor" class="text-xs font-bold text-dark mt-0.5 truncate">ZTE</p>
+                        <p id="detail-card-vendor" class="text-xs font-bold text-dark mt-0.5 truncate">-</p>
                         <p class="text-[10px] text-secondary">Penyedia</p>
                     </div>
                     <div>
                         <p class="text-[10px] text-secondary uppercase font-semibold">Garansi</p>
-                        <p id="detail-card-warranty" class="text-xs font-bold text-dark mt-0.5">12 Bulan</p>
+                        <p id="detail-card-warranty" class="text-xs font-bold text-dark mt-0.5">-</p>
                         <p class="text-[10px] text-emerald-600 font-medium">Valid</p>
                     </div>
                     <div>
                         <p class="text-[10px] text-secondary uppercase font-semibold">Lokasi</p>
-                        <p id="detail-card-location" class="font-bold text-dark mt-0.5 truncate">Gudang Utama</p>
+                        <p id="detail-card-location" class="font-bold text-dark mt-0.5 truncate">-</p>
                         <p class="text-[10px] text-secondary">Penyimpanan</p>
                     </div>
                     <div>
@@ -563,37 +333,47 @@
                             <div>
                                 <span class="text-secondary text-[11px] block">Deskripsi:</span>
                                 <p id="info-description" class="text-dark bg-surface p-2.5 rounded-xl border border-border mt-1 leading-relaxed">
-                                    ONT ZTE F670L untuk layanan internet dengan kecepatan tinggi dan stabil.
+                                    -
                                 </p>
                             </div>
                             <div class="grid grid-cols-2 gap-3 pt-1">
                                 <div>
-                                    <span class="text-secondary text-[11px] block">Kode Asset:</span>
-                                    <span id="info-code" class="font-semibold text-dark">AST-001</span>
+                                    <span class="text-secondary text-[11px] block">Kode Aset:</span>
+                                    <span id="info-code" class="font-semibold text-dark">-</span>
                                 </div>
                                 <div>
                                     <span class="text-secondary text-[11px] block">Serial Number:</span>
-                                    <span id="info-serial" class="font-mono font-semibold text-dark">ZTE001234</span>
+                                    <span id="info-serial" class="font-mono font-semibold text-dark">-</span>
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-3 pt-1">
                                 <div>
                                     <span class="text-secondary text-[11px] block">Kategori:</span>
-                                    <span id="info-category" class="font-medium text-dark">Modem/ONT</span>
+                                    <span id="info-category" class="font-medium text-dark">-</span>
                                 </div>
                                 <div>
-                                    <span class="text-secondary text-[11px] block">Vendor / Pabrikan:</span>
-                                    <span id="info-vendor" class="font-medium text-dark">ZTE</span>
+                                    <span class="text-secondary text-[11px] block">Merek / Tipe:</span>
+                                    <span id="info-vendor" class="font-medium text-dark">-</span>
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-3 pt-1">
                                 <div>
-                                    <span class="text-secondary text-[11px] block">Tanggal Pembelian:</span>
-                                    <span id="info-purchase" class="font-medium text-dark">12 Januari 2024</span>
+                                    <span class="text-secondary text-[11px] block">OPD Pengguna:</span>
+                                    <span id="info-opd" class="font-medium text-dark">-</span>
+                                </div>
+                                <div>
+                                    <span class="text-secondary text-[11px] block">Lokasi Penempatan:</span>
+                                    <span id="info-location" class="font-medium text-dark">-</span>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 pt-1">
+                                <div>
+                                    <span class="text-secondary text-[11px] block">Tanggal Pengadaan:</span>
+                                    <span id="info-purchase" class="font-medium text-dark">-</span>
                                 </div>
                                 <div>
                                     <span class="text-secondary text-[11px] block">Masa Garansi:</span>
-                                    <span id="info-warranty" class="font-medium text-dark">12 Bulan</span>
+                                    <span id="info-warranty" class="font-medium text-dark">-</span>
                                 </div>
                             </div>
                             <div>
@@ -630,7 +410,7 @@
                         </div>
                         <div class="p-3 rounded-xl bg-blue-50/50 border border-blue-200/40 text-[11px] text-secondary flex items-start gap-2 mt-2">
                             <i data-lucide="info" class="w-4 h-4 text-primary shrink-0 mt-0.5"></i>
-                            <span id="related-summary-text">Asset ini terhubung dengan 3 ticket dan 1 perangkat jaringan.</span>
+                            <span id="related-summary-text">-</span>
                         </div>
                     </div>
 
@@ -653,16 +433,16 @@
                         </select>
                         <div class="grid grid-cols-2 gap-2">
                             <button type="button" id="btn-trigger-edit" class="py-2 px-3 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-blue-700 shadow-sm transition-colors text-center">
-                                Edit Asset
+                                Edit Aset
                             </button>
                             <button type="button" id="btn-trigger-maintenance" class="py-2 px-3 rounded-lg bg-white border border-border text-dark text-xs font-medium hover:bg-gray-50 transition-colors text-center">
                                 Maintenance
                             </button>
                             <button type="button" id="btn-trigger-exchange" class="py-2 px-3 rounded-lg bg-white border border-border text-dark text-xs font-medium hover:bg-gray-50 transition-colors text-center">
-                                Tukar Asset
+                                Tukar Aset
                             </button>
                             <button type="button" id="btn-trigger-delete" class="py-2 px-3 rounded-lg bg-white border border-red-200 text-danger text-xs font-medium hover:bg-red-50 transition-colors text-center">
-                                Hapus Asset
+                                Hapus Aset
                             </button>
                         </div>
                     </div>
@@ -673,19 +453,19 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-secondary text-[11px]">Lokasi:</p>
-                                <p id="quick-location" class="font-medium text-dark">Gudang Utama</p>
+                                <p id="quick-location" class="font-medium text-dark">-</p>
                             </div>
                             <a href="#" class="text-primary text-[11px] font-semibold hover:underline" data-dummy-action="Detail Lokasi Gudang">Lihat Detail</a>
                         </div>
                         <div class="flex items-center justify-between border-t border-gray-200/60 pt-2">
                             <div>
                                 <p class="text-secondary text-[11px]">Vendor:</p>
-                                <p id="quick-vendor" class="font-medium text-dark">ZTE</p>
+                                <p id="quick-vendor" class="font-medium text-dark">-</p>
                             </div>
                             <a href="#" class="text-primary text-[11px] font-semibold hover:underline" data-dummy-action="Detail Vendor ZTE">Lihat Detail</a>
                         </div>
                         <div class="border-t border-gray-200/60 pt-2 text-[11px] text-secondary">
-                            <p id="quick-connected-note">Asset ini terhubung dengan 3 ticket dan 1 perangkat jaringan.</p>
+                            <p id="quick-connected-note">-</p>
                         </div>
                     </div>
 
@@ -742,7 +522,7 @@
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Lokasi Penyimpanan <span class="text-danger">*</span></label>
-                        <input type="text" id="create-location" placeholder="Gudang Utama" required
+                        <input type="text" id="create-location" placeholder="Lokasi penempatan" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                 </div>
@@ -923,7 +703,7 @@
             let assetMap = {};
             assetList.forEach(a => { assetMap[a.id] = a; });
 
-            let currentSelectedId = 'AST-001';
+            let currentSelectedId = assetList.length ? assetList[0].id : null;
 
             // Toast helper
             let toastTimer;
@@ -948,6 +728,7 @@
             const searchInput = document.getElementById('asset-search');
             const categoryFilter = document.getElementById('filter-category');
             const statusFilter = document.getElementById('filter-status');
+            const opdFilter = document.getElementById('filter-opd');
             const sortSelect = document.getElementById('asset-sort');
             const rows = Array.from(document.querySelectorAll('.asset-row'));
             const tbody = document.getElementById('asset-table-body');
@@ -976,8 +757,9 @@
                     const matchQ = !q || r.dataset.search.includes(q);
                     const matchCat = !cat || r.dataset.category === cat;
                     const matchSt = !st || r.dataset.status === st;
+                    const matchOpd = !opdFilter.value || r.dataset.opd === opdFilter.value;
 
-                    const match = matchQ && matchCat && matchSt;
+                    const match = matchQ && matchCat && matchSt && matchOpd;
                     r.classList.toggle('hidden', !match);
                     if (match) visibleCount++;
                 });
@@ -986,7 +768,7 @@
                 tableInfo.textContent = `Menampilkan ${visibleCount} dari ${rows.length} aset`;
             }
 
-            [searchInput, categoryFilter, statusFilter, sortSelect].forEach(el => {
+            [searchInput, categoryFilter, statusFilter, opdFilter, sortSelect].forEach(el => {
                 el.addEventListener(el === searchInput ? 'input' : 'change', applyFilters);
             });
 
@@ -1002,6 +784,7 @@
                 searchInput.value = '';
                 categoryFilter.value = '';
                 statusFilter.value = '';
+                opdFilter.value = '';
                 sortSelect.value = 'code_asc';
                 applyFilters();
             });
@@ -1044,8 +827,10 @@
 
                 // 4 Kotak Metrik
                 document.getElementById('detail-card-vendor').textContent = a.vendor || '-';
+                document.getElementById('info-opd').textContent = a.opd || '-';
+                document.getElementById('info-location').textContent = a.location || '-';
                 document.getElementById('detail-card-warranty').textContent = a.warranty || '-';
-                document.getElementById('detail-card-location').textContent = a.location || 'Gudang Utama';
+                document.getElementById('detail-card-location').textContent = a.location || '-';
                 const cardStatus = document.getElementById('detail-card-status');
                 cardStatus.textContent = a.status;
                 cardStatus.className = `font-bold mt-0.5 truncate ${a.status === 'Aktif' ? 'text-emerald-600' : (a.status === 'Maintenance' ? 'text-amber-600' : 'text-danger')}`;
@@ -1188,7 +973,7 @@
                 populateDetail(code);
             });
 
-            // 5. Modal Edit Asset
+            // 5. Modal Edit Aset
             const editModal = document.getElementById('modal-edit-asset');
             document.getElementById('btn-trigger-edit').addEventListener('click', () => {
                 const current = assetMap[currentSelectedId];
@@ -1235,7 +1020,6 @@
                     row.querySelector('td:nth-child(3) p:first-child').textContent = current.name;
                     row.querySelector('td:nth-child(3) p:last-child').textContent = current.vendor;
                     row.querySelector('td:nth-child(4) span').textContent = current.category;
-                    row.querySelector('td:nth-child(5)').textContent = current.serial;
                     row.querySelector('td:nth-child(6)').textContent = current.location;
                     row.dataset.name = current.name;
                     row.dataset.category = current.category;
@@ -1267,12 +1051,12 @@
             document.getElementById('btn-trigger-exchange').addEventListener('click', () => {
                 const current = assetMap[currentSelectedId];
                 if (!current) return;
-                if (confirm(`Apakah Anda ingin memulai proses Tukar Asset untuk "${current.name}" (${current.id})?`)) {
+                if (confirm(`Apakah Anda ingin memulai proses Tukar Aset untuk "${current.name}" (${current.id})?`)) {
                     showToast(`Proses pergantian unit untuk ${current.id} telah dicatat.`);
                 }
             });
 
-            // 8. Hapus Asset
+            // 8. Hapus Aset
             document.getElementById('btn-trigger-delete').addEventListener('click', () => {
                 const current = assetMap[currentSelectedId];
                 if (!current) return;
@@ -1293,7 +1077,7 @@
             });
 
             // Inisialisasi awal produk pertama
-            populateDetail('AST-001');
+            if (assetList.length) populateDetail(assetList[0].id);
 
             // Refresh icons
             if (window.lucide) {

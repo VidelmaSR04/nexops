@@ -1,274 +1,20 @@
 <x-app-layout>
 
-    {{-- ============================================ --}}
-    {{-- DATA DUMMY INVENTORY (Frontend Prototype)     --}}
-    {{-- ============================================ --}}
     @php
-        $products = $products ?? [
-            [
-                'id' => 'PRD-001',
-                'name' => 'ONT ZTE F670L',
-                'category' => 'Modem/ONT',
-                'unit' => 'Unit',
-                'total_stock' => 120,
-                'min_stock' => 10,
-                'status' => 'Aktif',
-                'location' => 'Gudang Utama',
-                'address' => 'Jl. Raya Situbondo No. 12',
-                'serial_example' => 'ZTE001234',
-                'description' => 'Optical Network Terminal (ONT) dual-band GPON dengan 4 port Gigabit Ethernet dan WiFi 2.4/5GHz.',
-                'warehouses' => [
-                    ['name' => 'Gudang Utama', 'stock' => 70, 'min' => 10],
-                    ['name' => 'Gudang Situbondo', 'stock' => 30, 'min' => 10],
-                    ['name' => 'Gudang Besuki', 'stock' => 20, 'min' => 5],
-                ],
-                'movements' => [
-                    ['date' => '08 Okt 2026 09:43', 'type' => 'Keluar', 'qty' => 1, 'ref' => 'Ticket #TK-1025', 'user' => 'Budi'],
-                    ['date' => '06 Okt 2026 14:10', 'type' => 'Masuk', 'qty' => 50, 'ref' => 'PO-2026-089', 'user' => 'Eka Pratama'],
-                    ['date' => '04 Okt 2026 11:20', 'type' => 'Keluar', 'qty' => 2, 'ref' => 'Ticket #TK-1018', 'user' => 'Dimas'],
-                ],
-                'related' => [
-                    'active_assets' => 14,
-                    'open_tickets' => 2,
-                ]
-            ],
-            [
-                'id' => 'PRD-002',
-                'name' => 'ONT Huawei HG8245H',
-                'category' => 'Modem/ONT',
-                'unit' => 'Unit',
-                'total_stock' => 85,
-                'min_stock' => 10,
-                'status' => 'Aktif',
-                'location' => 'Gudang Situbondo',
-                'address' => 'Jl. Basuki Rahmat No. 45, Situbondo',
-                'serial_example' => 'HWT778120',
-                'description' => 'EchoLife HG8245H GPON ONT dengan 4 port GE, 2 port POTS, dan 1 port USB.',
-                'warehouses' => [
-                    ['name' => 'Gudang Situbondo', 'stock' => 55, 'min' => 10],
-                    ['name' => 'Gudang Utama', 'stock' => 30, 'min' => 10],
-                ],
-                'movements' => [
-                    ['date' => '07 Okt 2026 15:30', 'type' => 'Keluar', 'qty' => 1, 'ref' => 'Ticket #TK-1022', 'user' => 'Rizky'],
-                ],
-                'related' => [
-                    'active_assets' => 9,
-                    'open_tickets' => 1,
-                ]
-            ],
-            [
-                'id' => 'PRD-003',
-                'name' => 'RJ45 Connector',
-                'category' => 'Accessories',
-                'unit' => 'Pack',
-                'total_stock' => 420,
-                'min_stock' => 100,
-                'status' => 'Aktif',
-                'location' => 'Gudang Utama',
-                'address' => 'Jl. Raya Situbondo No. 12',
-                'serial_example' => 'CAT6-CON-420',
-                'description' => 'Konektor RJ45 Cat6 modular plug berlapis emas 50 micron untuk kabel UTP/STP.',
-                'warehouses' => [
-                    ['name' => 'Gudang Utama', 'stock' => 300, 'min' => 70],
-                    ['name' => 'Gudang Besuki', 'stock' => 120, 'min' => 30],
-                ],
-                'movements' => [
-                    ['date' => '05 Okt 2026 10:00', 'type' => 'Keluar', 'qty' => 20, 'ref' => 'Maintenance Jaringan', 'user' => 'Ahmad'],
-                ],
-                'related' => [
-                    'active_assets' => 0,
-                    'open_tickets' => 0,
-                ]
-            ],
-            [
-                'id' => 'PRD-004',
-                'name' => 'Fiber Patchcord',
-                'category' => 'Accessories',
-                'unit' => 'Pcs',
-                'total_stock' => 65,
-                'min_stock' => 20,
-                'status' => 'Low Stock',
-                'location' => 'Gudang Besuki',
-                'address' => 'Jl. Raya Besuki Timur No. 8',
-                'serial_example' => 'PC-SCUPC-3M',
-                'description' => 'Patchcord Single Mode SC/UPC to SC/UPC simplex panjang 3 meter diameter 3.0mm.',
-                'warehouses' => [
-                    ['name' => 'Gudang Besuki', 'stock' => 15, 'min' => 10],
-                    ['name' => 'Gudang Utama', 'stock' => 50, 'min' => 10],
-                ],
-                'movements' => [
-                    ['date' => '08 Okt 2026 08:55', 'type' => 'Keluar', 'qty' => 1, 'ref' => 'Ticket #TK-1025', 'user' => 'Budi'],
-                ],
-                'related' => [
-                    'active_assets' => 65,
-                    'open_tickets' => 2,
-                ]
-            ],
-            [
-                'id' => 'PRD-005',
-                'name' => 'Adapter 12V',
-                'category' => 'Accessories',
-                'unit' => 'Pcs',
-                'total_stock' => 48,
-                'min_stock' => 25,
-                'status' => 'Low Stock',
-                'location' => 'Gudang Utama',
-                'address' => 'Jl. Raya Situbondo No. 12',
-                'serial_example' => 'ADP-12V1.5A',
-                'description' => 'Power Adaptor Switching AC 100-240V ke DC 12V 1.5A jack standard 5.5mm.',
-                'warehouses' => [
-                    ['name' => 'Gudang Utama', 'stock' => 48, 'min' => 25],
-                ],
-                'movements' => [
-                    ['date' => '07 Okt 2026 20:42', 'type' => 'Keluar', 'qty' => 1, 'ref' => 'Ticket #TK-1019', 'user' => 'Ahmad'],
-                ],
-                'related' => [
-                    'active_assets' => 40,
-                    'open_tickets' => 1,
-                ]
-            ],
-            [
-                'id' => 'PRD-006',
-                'name' => 'Splitter 1:8',
-                'category' => 'Perangkat FO',
-                'unit' => 'Pcs',
-                'total_stock' => 200,
-                'min_stock' => 50,
-                'status' => 'Aktif',
-                'location' => 'Gudang Utama',
-                'address' => 'Jl. Raya Situbondo No. 12',
-                'serial_example' => 'PLC-1x8-SCUPC',
-                'description' => 'PLC Optical Splitter 1:8 SC/UPC box type untuk distribusi Fiber to the Home (FTTH).',
-                'warehouses' => [
-                    ['name' => 'Gudang Utama', 'stock' => 140, 'min' => 30],
-                    ['name' => 'Gudang Situbondo', 'stock' => 60, 'min' => 20],
-                ],
-                'movements' => [
-                    ['date' => '03 Okt 2026 13:00', 'type' => 'Masuk', 'qty' => 100, 'ref' => 'PO-2026-077', 'user' => 'Eka Pratama'],
-                ],
-                'related' => [
-                    'active_assets' => 18,
-                    'open_tickets' => 0,
-                ]
-            ],
-            [
-                'id' => 'PRD-007',
-                'name' => 'ODP Box',
-                'category' => 'Perangkat FO',
-                'unit' => 'Unit',
-                'total_stock' => 75,
-                'min_stock' => 20,
-                'status' => 'Aktif',
-                'location' => 'Gudang Asembagus',
-                'address' => 'Jl. Pelabuhan Jangkar No. 3',
-                'serial_example' => 'ODP-8C-OUTDOOR',
-                'description' => 'Optical Distribution Point 8/16 Core IP65 Waterproof dengan kunci proteksi luar ruangan.',
-                'warehouses' => [
-                    ['name' => 'Gudang Asembagus', 'stock' => 45, 'min' => 10],
-                    ['name' => 'Gudang Utama', 'stock' => 30, 'min' => 10],
-                ],
-                'movements' => [
-                    ['date' => '02 Okt 2026 09:15', 'type' => 'Keluar', 'qty' => 2, 'ref' => 'Ekspansi Jaringan Cluster A', 'user' => 'Dimas'],
-                ],
-                'related' => [
-                    'active_assets' => 12,
-                    'open_tickets' => 0,
-                ]
-            ],
-            [
-                'id' => 'PRD-008',
-                'name' => 'Kabel Dropcore',
-                'category' => 'Kabel',
-                'unit' => 'Roll',
-                'total_stock' => 150,
-                'min_stock' => 30,
-                'status' => 'Aktif',
-                'location' => 'Gudang Utama',
-                'address' => 'Jl. Raya Situbondo No. 12',
-                'serial_example' => 'DC-1C-1000M',
-                'description' => 'Kabel Drop Fiber Optik 1 Core 3 Seling Kawat Baja panjang 1000m/roll.',
-                'warehouses' => [
-                    ['name' => 'Gudang Utama', 'stock' => 90, 'min' => 20],
-                    ['name' => 'Gudang Banyuglugur', 'stock' => 60, 'min' => 10],
-                ],
-                'movements' => [
-                    ['date' => '07 Okt 2026 14:10', 'type' => 'Keluar', 'qty' => 1, 'ref' => 'Ticket #TK-1016', 'user' => 'Fajar'],
-                ],
-                'related' => [
-                    'active_assets' => 85,
-                    'open_tickets' => 1,
-                ]
-            ],
-            [
-                'id' => 'PRD-009',
-                'name' => 'Patch Panel',
-                'category' => 'Perangkat Jaringan',
-                'unit' => 'Unit',
-                'total_stock' => 35,
-                'min_stock' => 10,
-                'status' => 'Aktif',
-                'location' => 'Gudang Utama',
-                'address' => 'Jl. Raya Situbondo No. 12',
-                'serial_example' => 'PP-24P-CAT6',
-                'description' => 'Patch Panel 24 Port 1U 19-inch Rackmount Cat6 UTP with rear cable manager.',
-                'warehouses' => [
-                    ['name' => 'Gudang Utama', 'stock' => 35, 'min' => 10],
-                ],
-                'movements' => [
-                    ['date' => '01 Okt 2026 16:45', 'type' => 'Masuk', 'qty' => 15, 'ref' => 'PO-2026-065', 'user' => 'Eka Pratama'],
-                ],
-                'related' => [
-                    'active_assets' => 8,
-                    'open_tickets' => 0,
-                ]
-            ],
-            [
-                'id' => 'PRD-010',
-                'name' => 'Router Mikrotik',
-                'category' => 'Perangkat Jaringan',
-                'unit' => 'Unit',
-                'total_stock' => 20,
-                'min_stock' => 5,
-                'status' => 'Low Stock',
-                'location' => 'Gudang Utama',
-                'address' => 'Jl. Raya Situbondo No. 12',
-                'serial_example' => 'RB750Gr3-HEX',
-                'description' => 'RouterBOARD hEX 5x Gigabit Ethernet, Dual Core 880MHz CPU, 256MB RAM, RouterOS L4.',
-                'warehouses' => [
-                    ['name' => 'Gudang Utama', 'stock' => 15, 'min' => 5],
-                    ['name' => 'Gudang Situbondo', 'stock' => 5, 'min' => 2],
-                ],
-                'movements' => [
-                    ['date' => '08 Okt 2026 07:45', 'type' => 'Keluar', 'qty' => 1, 'ref' => 'Ticket #TK-1023', 'user' => 'Dimas'],
-                ],
-                'related' => [
-                    'active_assets' => 22,
-                    'open_tickets' => 1,
-                ]
-            ],
-        ];
+        // Data berasal dari InventoryController@index. Jika belum ada, tampil kosong (tanpa data dummy).
+        $products = $products ?? [];
 
         $summary = $summary ?? [
-            'total_products' => 248,
-            'total_stock'    => 12480,
-            'low_stock'      => 13,
-            'warehouse'      => 4,
+            'total_products' => 0,
+            'total_stock'    => 0,
+            'low_stock'      => 0,
+            'warehouse'      => 0,
         ];
 
-        $categories = $categories ?? [
-            'Modem/ONT',
-            'Accessories',
-            'Perangkat FO',
-            'Kabel',
-            'Perangkat Jaringan',
-        ];
+        $categories = $categories ?? [];
 
-        $statuses = [
-            'Aktif',
-            'Low Stock',
-            'Habis',
-            'Nonaktif',
-        ];
+        $conditions = \App\Models\InventoryItem::CONDITIONS;
+        $availabilities = \App\Models\InventoryItem::AVAILABILITIES;
 
         $productsById = collect($products)->keyBy('id')->all();
     @endphp
@@ -280,14 +26,14 @@
         {{-- ============================================ --}}
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-dark tracking-tight">Inventory</h1>
-                <p class="text-secondary text-sm mt-0.5">Kelola data produk dan stok persediaan</p>
+                <h1 class="text-2xl font-bold text-dark tracking-tight">Inventory Peralatan</h1>
+                <p class="text-secondary text-sm mt-0.5">Kelola data peralatan kerja teknis dan perlengkapan operasional Kominfo.</p>
             </div>
             <div>
                 <button type="button" id="btn-open-create-modal"
                         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-blue-700 shadow-sm transition-colors">
                     <i data-lucide="plus" class="w-4 h-4"></i>
-                    <span>Tambah Produk</span>
+                    <span>Tambah Peralatan</span>
                 </button>
             </div>
         </div>
@@ -302,7 +48,7 @@
                     <i data-lucide="package" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <p class="text-xs text-secondary font-medium">Total Produk</p>
+                    <p class="text-xs text-secondary font-medium">Total Jenis Peralatan</p>
                     <p class="text-2xl font-bold text-dark mt-0.5">{{ number_format($summary['total_products']) }}</p>
                 </div>
             </div>
@@ -313,7 +59,7 @@
                     <i data-lucide="boxes" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <p class="text-xs text-secondary font-medium">Total Stok</p>
+                    <p class="text-xs text-secondary font-medium">Total Unit Peralatan</p>
                     <p class="text-2xl font-bold text-dark mt-0.5">{{ number_format($summary['total_stock']) }}</p>
                 </div>
             </div>
@@ -324,7 +70,7 @@
                     <i data-lucide="alert-triangle" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <p class="text-xs text-secondary font-medium">Low Stock</p>
+                    <p class="text-xs text-secondary font-medium">Stok Menipis</p>
                     <p class="text-2xl font-bold text-dark mt-0.5">{{ $summary['low_stock'] }}</p>
                 </div>
             </div>
@@ -335,7 +81,7 @@
                     <i data-lucide="warehouse" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <p class="text-xs text-secondary font-medium">Warehouse</p>
+                    <p class="text-xs text-secondary font-medium">Lokasi Penyimpanan</p>
                     <p class="text-2xl font-bold text-dark mt-0.5">{{ $summary['warehouse'] }}</p>
                 </div>
             </div>
@@ -357,7 +103,7 @@
                         <div class="relative flex-1 min-w-[220px]">
                             <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
                             <input id="product-search" type="text"
-                                   placeholder="Cari produk, kode produk, atau kategori..."
+                                   placeholder="Cari peralatan, kode inventaris, atau kategori..."
                                    class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-border bg-surface focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
                         </div>
 
@@ -370,10 +116,10 @@
 
                         <select id="product-sort"
                                 class="text-xs rounded-xl border border-border bg-white px-3 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-primary/20">
-                            <option value="code_asc">Kode Produk (A-Z)</option>
-                            <option value="code_desc">Kode Produk (Z-A)</option>
-                            <option value="stock_desc">Stok Terbanyak</option>
-                            <option value="stock_asc">Stok Tersedikit</option>
+                            <option value="code_asc">Kode Inventaris (A-Z)</option>
+                            <option value="code_desc">Kode Inventaris (Z-A)</option>
+                            <option value="stock_desc">Jumlah Terbanyak</option>
+                            <option value="stock_asc">Jumlah Tersedikit</option>
                         </select>
                     </div>
 
@@ -387,9 +133,9 @@
                         </select>
 
                         <select id="filter-status" class="text-xs rounded-lg border border-border bg-white px-2.5 py-1.5 text-dark">
-                            <option value="">Semua Status</option>
-                            @foreach ($statuses as $st)
-                                <option value="{{ $st }}">{{ $st }}</option>
+                            <option value="">Semua Ketersediaan</option>
+                            @foreach ($availabilities as $availability)
+                                <option value="{{ $availability }}">{{ $availability }}</option>
                             @endforeach
                         </select>
 
@@ -408,25 +154,37 @@
                                 <th class="pl-4 py-3 w-8">
                                     <input id="check-all" type="checkbox" class="rounded border-gray-300 text-primary focus:ring-primary/20">
                                 </th>
-                                <th class="py-3 pr-3">Kode Produk</th>
-                                <th class="py-3 pr-3">Nama Produk</th>
-                                <th class="py-3 pr-3">Kategori</th>
-                                <th class="py-3 pr-3 text-right">Stok Total</th>
-                                <th class="py-3 pr-3 text-right">Min. Stok</th>
-                                <th class="py-3 pr-3 text-center">Status</th>
+                                <th class="py-3 pr-3 w-14">Foto</th>
+                                <th class="py-3 pr-3 whitespace-nowrap">Kode Inventaris</th>
+                                <th class="py-3 pr-3 min-w-[160px]">Nama Peralatan</th>
+                                <th class="py-3 pr-3 whitespace-nowrap">Kategori</th>
+                                <th class="py-3 pr-3 text-right">Jumlah</th>
+                                <th class="py-3 pr-3 text-center">Kondisi</th>
+                                <th class="py-3 pr-3 text-center whitespace-nowrap">Status Ketersediaan</th>
+                                <th class="py-3 pr-3 whitespace-nowrap">Lokasi</th>
                                 <th class="py-3 pr-4 text-center w-8">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="inventory-table-body" class="divide-y divide-gray-100">
                             @foreach ($products as $idx => $item)
                                 @php
+                                    $condition    = $item['condition'];
+                                    $availability = $item['availability'];
                                     $isLow = $item['status'] === 'Low Stock';
                                     $isOut = $item['status'] === 'Habis';
-                                    $badgeClass = match($item['status']) {
-                                        'Aktif'     => 'bg-emerald-50 text-emerald-600 border border-emerald-200/60',
-                                        'Low Stock' => 'bg-amber-50 text-amber-600 border border-amber-200/60 font-semibold',
-                                        'Habis'     => 'bg-red-50 text-red-600 border border-red-200/60 font-bold',
-                                        default     => 'bg-slate-100 text-slate-500 border border-slate-200/60',
+
+                                    $conditionClass = match($condition) {
+                                        'Baru', 'Baik'          => 'bg-emerald-50 text-emerald-600 border border-emerald-200/60',
+                                        'Perlu Perbaikan'       => 'bg-amber-50 text-amber-600 border border-amber-200/60',
+                                        'Rusak'                 => 'bg-red-50 text-red-600 border border-red-200/60',
+                                        default                 => 'bg-slate-100 text-slate-500 border border-slate-200/60',
+                                    };
+                                    $badgeClass = match($availability) {
+                                        'Tersedia'                => 'bg-emerald-50 text-emerald-600 border border-emerald-200/60',
+                                        'Sedang Digunakan'        => 'bg-purple-50 text-purple-600 border border-purple-200/60',
+                                        'Sedang Diperbaiki'       => 'bg-amber-50 text-amber-600 border border-amber-200/60',
+                                        'Hilang'                  => 'bg-red-50 text-red-600 border border-red-200/60',
+                                        default                   => 'bg-slate-100 text-slate-500 border border-slate-200/60',
                                     };
                                 @endphp
                                 <tr class="product-row cursor-pointer transition-colors hover:bg-blue-50/40 {{ $idx === 0 ? 'bg-blue-50/70 border-l-4 border-l-primary' : '' }}"
@@ -436,30 +194,46 @@
                                     data-stock="{{ $item['total_stock'] }}"
                                     data-min="{{ $item['min_stock'] }}"
                                     data-status="{{ $item['status'] }}"
-                                    data-search="{{ strtolower($item['id'] . ' ' . $item['name'] . ' ' . $item['category'] . ' ' . ($item['location'] ?? '')) }}">
+                                    data-availability="{{ $availability }}"
+                                    data-search="{{ strtolower($item['id'] . ' ' . $item['name'] . ' ' . ($item['brand'] ?? '') . ' ' . $item['category'] . ' ' . ($item['location'] ?? '')) }}">
                                     <td class="pl-4 py-3">
                                         <input type="checkbox" class="row-checkbox rounded border-gray-300 text-primary focus:ring-primary/20">
+                                    </td>
+                                    <td class="py-3 pr-3">
+                                        @if (! empty($item['photo']))
+                                            <img src="{{ $item['photo'] }}" alt="{{ $item['name'] }}" loading="lazy" class="w-10 h-10 rounded-lg object-cover border border-border bg-gray-50">
+                                        @else
+                                            <div class="w-10 h-10 rounded-lg border border-border bg-blue-50 text-primary flex items-center justify-center">
+                                                <i data-lucide="wrench" class="w-4 h-4"></i>
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="py-3 pr-3 font-semibold text-primary whitespace-nowrap">
                                         {{ $item['id'] }}
                                     </td>
                                     <td class="py-3 pr-3">
                                         <p class="font-medium text-dark">{{ $item['name'] }}</p>
-                                        <p class="text-[11px] text-secondary">{{ $item['unit'] }}</p>
+                                        <p class="text-[11px] text-secondary">{{ $item['brand'] ?? '-' }}</p>
                                     </td>
                                     <td class="py-3 pr-3 whitespace-nowrap text-secondary">
                                         {{ $item['category'] }}
                                     </td>
-                                    <td class="py-3 pr-3 text-right font-bold {{ $isLow ? 'text-amber-600' : ($isOut ? 'text-danger' : 'text-dark') }}">
+                                    <td class="py-3 pr-3 text-right font-bold whitespace-nowrap {{ $isLow ? 'text-amber-600' : ($isOut ? 'text-danger' : 'text-dark') }}">
                                         {{ number_format($item['total_stock']) }}
+                                        <span class="font-normal text-[11px] text-secondary">{{ $item['unit'] }}</span>
                                     </td>
-                                    <td class="py-3 pr-3 text-right text-secondary">
-                                        {{ number_format($item['min_stock']) }}
+                                    <td class="py-3 pr-3 text-center">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap {{ $conditionClass }}">
+                                            {{ $condition }}
+                                        </span>
                                     </td>
                                     <td class="py-3 pr-3 text-center">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap {{ $badgeClass }}">
-                                            {{ $item['status'] }}
+                                            {{ $availability }}
                                         </span>
+                                    </td>
+                                    <td class="py-3 pr-3 text-secondary">
+                                        {{ $item['location'] }}
                                     </td>
                                     <td class="py-3 pr-4 text-center">
                                         <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" data-dummy-action="Menu Aksi {{ $item['id'] }}">
@@ -469,10 +243,10 @@
                                 </tr>
                             @endforeach
 
-                            <tr id="empty-state-row" class="hidden">
-                                <td colspan="8" class="py-12 text-center text-gray-400">
+                            <tr id="empty-state-row" class="{{ count($products) ? 'hidden' : '' }}">
+                                <td colspan="10" class="py-12 text-center text-gray-400">
                                     <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-gray-300"></i>
-                                    Tidak ada produk yang cocok dengan kriteria pencarian / filter.
+                                    Tidak ada peralatan yang cocok dengan kriteria pencarian / filter.
                                 </td>
                             </tr>
                         </tbody>
@@ -481,7 +255,7 @@
 
                 {{-- Pagination Dummy --}}
                 <div class="p-3.5 border-t border-border flex flex-wrap items-center justify-between gap-3 text-xs">
-                    <p id="table-info" class="text-secondary">Menampilkan 1-10 dari {{ count($products) }} produk</p>
+                    <p id="table-info" class="text-secondary">Menampilkan 1-10 dari {{ count($products) }} peralatan</p>
                     <div class="flex items-center gap-1">
                         <button type="button" class="w-7 h-7 rounded-lg border border-border flex items-center justify-center text-secondary hover:bg-gray-50" data-dummy-action="Halaman Sebelumnya">
                             <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
@@ -509,11 +283,11 @@
                 <div class="flex items-start justify-between pb-4 border-b border-border">
                     <div class="space-y-1">
                         <div class="flex items-center gap-2">
-                            <span id="detail-product-id" class="text-lg font-bold text-primary">PRD-001</span>
+                            <span id="detail-product-id" class="text-lg font-bold text-primary">-</span>
                             <span id="detail-category-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-600 border border-blue-200/60">Modem/ONT</span>
-                            <span id="detail-status-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-200/60">Aktif</span>
+                            <span id="detail-status-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-200/60">Tersedia</span>
                         </div>
-                        <p id="detail-product-name" class="text-base font-bold text-dark mt-1">ONT ZTE F670L</p>
+                        <p id="detail-product-name" class="text-base font-bold text-dark mt-1">Pilih peralatan</p>
                         <p id="detail-product-unit" class="text-xs text-secondary">Satuan: Unit</p>
                     </div>
 
@@ -527,23 +301,23 @@
                 {{-- Kartu Metrik Ringkas 4 Kolom --}}
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-xl bg-surface border border-border/80 text-xs my-4">
                     <div>
-                        <p class="text-[10px] text-secondary uppercase font-semibold">Stok Total</p>
-                        <p id="detail-card-stock" class="text-base font-bold text-dark mt-0.5">120</p>
+                        <p class="text-[10px] text-secondary uppercase font-semibold">Jumlah Unit</p>
+                        <p id="detail-card-stock" class="text-base font-bold text-dark mt-0.5">-</p>
                         <p id="detail-card-unit" class="text-[10px] text-secondary">Unit</p>
                     </div>
                     <div>
-                        <p class="text-[10px] text-secondary uppercase font-semibold">Min. Stok</p>
-                        <p id="detail-card-min" class="text-base font-bold text-dark mt-0.5">10</p>
+                        <p class="text-[10px] text-secondary uppercase font-semibold">Batas Minimum</p>
+                        <p id="detail-card-min" class="text-base font-bold text-dark mt-0.5">-</p>
                         <p class="text-[10px] text-secondary">Ambang batas</p>
                     </div>
                     <div>
-                        <p class="text-[10px] text-secondary uppercase font-semibold">Gudang</p>
-                        <p id="detail-card-location" class="font-bold text-dark mt-0.5 truncate">Gudang Utama</p>
+                        <p class="text-[10px] text-secondary uppercase font-semibold">Lokasi</p>
+                        <p id="detail-card-location" class="font-bold text-dark mt-0.5 truncate">-</p>
                         <p class="text-[10px] text-secondary">Lokasi Utama</p>
                     </div>
                     <div>
                         <p class="text-[10px] text-secondary uppercase font-semibold">Contoh SN</p>
-                        <p id="detail-card-serial" class="font-bold text-primary mt-0.5 truncate">ZTE001234</p>
+                        <p id="detail-card-serial" class="font-bold text-primary mt-0.5 truncate">-</p>
                         <p class="text-[10px] text-secondary">Serial Number</p>
                     </div>
                 </div>
@@ -551,8 +325,8 @@
                 {{-- 4 Tab Navigation --}}
                 <div class="flex border-b border-border text-xs font-semibold mb-4 gap-6" id="panel-tabs">
                     <button type="button" class="tab-btn pb-2.5 border-b-2 border-primary text-primary transition-colors" data-target="tab-detail">Detail</button>
-                    <button type="button" class="tab-btn pb-2.5 border-b-2 border-transparent text-secondary hover:text-dark transition-colors" data-target="tab-stock">Stok</button>
-                    <button type="button" class="tab-btn pb-2.5 border-b-2 border-transparent text-secondary hover:text-dark transition-colors" data-target="tab-movement">Riwayat</button>
+                    <button type="button" class="tab-btn pb-2.5 border-b-2 border-transparent text-secondary hover:text-dark transition-colors" data-target="tab-stock">Lokasi & Jumlah</button>
+                    <button type="button" class="tab-btn pb-2.5 border-b-2 border-transparent text-secondary hover:text-dark transition-colors" data-target="tab-movement">Riwayat Penggunaan</button>
                     <button type="button" class="tab-btn pb-2.5 border-b-2 border-transparent text-secondary hover:text-dark transition-colors" data-target="tab-related">Terkait</button>
                 </div>
 
@@ -563,12 +337,12 @@
                     <div id="tab-detail" class="tab-pane space-y-3 text-xs">
                         <div class="space-y-2">
                             <div>
-                                <span class="text-secondary text-[11px] block">Kode Produk:</span>
-                                <span id="info-code" class="font-semibold text-dark">PRD-001</span>
+                                <span class="text-secondary text-[11px] block">Kode Inventaris:</span>
+                                <span id="info-code" class="font-semibold text-dark">-</span>
                             </div>
                             <div>
-                                <span class="text-secondary text-[11px] block">Nama Produk:</span>
-                                <span id="info-name" class="font-semibold text-dark">ONT ZTE F670L</span>
+                                <span class="text-secondary text-[11px] block">Nama Peralatan:</span>
+                                <span id="info-name" class="font-semibold text-dark">-</span>
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
@@ -589,12 +363,16 @@
                             <div class="grid grid-cols-2 gap-3 pt-1">
                                 <div>
                                     <span class="text-secondary text-[11px] block">Lokasi Penyimpanan:</span>
-                                    <span id="info-location" class="font-semibold text-dark">Gudang Utama</span>
-                                    <p id="info-address" class="text-[11px] text-secondary mt-0.5">Jl. Raya Situbondo No. 12</p>
+                                    <span id="info-location" class="font-semibold text-dark">-</span>
+                                    <p id="info-address" class="text-[11px] text-secondary mt-0.5">-</p>
                                 </div>
                                 <div>
-                                    <span class="text-secondary text-[11px] block">Status Produk:</span>
-                                    <span id="info-status-text" class="font-semibold text-emerald-600">Aktif</span>
+                                    <span class="text-secondary text-[11px] block">Kondisi:</span>
+                                    <span id="info-condition-text" class="font-semibold text-emerald-600">-</span>
+                                </div>
+                                <div>
+                                    <span class="text-secondary text-[11px] block">Status Ketersediaan:</span>
+                                    <span id="info-status-text" class="font-semibold text-emerald-600">-</span>
                                 </div>
                             </div>
                         </div>
@@ -602,7 +380,7 @@
 
                     {{-- TAB 2: STOK --}}
                     <div id="tab-stock" class="tab-pane hidden space-y-2.5 text-xs">
-                        <p class="font-semibold text-dark text-xs mb-2">Sebaran Stok Berdasarkan Gudang:</p>
+                        <p class="font-semibold text-dark text-xs mb-2">Sebaran Unit Berdasarkan Lokasi Penyimpanan:</p>
                         <div id="warehouse-stock-list" class="space-y-2">
                             {{-- Diisi secara dinamis oleh JS --}}
                         </div>
@@ -610,7 +388,7 @@
 
                     {{-- TAB 3: RIWAYAT MUTASI --}}
                     <div id="tab-movement" class="tab-pane hidden space-y-3 text-xs">
-                        <p class="font-semibold text-dark text-xs mb-2">Riwayat Keluar / Masuk Barang:</p>
+                        <p class="font-semibold text-dark text-xs mb-2">Riwayat Penggunaan Peralatan:</p>
                         <div id="movement-list" class="space-y-3">
                             {{-- Diisi secara dinamis oleh JS --}}
                         </div>
@@ -618,27 +396,27 @@
 
                     {{-- TAB 4: TERKAIT --}}
                     <div id="tab-related" class="tab-pane hidden space-y-3 text-xs">
-                        <p class="font-semibold text-dark text-xs mb-2">Aset Terpasang & Tiket Terkait:</p>
+                        <p class="font-semibold text-dark text-xs mb-2">Aset & Tiket Terkait:</p>
                         <div class="grid grid-cols-2 gap-3">
                             <div class="p-3 rounded-xl bg-surface border border-border">
-                                <p class="text-[11px] text-secondary">Aset Aktif di Customer</p>
-                                <p id="related-active-assets" class="text-xl font-bold text-dark mt-1">14 unit</p>
+                                <p class="text-[11px] text-secondary">Aset Terkait</p>
+                                <p id="related-active-assets" class="text-xl font-bold text-dark mt-1">-</p>
                                 <a href="#" class="text-[11px] text-primary font-medium hover:underline mt-1 block" data-dummy-action="Lihat Semua Aset Terpasang">Lihat Daftar Aset →</a>
                             </div>
                             <div class="p-3 rounded-xl bg-surface border border-border">
                                 <p class="text-[11px] text-secondary">Tiket Terkait Terbuka</p>
-                                <p id="related-open-tickets" class="text-xl font-bold text-amber-600 mt-1">2 tiket</p>
+                                <p id="related-open-tickets" class="text-xl font-bold text-amber-600 mt-1">-</p>
                                 <a href="{{ route('tickets.index') }}" class="text-[11px] text-primary font-medium hover:underline mt-1 block">Lihat di Menu Ticket →</a>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Tombol Aksi Produk --}}
+                    {{-- Tombol Aksi Peralatan --}}
                     <div class="pt-3 border-t border-border flex items-center gap-2.5">
                         <button type="button" id="btn-edit-product"
                                 class="flex-1 py-2 px-3 rounded-xl bg-white border border-border text-dark text-xs font-semibold hover:bg-gray-50 shadow-xs transition-colors flex items-center justify-center gap-1.5">
                             <i data-lucide="edit-3" class="w-3.5 h-3.5 text-secondary"></i>
-                            <span>Edit Produk</span>
+                            <span>Edit Peralatan</span>
                         </button>
                         <button type="button" id="btn-delete-product"
                                 class="py-2 px-3 rounded-xl bg-white border border-red-200 text-danger text-xs font-semibold hover:bg-red-50 shadow-xs transition-colors flex items-center justify-center gap-1.5">
@@ -662,8 +440,8 @@
         <div class="bg-white rounded-2xl border border-border shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in duration-150">
             <div class="p-4 border-b border-border flex items-center justify-between">
                 <div>
-                    <h3 class="text-base font-bold text-dark">Tambah Produk Baru</h3>
-                    <p class="text-secondary text-xs">Masukkan data master barang persediaan</p>
+                    <h3 class="text-base font-bold text-dark">Tambah Peralatan Baru</h3>
+                    <p class="text-secondary text-xs">Masukkan data peralatan kerja teknis</p>
                 </div>
                 <button type="button" id="btn-close-create-modal" class="p-1 rounded-lg text-gray-400 hover:text-dark hover:bg-gray-100">
                     <i data-lucide="x" class="w-5 h-5"></i>
@@ -672,8 +450,8 @@
             <form id="form-create-product" class="p-5 space-y-3.5 text-xs">
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-medium text-dark mb-1">Kode Produk <span class="text-danger">*</span></label>
-                        <input type="text" id="create-code" placeholder="PRD-011" required
+                        <label class="block font-medium text-dark mb-1">Kode Inventaris <span class="text-danger">*</span></label>
+                        <input type="text" id="create-code" placeholder="INV-001" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                     <div>
@@ -687,7 +465,7 @@
                 </div>
 
                 <div>
-                    <label class="block font-medium text-dark mb-1">Nama Produk <span class="text-danger">*</span></label>
+                    <label class="block font-medium text-dark mb-1">Nama Peralatan <span class="text-danger">*</span></label>
                     <input type="text" id="create-name" placeholder="Contoh: ONT Fiberhome HG6243C" required
                            class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                 </div>
@@ -704,36 +482,56 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block font-medium text-dark mb-1">Stok Awal</label>
+                        <label class="block font-medium text-dark mb-1">Jumlah Awal</label>
                         <input type="number" id="create-stock" min="0" value="50" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                     <div>
-                        <label class="block font-medium text-dark mb-1">Min. Stok</label>
+                        <label class="block font-medium text-dark mb-1">Batas Minimum</label>
                         <input type="number" id="create-min" min="0" value="10" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                 </div>
 
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="create-condition" class="block font-medium text-dark mb-1">Kondisi</label>
+                        <select id="create-condition" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                            @foreach ($conditions as $condition)
+                                <option value="{{ $condition }}" @selected($condition === 'Baik')>{{ $condition }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label for="create-availability" class="block font-medium text-dark mb-1">Status Ketersediaan</label>
+                        <select id="create-availability" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                            @foreach ($availabilities as $availability)
+                                <option value="{{ $availability }}" @selected($availability === 'Tersedia')>{{ $availability }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
                 <div>
-                    <label class="block font-medium text-dark mb-1">Gudang Penyimpanan</label>
+                    <label class="block font-medium text-dark mb-1">Lokasi Penyimpanan</label>
                     <select id="create-warehouse" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
-                        <option value="Gudang Utama">Gudang Utama (Situbondo)</option>
-                        <option value="Gudang Situbondo">Gudang Situbondo</option>
-                        <option value="Gudang Besuki">Gudang Besuki</option>
-                        <option value="Gudang Asembagus">Gudang Asembagus</option>
+                        <option value="">Pilih lokasi penyimpanan</option>
+                        {{-- Kirim $locations dari controller (mis. Warehouse::pluck('name')) --}}
+                        @foreach (($locations ?? []) as $loc)
+                            <option value="{{ $loc }}">{{ $loc }}</option>
+                        @endforeach
                     </select>
                 </div>
 
                 <div>
-                    <label class="block font-medium text-dark mb-1">Deskripsi Produk</label>
-                    <textarea id="create-desc" rows="2.5" placeholder="Spesifikasi atau informasi penting produk..."
+                    <label class="block font-medium text-dark mb-1">Catatan Peralatan</label>
+                    <textarea id="create-desc" rows="2.5" placeholder="Catatan, merek/tipe, atau informasi penting peralatan..."
                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"></textarea>
                 </div>
 
                 <div class="pt-3 border-t border-border flex items-center justify-end gap-2">
                     <button type="button" id="btn-cancel-create-modal" class="px-3.5 py-2 rounded-xl border border-border text-secondary hover:bg-gray-50 font-medium">Batal</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-primary text-white font-semibold hover:bg-blue-700 shadow-sm">Simpan Produk</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-primary text-white font-semibold hover:bg-blue-700 shadow-sm">Simpan Peralatan</button>
                 </div>
             </form>
         </div>
@@ -746,8 +544,8 @@
         <div class="bg-white rounded-2xl border border-border shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in duration-150">
             <div class="p-4 border-b border-border flex items-center justify-between">
                 <div>
-                    <h3 class="text-base font-bold text-dark">Edit Data Produk</h3>
-                    <p class="text-secondary text-xs">Ubah rincian informasi produk</p>
+                    <h3 class="text-base font-bold text-dark">Edit Data Peralatan</h3>
+                    <p class="text-secondary text-xs">Ubah rincian informasi peralatan</p>
                 </div>
                 <button type="button" id="btn-close-edit-modal" class="p-1 rounded-lg text-gray-400 hover:text-dark hover:bg-gray-100">
                     <i data-lucide="x" class="w-5 h-5"></i>
@@ -758,7 +556,7 @@
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-medium text-dark mb-1">Kode Produk</label>
+                        <label class="block font-medium text-dark mb-1">Kode Inventaris</label>
                         <input type="text" id="edit-code" readonly
                                class="w-full rounded-xl border border-border bg-gray-50 text-gray-500 px-3 py-2 text-xs cursor-not-allowed">
                     </div>
@@ -773,26 +571,54 @@
                 </div>
 
                 <div>
-                    <label class="block font-medium text-dark mb-1">Nama Produk</label>
+                    <label class="block font-medium text-dark mb-1">Nama Peralatan</label>
                     <input type="text" id="edit-name" required
                            class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                 </div>
 
-                <div class="grid grid-cols-3 gap-3">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">Satuan</label>
                         <input type="text" id="edit-unit" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                     <div>
-                        <label class="block font-medium text-dark mb-1">Stok Total</label>
+                        <label class="block font-medium text-dark mb-1">Jumlah di Lokasi</label>
                         <input type="number" id="edit-stock" min="0" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                     <div>
-                        <label class="block font-medium text-dark mb-1">Min. Stok</label>
+                        <label class="block font-medium text-dark mb-1">Batas Minimum</label>
                         <input type="number" id="edit-min" min="0" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-dark mb-1">Lokasi Penyimpanan</label>
+                        <select id="edit-warehouse" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                            <option value="">Pilih lokasi penyimpanan</option>
+                            @foreach (($locations ?? []) as $loc)
+                                <option value="{{ $loc }}">{{ $loc }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="edit-condition" class="block font-medium text-dark mb-1">Kondisi</label>
+                        <select id="edit-condition" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                            @foreach ($conditions as $condition)
+                                <option value="{{ $condition }}">{{ $condition }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label for="edit-availability" class="block font-medium text-dark mb-1">Status Ketersediaan</label>
+                        <select id="edit-availability" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                            @foreach ($availabilities as $availability)
+                                <option value="{{ $availability }}">{{ $availability }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
 
@@ -822,10 +648,13 @@
         document.addEventListener('DOMContentLoaded', function () {
             // Data produk dari Blade
             let productList = @json($products);
+            const inventoryStoreUrl = @json(route('inventory.store'));
+            const inventoryUpdateUrl = @json(route('inventory.update', ['id' => '__ID__']));
+            const inventoryDestroyUrl = @json(route('inventory.destroy', ['id' => '__ID__']));
             let productMap = {};
             productList.forEach(p => { productMap[p.id] = p; });
 
-            let currentSelectedId = 'PRD-001';
+            let currentSelectedId = productList.length ? productList[0].id : null;
 
             // Toast helper
             let toastTimer;
@@ -835,6 +664,26 @@
                 toast.classList.remove('hidden');
                 clearTimeout(toastTimer);
                 toastTimer = setTimeout(() => toast.classList.add('hidden'), 2600);
+            }
+
+            async function sendInventoryRequest(url, method, payload = null) {
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
+                    ...(payload ? { body: JSON.stringify(payload) } : {}),
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    const validationErrors = Object.values(data.errors || {}).flat();
+                    throw new Error(validationErrors.join(' ') || data.message || 'Permintaan inventori gagal.');
+                }
+
+                return data;
             }
 
             // Dummy Action Click Handler
@@ -877,7 +726,7 @@
                 sortedRows.forEach(r => {
                     const matchQ = !q || r.dataset.search.includes(q);
                     const matchCat = !cat || r.dataset.category === cat;
-                    const matchSt = !st || r.dataset.status === st;
+                    const matchSt = !st || r.dataset.availability === st;
 
                     const match = matchQ && matchCat && matchSt;
                     r.classList.toggle('hidden', !match);
@@ -885,7 +734,7 @@
                 });
 
                 emptyState.classList.toggle('hidden', visibleCount > 0);
-                tableInfo.textContent = `Menampilkan ${visibleCount} dari ${rows.length} produk`;
+                tableInfo.textContent = `Menampilkan ${visibleCount} dari ${rows.length} peralatan`;
             }
 
             [searchInput, categoryFilter, statusFilter, sortSelect].forEach(el => {
@@ -933,22 +782,20 @@
                 document.getElementById('detail-category-badge').textContent = p.category;
 
                 const statusBadge = document.getElementById('detail-status-badge');
-                statusBadge.textContent = p.status;
-                if (p.status === 'Aktif') {
-                    statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-200/60';
-                } else if (p.status === 'Low Stock') {
-                    statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-600 border border-amber-200/60 font-semibold';
-                } else if (p.status === 'Habis') {
-                    statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-red-50 text-red-600 border border-red-200/60 font-bold';
-                } else {
-                    statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200/60';
-                }
+                const availabilityClasses = {
+                    'Tersedia': 'bg-emerald-50 text-emerald-600 border border-emerald-200/60',
+                    'Sedang Digunakan': 'bg-purple-50 text-purple-600 border border-purple-200/60',
+                    'Sedang Diperbaiki': 'bg-amber-50 text-amber-600 border border-amber-200/60',
+                    'Hilang': 'bg-red-50 text-red-600 border border-red-200/60',
+                };
+                statusBadge.textContent = p.availability;
+                statusBadge.className = `px-2.5 py-0.5 rounded-full text-[11px] font-medium ${availabilityClasses[p.availability] || 'bg-slate-100 text-slate-500 border border-slate-200/60'}`;
 
                 // 4 Kotak Metrik
                 document.getElementById('detail-card-stock').textContent = Number(p.total_stock).toLocaleString('id-ID');
                 document.getElementById('detail-card-unit').textContent = p.unit;
                 document.getElementById('detail-card-min').textContent = Number(p.min_stock).toLocaleString('id-ID');
-                document.getElementById('detail-card-location').textContent = p.location || 'Gudang Utama';
+                document.getElementById('detail-card-location').textContent = p.location || '-';
                 document.getElementById('detail-card-serial').textContent = p.serial_example || '-';
 
                 // Tab Detail
@@ -957,14 +804,32 @@
                 document.getElementById('info-category').textContent = p.category;
                 document.getElementById('info-unit').textContent = p.unit;
                 document.getElementById('info-description').textContent = p.description || 'Tidak ada deskripsi.';
-                document.getElementById('info-location').textContent = p.location || 'Gudang Utama';
+                document.getElementById('info-location').textContent = p.location || '-';
                 document.getElementById('info-address').textContent = p.address || 'Alamat gudang belum diatur.';
-                document.getElementById('info-status-text').textContent = p.status;
+                const conditionText = document.getElementById('info-condition-text');
+                const conditionTextClasses = {
+                    'Baru': 'text-emerald-600',
+                    'Baik': 'text-emerald-600',
+                    'Perlu Perbaikan': 'text-amber-600',
+                    'Rusak': 'text-red-600',
+                };
+                conditionText.textContent = p.condition;
+                conditionText.className = `font-semibold ${conditionTextClasses[p.condition] || 'text-slate-500'}`;
+
+                const availabilityText = document.getElementById('info-status-text');
+                const availabilityTextClasses = {
+                    'Tersedia': 'text-emerald-600',
+                    'Sedang Digunakan': 'text-purple-600',
+                    'Sedang Diperbaiki': 'text-amber-600',
+                    'Hilang': 'text-red-600',
+                };
+                availabilityText.textContent = p.availability;
+                availabilityText.className = `font-semibold ${availabilityTextClasses[p.availability] || 'text-slate-500'}`;
 
                 // Tab Stok (Per Gudang)
                 const whList = document.getElementById('warehouse-stock-list');
                 const whData = p.warehouses || [
-                    { name: p.location || 'Gudang Utama', stock: p.total_stock, min: p.min_stock }
+                    { name: p.location || '-', stock: p.total_stock, min: p.min_stock }
                 ];
                 whList.innerHTML = whData.map(wh => `
                     <div class="p-2.5 rounded-xl border border-border bg-surface flex items-center justify-between">
@@ -1051,46 +916,32 @@
             document.getElementById('btn-close-create-modal').addEventListener('click', closeCreateModal);
             document.getElementById('btn-cancel-create-modal').addEventListener('click', closeCreateModal);
 
-            document.getElementById('form-create-product').addEventListener('submit', (e) => {
+            document.getElementById('form-create-product').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const code = document.getElementById('create-code').value.trim();
-                const name = document.getElementById('create-name').value.trim();
-                const category = document.getElementById('create-category').value;
-                const unit = document.getElementById('create-unit').value;
-                const stock = parseInt(document.getElementById('create-stock').value) || 0;
-                const min = parseInt(document.getElementById('create-min').value) || 0;
-                const warehouse = document.getElementById('create-warehouse').value;
-                const desc = document.getElementById('create-desc').value.trim();
+                const form = e.currentTarget;
+                const submitButton = form.querySelector('[type="submit"]');
+                submitButton.disabled = true;
 
-                const status = stock <= 0 ? 'Habis' : (stock <= min ? 'Low Stock' : 'Aktif');
+                try {
+                    const data = await sendInventoryRequest(inventoryStoreUrl, 'POST', {
+                        sku: document.getElementById('create-code').value.trim(),
+                        name: document.getElementById('create-name').value.trim(),
+                        category: document.getElementById('create-category').value,
+                        unit: document.getElementById('create-unit').value,
+                        quantity: parseInt(document.getElementById('create-stock').value) || 0,
+                        min_stock: parseInt(document.getElementById('create-min').value) || 0,
+                        warehouse: document.getElementById('create-warehouse').value,
+                        condition: document.getElementById('create-condition').value,
+                        availability: document.getElementById('create-availability').value,
+                        description: document.getElementById('create-desc').value.trim(),
+                    });
 
-                const newProduct = {
-                    id: code,
-                    name: name,
-                    category: category,
-                    unit: unit,
-                    total_stock: stock,
-                    min_stock: min,
-                    status: status,
-                    location: warehouse,
-                    address: 'Jl. Raya Situbondo',
-                    serial_example: 'SN-' + Math.floor(100000 + Math.random() * 900000),
-                    description: desc || 'Produk baru ditambahkan ke persediaan.',
-                    warehouses: [{ name: warehouse, stock: stock, min: min }],
-                    movements: [{
-                        date: 'Hari ini',
-                        type: 'Masuk',
-                        qty: stock,
-                        ref: 'Stok Awal Produk Baru',
-                        user: 'Administrator'
-                    }],
-                    related: { active_assets: 0, open_tickets: 0 }
-                };
-
-                productMap[code] = newProduct;
-                closeCreateModal();
-                showToast(`Produk ${code} - ${name} berhasil ditambahkan!`);
-                populateDetail(code);
+                    showToast(data.message || 'Peralatan berhasil ditambahkan.');
+                    setTimeout(() => window.location.reload(), 500);
+                } catch (error) {
+                    showToast(error.message || 'Gagal menyimpan peralatan.');
+                    submitButton.disabled = false;
+                }
             });
 
             // 5. Modal Edit Produk
@@ -1104,8 +955,12 @@
                 document.getElementById('edit-name').value = current.name;
                 document.getElementById('edit-category').value = current.category;
                 document.getElementById('edit-unit').value = current.unit;
-                document.getElementById('edit-stock').value = current.total_stock;
+                const currentWarehouse = (current.warehouses || []).find(warehouse => warehouse.name === current.location);
+                document.getElementById('edit-stock').value = currentWarehouse ? currentWarehouse.stock : 0;
                 document.getElementById('edit-min').value = current.min_stock;
+                document.getElementById('edit-warehouse').value = current.location === '-' ? '' : current.location;
+                document.getElementById('edit-condition').value = current.condition;
+                document.getElementById('edit-availability').value = current.availability;
                 document.getElementById('edit-desc').value = current.description;
 
                 editModal.classList.remove('hidden');
@@ -1115,62 +970,63 @@
             document.getElementById('btn-close-edit-modal').addEventListener('click', closeEditModal);
             document.getElementById('btn-cancel-edit-modal').addEventListener('click', closeEditModal);
 
-            document.getElementById('form-edit-product').addEventListener('submit', (e) => {
+            document.getElementById('form-edit-product').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const code = document.getElementById('edit-id-hidden').value;
                 const current = productMap[code];
                 if (!current) return;
 
-                current.name = document.getElementById('edit-name').value.trim();
-                current.category = document.getElementById('edit-category').value;
-                current.unit = document.getElementById('edit-unit').value.trim();
-                current.total_stock = parseInt(document.getElementById('edit-stock').value) || 0;
-                current.min_stock = parseInt(document.getElementById('edit-min').value) || 0;
-                current.description = document.getElementById('edit-desc').value.trim();
-                current.status = current.total_stock <= 0 ? 'Habis' : (current.total_stock <= current.min_stock ? 'Low Stock' : 'Aktif');
+                const form = e.currentTarget;
+                const submitButton = form.querySelector('[type="submit"]');
+                submitButton.disabled = true;
 
-                closeEditModal();
-                showToast(`Perubahan data ${code} berhasil disimpan!`);
-                populateDetail(code);
+                try {
+                    const data = await sendInventoryRequest(
+                        inventoryUpdateUrl.replace('__ID__', encodeURIComponent(code)),
+                        'PUT',
+                        {
+                            sku: code,
+                            name: document.getElementById('edit-name').value.trim(),
+                            category: document.getElementById('edit-category').value,
+                            unit: document.getElementById('edit-unit').value.trim(),
+                            quantity: parseInt(document.getElementById('edit-stock').value) || 0,
+                            min_stock: parseInt(document.getElementById('edit-min').value) || 0,
+                            warehouse: document.getElementById('edit-warehouse').value,
+                            condition: document.getElementById('edit-condition').value,
+                            availability: document.getElementById('edit-availability').value,
+                            description: document.getElementById('edit-desc').value.trim(),
+                        }
+                    );
 
-                // Update row in table
-                const row = document.querySelector(`.product-row[data-id="${code}"]`);
-                if (row) {
-                    row.querySelector('td:nth-child(3) p:first-child').textContent = current.name;
-                    row.querySelector('td:nth-child(3) p:last-child').textContent = current.unit;
-                    row.querySelector('td:nth-child(4)').textContent = current.category;
-                    row.querySelector('td:nth-child(5)').textContent = Number(current.total_stock).toLocaleString('id-ID');
-                    row.querySelector('td:nth-child(6)').textContent = Number(current.min_stock).toLocaleString('id-ID');
-                    row.dataset.name = current.name;
-                    row.dataset.stock = current.total_stock;
-                    row.dataset.category = current.category;
-                    row.dataset.status = current.status;
+                    showToast(data.message || 'Peralatan berhasil diperbarui.');
+                    setTimeout(() => window.location.reload(), 500);
+                } catch (error) {
+                    showToast(error.message || 'Gagal memperbarui peralatan.');
+                    submitButton.disabled = false;
                 }
             });
 
             // 6. Hapus Produk
-            document.getElementById('btn-delete-product').addEventListener('click', () => {
+            document.getElementById('btn-delete-product').addEventListener('click', async () => {
                 const current = productMap[currentSelectedId];
                 if (!current) return;
 
-                if (confirm(`Apakah Anda yakin ingin menghapus produk "${current.name}" (${current.id})?`)) {
-                    showToast(`Produk ${current.id} berhasil dihapus!`);
-                    const row = document.querySelector(`.product-row[data-id="${current.id}"]`);
-                    if (row) row.remove();
-                    delete productMap[current.id];
-
-                    // Pilih baris pertama yang tersisa
-                    const firstRemaining = document.querySelector('.product-row');
-                    if (firstRemaining) {
-                        firstRemaining.click();
-                    } else {
-                        detailPanel.classList.add('hidden');
+                if (confirm(`Apakah Anda yakin ingin menghapus peralatan "${current.name}" (${current.id})?`)) {
+                    try {
+                        const data = await sendInventoryRequest(
+                            inventoryDestroyUrl.replace('__ID__', encodeURIComponent(current.id)),
+                            'DELETE'
+                        );
+                        showToast(data.message || 'Peralatan berhasil dihapus.');
+                        setTimeout(() => window.location.reload(), 500);
+                    } catch (error) {
+                        showToast(error.message || 'Gagal menghapus peralatan.');
                     }
                 }
             });
 
             // Inisialisasi awal produk pertama
-            populateDetail('PRD-001');
+            if (productList.length) populateDetail(productList[0].id);
 
             // Refresh icons
             if (window.lucide) {

@@ -39,6 +39,18 @@ Route::get('/inventory', [InventoryController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('inventory.index');
 
+Route::post('/inventory', [InventoryController::class, 'store'])
+    ->middleware(['auth', 'verified'])
+    ->name('inventory.store');
+
+Route::put('/inventory/{id}', [InventoryController::class, 'update'])
+    ->middleware(['auth', 'verified'])
+    ->name('inventory.update');
+
+Route::delete('/inventory/{id}', [InventoryController::class, 'destroy'])
+    ->middleware(['auth', 'verified'])
+    ->name('inventory.destroy');
+
 Route::get('/assets', [AssetController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('assets.index');
@@ -58,6 +70,10 @@ Route::get('/customers', [CustomerController::class, 'index'])
 Route::post('/customers', [CustomerController::class, 'store'])
     ->middleware(['auth', 'verified'])
     ->name('customers.store');
+
+Route::put('/customers/{customer}', [CustomerController::class, 'update'])
+    ->middleware(['auth', 'verified'])
+    ->name('customers.update');
 
 Route::view('/reports', 'reports')
     ->middleware(['auth', 'verified'])

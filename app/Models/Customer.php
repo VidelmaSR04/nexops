@@ -15,6 +15,8 @@ class Customer extends Model
         'customer_code',
         'nik',
         'name',
+        'reporter_name',
+        'reporter_contact',
         'type',
         'phone',
         'email',
@@ -35,4 +37,3 @@ class Customer extends Model
         return $this->hasMany(Asset::class);
     }
 }
-
