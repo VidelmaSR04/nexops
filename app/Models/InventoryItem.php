@@ -34,6 +34,57 @@ class InventoryItem extends Model
         'min_stock' => 'integer',
     ];
 
+    public static function stockLevel(int $total, int $min, ?string $status = null): string
+    {
+        if ($status === 'Nonaktif') {
+            return 'Aman';
+        }
+
+        if ($total <= 0) {
+            return 'Habis';
+        }
+
+        if ($min > 0 && $total <= $min) {
+            return 'Menipis';
+        }
+
+        return 'Aman';
+    }
+
+    public static function isWorseStockLevel(string $before, string $after): bool
+    {
+        return ($before === 'Aman' && in_array($after, ['Menipis', 'Habis'], true))
+            || ($before === 'Menipis' && $after === 'Habis');
+    }
+
+    public function logWorsenedStockLevel(string $before, int $total, ?User $user): void
+    {
+        $level = self::stockLevel($total, (int) $this->min_stock, $this->status);
+        if (! self::isWorseStockLevel($before, $level)) {
+            return;
+        }
+
+        $action = $level === 'Habis' ? 'out_of_stock' : 'low_stock';
+        $description = $level === 'Habis'
+            ? "Stok {$this->name} habis: {$total} {$this->unit} (minimum {$this->min_stock})"
+            : "Stok {$this->name} menipis: {$total} {$this->unit} (minimum {$this->min_stock})";
+
+        ActivityLog::create([
+            'user_id' => $user?->id,
+            'user_name' => $user?->name,
+            'subject_type' => self::class,
+            'subject_id' => $this->id,
+            'action' => $action,
+            'description' => $description,
+            'properties' => [
+                'previous_stock_level' => $before,
+                'stock_level' => $level,
+                'total_stock' => $total,
+                'min_stock' => (int) $this->min_stock,
+            ],
+        ]);
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);

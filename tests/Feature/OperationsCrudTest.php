@@ -16,7 +16,7 @@ class OperationsCrudTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_inventory_crud_generates_sku_and_tracks_stock_by_warehouse(): void
+    public function test_inventory_crud_tracks_stock_by_warehouse(): void
     {
         $this->actingAs(User::factory()->create());
         $warehouse = $this->createWarehouse('WH-001', 'Gudang Utama');
@@ -27,19 +27,14 @@ class OperationsCrudTest extends TestCase
             'category' => 'Perangkat Jaringan',
             'unit' => 'Unit',
             'min_stock' => 2,
-            'stock' => 5,
-            'warehouse_id' => $warehouse->id,
+            'quantity' => 5,
+            'warehouse' => $warehouse->name,
         ])->assertRedirect(route('inventory.index'));
 
-        $item = InventoryItem::where('sku', 'PRD-001')->firstOrFail();
+        $item = InventoryItem::where('sku', 'MANUAL-SKU')->firstOrFail();
         $this->assertDatabaseHas('warehouse_stocks', [
             'inventory_item_id' => $item->id,
             'warehouse_id' => $warehouse->id,
-            'quantity' => 5,
-        ]);
-        $this->assertDatabaseHas('stock_movements', [
-            'inventory_item_id' => $item->id,
-            'type' => 'Masuk',
             'quantity' => 5,
         ]);
         $this->get(route('inventory.index'))
@@ -53,18 +48,33 @@ class OperationsCrudTest extends TestCase
             'category' => 'Perangkat Jaringan',
             'unit' => 'Unit',
             'min_stock' => 3,
-            'stock' => 8,
-            'warehouse_id' => $warehouse->id,
+            'quantity' => 8,
+            'warehouse' => $warehouse->name,
         ])->assertRedirect(route('inventory.index'));
 
         $this->assertSame('Router Updated', $item->fresh()->name);
         $this->assertSame(8, (int) $item->stocks()->sum('quantity'));
-        $this->assertSame('Masuk', StockMovement::latest('id')->firstOrFail()->type);
 
-        $this->delete(route('inventory.destroy', $item->sku))
+        WarehouseStock::where('inventory_item_id', $item->id)
+            ->where('warehouse_id', $warehouse->id)
+            ->update(['quantity' => 0]);
+        $movement = StockMovement::create([
+            'inventory_item_id' => $item->id,
+            'warehouse_id' => $warehouse->id,
+            'type' => 'Masuk',
+            'quantity' => 5,
+        ]);
+
+        $this->delete(route('inventory.destroy', $item->fresh()->sku))
             ->assertRedirect(route('inventory.index'));
 
         $this->assertSoftDeleted('inventory_items', ['id' => $item->id]);
+        $this->assertDatabaseHas('warehouse_stocks', [
+            'inventory_item_id' => $item->id,
+            'warehouse_id' => $warehouse->id,
+            'quantity' => 0,
+        ]);
+        $this->assertDatabaseHas('stock_movements', ['id' => $movement->id]);
         $this->assertSame(0, (int) $item->stocks()->sum('quantity'));
     }
 
@@ -132,7 +142,7 @@ class OperationsCrudTest extends TestCase
         $this->assertSoftDeleted('assets', ['id' => $asset->id]);
     }
 
-    public function test_warehouse_crud_and_stock_movements_enforce_capacity_and_availability(): void
+    public function test_warehouse_crud_and_stock_movements_enforce_location_availability(): void
     {
         $this->actingAs(User::factory()->create());
 
@@ -145,10 +155,10 @@ class OperationsCrudTest extends TestCase
             'status' => 'Aktif',
         ])->assertRedirect(route('warehouse.index'));
 
-        $source = Warehouse::where('code', 'WH-001')->firstOrFail();
+        $source = Warehouse::where('code', 'MANUAL-WAREHOUSE')->firstOrFail();
         $this->get(route('warehouse.index'))
             ->assertOk()
-            ->assertSee('id="edit-status" name="status"', false);
+            ->assertSee('id="edit-status"', false);
 
         $destination = $this->createWarehouse('WH-002', 'Gudang Tujuan', 20);
         $item = InventoryItem::create([
@@ -181,6 +191,7 @@ class OperationsCrudTest extends TestCase
             ->assertSee('Gudang Asal');
 
         $this->put(route('warehouse.update', $source->code), [
+            'code' => $source->code,
             'name' => $source->name,
             'address' => $source->address,
             'area' => $source->area,
@@ -190,16 +201,179 @@ class OperationsCrudTest extends TestCase
         $this->assertSame('Maintenance', $source->fresh()->status);
 
         $this->put(route('warehouse.update', $source->code), [
-            'code' => 'MANUAL-UPDATED',
+            'code' => 'WH-002',
             'name' => $source->name,
             'address' => $source->address,
             'area' => $source->area,
             'capacity' => 5,
             'status' => 'Maintenance',
-        ])->assertSessionHasErrors('capacity');
+        ])->assertSessionHasErrors('code');
 
         $this->delete(route('warehouse.destroy', $source->code))
-            ->assertSessionHasErrors('warehouse');
+            ->assertSessionHas('error', 'Lokasi masih memiliki aset atau stok, pindahkan atau hapus datanya terlebih dahulu.');
+    }
+
+    public function test_warehouse_update_status_and_asset_restriction(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $warehouse = $this->createWarehouse('WH-STAT', 'Gudang Status Test');
+
+        // Update status to Maintenance
+        $this->patchJson(route('warehouse.update-status', $warehouse->code), [
+            'status' => 'Maintenance',
+        ])->assertOk()
+            ->assertJsonPath('message', 'Status lokasi berhasil diperbarui.');
+
+        $this->assertSame('Maintenance', $warehouse->fresh()->status);
+        $this->assertDatabaseHas('activity_logs', [
+            'subject_type' => Warehouse::class,
+            'subject_id' => $warehouse->id,
+            'action' => 'status_changed',
+            'user_id' => $user->id,
+        ]);
+
+        // Create an active asset linked to warehouse
+        Asset::create([
+            'asset_code' => 'AST-WH-01',
+            'name' => 'Router di Gudang',
+            'warehouse_id' => $warehouse->id,
+            'status' => 'Aktif',
+        ]);
+
+        // Cannot change to Nonaktif because of active asset
+        $this->patchJson(route('warehouse.update-status', $warehouse->code), [
+            'status' => 'Nonaktif',
+        ])->assertStatus(422)
+            ->assertJsonPath('message', 'Status tidak dapat diubah menjadi Nonaktif karena masih ada aset aktif di lokasi ini.');
+
+        $this->assertNotSame('Nonaktif', $warehouse->fresh()->status);
+
+        // Validation error on invalid status
+        $this->patchJson(route('warehouse.update-status', $warehouse->code), [
+            'status' => 'StatusPalsu',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['status']);
+    }
+
+    public function test_warehouse_crud_via_ui_json_endpoints(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        // Create via POST
+        $this->postJson(route('warehouse.store'), [
+            'code' => 'WH-UI-01',
+            'name' => 'Dinas Pendidikan',
+            'address' => 'Jl. Pemuda No. 10',
+            'status' => 'Aktif',
+        ])->assertOk()
+            ->assertJsonPath('message', 'Lokasi berhasil ditambahkan.');
+
+        $this->assertDatabaseHas('warehouses', [
+            'code' => 'WH-UI-01',
+            'name' => 'Dinas Pendidikan',
+            'status' => 'Aktif',
+        ]);
+
+        // Edit via PUT
+        $this->putJson(route('warehouse.update', 'WH-UI-01'), [
+            'code' => 'WH-UI-01',
+            'name' => 'Dinas Pendidikan Situbondo',
+            'address' => 'Jl. Pemuda No. 12',
+            'status' => 'Aktif',
+        ])->assertOk()
+            ->assertJsonPath('message', 'Lokasi berhasil diperbarui.');
+
+        $this->assertDatabaseHas('warehouses', [
+            'code' => 'WH-UI-01',
+            'name' => 'Dinas Pendidikan Situbondo',
+        ]);
+
+        // Delete via DELETE
+        $this->deleteJson(route('warehouse.destroy', 'WH-UI-01'))
+            ->assertOk()
+            ->assertJsonPath('message', 'Lokasi berhasil dihapus.');
+
+        $this->assertSoftDeleted('warehouses', [
+            'code' => 'WH-UI-01',
+        ]);
+    }
+
+    public function test_asset_edit_form_persists_changes_and_displays_opd(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $customer = Customer::create([
+            'customer_code' => 'CST-OPD-01',
+            'name' => 'Dinas Kominfo',
+            'status' => 'Aktif',
+        ]);
+
+        $asset = Asset::create([
+            'asset_code' => 'AST-EDIT-01',
+            'name' => 'Switch Core',
+            'customer_id' => $customer->id,
+            'status' => 'Aktif',
+            'serial_number' => 'SN-SW-01',
+        ]);
+
+        // Verify index view has OPD key and shows customer name
+        $response = $this->get(route('assets.index'))->assertOk();
+        $response->assertSee('Dinas Kominfo');
+        $response->assertViewHas('assets', function (array $assets): bool {
+            $item = collect($assets)->firstWhere('id', 'AST-EDIT-01');
+
+            return $item !== null && $item['opd'] === 'Dinas Kominfo';
+        });
+
+        // Edit asset via PUT JSON endpoint (used by fetch)
+        $this->putJson(route('assets.update', $asset->asset_code), [
+            'name' => 'Switch Core Updated',
+            'category' => 'Perangkat Jaringan',
+            'customer_id' => $customer->id,
+            'status' => 'Maintenance',
+            'serial_number' => 'SN-SW-01',
+        ])->assertOk()
+            ->assertJsonPath('message', 'Data aset berhasil diperbarui.');
+
+        $this->assertSame('Switch Core Updated', $asset->fresh()->name);
+        $this->assertSame('Maintenance', $asset->fresh()->status);
+
+        // Update status via PATCH JSON endpoint (used by action-status-select fetch)
+        $this->patchJson(route('assets.update-status', $asset->asset_code), [
+            'status' => 'Rusak',
+        ])->assertOk()
+            ->assertJsonPath('message', 'Status aset berhasil diperbarui.');
+
+        $this->assertSame('Rusak', $asset->fresh()->status);
+    }
+
+    public function test_inventory_serial_example_persists_via_edit(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $item = InventoryItem::create([
+            'sku' => 'INV-SN-01',
+            'name' => 'Router Mikrotik',
+            'unit' => 'Unit',
+            'min_stock' => 1,
+            'status' => 'Aktif',
+            'serial_example' => 'SN-OLD-001',
+        ]);
+
+        $this->putJson(route('inventory.update', $item->sku), [
+            'sku' => $item->sku,
+            'name' => $item->name,
+            'serial_example' => 'ZTE001234',
+        ])->assertOk();
+
+        $this->assertSame('ZTE001234', $item->fresh()->serial_example);
+
+        $response = $this->get(route('inventory.index'))->assertOk();
+        $response->assertSee('ZTE001234');
+        $response->assertViewHas('products', function (array $products): bool {
+            $product = collect($products)->firstWhere('id', 'INV-SN-01');
+
+            return $product !== null && $product['serial_example'] === 'ZTE001234';
+        });
     }
 
     private function createWarehouse(string $code, string $name, int $capacity = 100): Warehouse

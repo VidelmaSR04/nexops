@@ -211,6 +211,14 @@
                         <dt class="text-secondary text-[11px]">Status</dt>
                         <dd id="detail-status" class="font-medium text-dark mt-0.5">-</dd>
                     </div>
+                    <div class="col-span-2">
+                        <dt class="text-secondary text-[11px] mb-1">Status Cepat</dt>
+                        <dd>
+                            <select id="action-status-select" class="w-full text-xs rounded-lg border border-border bg-white px-2 py-1.5 text-dark focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                @foreach ($statuses as $st)<option value="{{ $st }}">{{ $st }}</option>@endforeach
+                            </select>
+                        </dd>
+                    </div>
                 </dl>
 
                 {{-- Riwayat Perbaikan --}}
@@ -248,24 +256,24 @@
                 @csrf
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-medium text-dark mb-1" for="create-code">Kode Lokasi <span class="text-danger">*</span></label>
-                        <input type="text" id="create-code" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                        <label class="block font-medium text-dark mb-1" for="create-code">Kode Lokasi</label>
+                        <input type="text" id="create-code" name="code" value="{{ $warehousePreview ?? 'WH-001' }}" readonly class="w-full rounded-xl border border-border px-3 py-2 text-xs bg-gray-50 text-gray-500 cursor-not-allowed">
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1" for="create-status">Status</label>
-                        <select id="create-status" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <select id="create-status" name="status" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                             @foreach ($statuses as $st)<option value="{{ $st }}">{{ $st }}</option>@endforeach
                         </select>
                     </div>
                 </div>
                 <div>
                     <label class="block font-medium text-dark mb-1" for="create-name">Nama OPD <span class="text-danger">*</span></label>
-                    <input type="text" id="create-name" list="opd-options" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    <input type="text" id="create-name" name="name" list="opd-options" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     <datalist id="opd-options">@foreach ($opdNames as $n)<option value="{{ $n }}"></option>@endforeach</datalist>
                 </div>
                 <div>
                     <label class="block font-medium text-dark mb-1" for="create-address">Alamat <span class="text-danger">*</span></label>
-                    <input type="text" id="create-address" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    <input type="text" id="create-address" name="address" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                 </div>
                 <div class="pt-3 border-t border-border flex items-center justify-end gap-2">
                     <button type="button" class="btn-close-modal px-3.5 py-2 rounded-xl border border-border text-secondary hover:bg-gray-50 font-medium">Batal</button>
@@ -285,26 +293,28 @@
                 </div>
                 <button type="button" class="btn-close-modal p-1 rounded-lg text-gray-400 hover:text-dark hover:bg-gray-100"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <form id="form-edit-warehouse" class="p-5 space-y-3.5 text-xs">
+            <form id="form-edit-warehouse" method="POST" class="p-5 space-y-3.5 text-xs">
+                @csrf
+                @method('PUT')
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1" for="edit-code">Kode Lokasi</label>
-                        <input type="text" id="edit-code" readonly class="w-full rounded-xl border border-border px-3 py-2 text-xs bg-gray-50 text-secondary">
+                        <input type="text" id="edit-code" name="code" readonly class="w-full rounded-xl border border-border px-3 py-2 text-xs bg-gray-50 text-secondary">
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1" for="edit-status">Status</label>
-                        <select id="edit-status" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <select id="edit-status" name="status" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                             @foreach ($statuses as $st)<option value="{{ $st }}">{{ $st }}</option>@endforeach
                         </select>
                     </div>
                 </div>
                 <div>
                     <label class="block font-medium text-dark mb-1" for="edit-name">Nama OPD</label>
-                    <input type="text" id="edit-name" list="opd-options" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    <input type="text" id="edit-name" name="name" list="opd-options" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                 </div>
                 <div>
                     <label class="block font-medium text-dark mb-1" for="edit-address">Alamat</label>
-                    <input type="text" id="edit-address" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    <input type="text" id="edit-address" name="address" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                 </div>
                 <div class="pt-3 border-t border-border flex items-center justify-end gap-2">
                     <button type="button" class="btn-close-modal px-3.5 py-2 rounded-xl border border-border text-secondary hover:bg-gray-50 font-medium">Batal</button>
@@ -431,6 +441,9 @@
                 $('detail-address').textContent = w.location || '-';
                 $('detail-assets').textContent = (w.assets_count ?? '-');
                 $('detail-status').textContent = w.status;
+                if ($('action-status-select')) {
+                    $('action-status-select').value = w.status;
+                }
                 const b = $('detail-status-badge');
                 b.textContent = w.status;
                 b.className = BADGE_BASE + (BADGES[w.status] || BADGE_DEFAULT);
@@ -465,19 +478,145 @@
                 $('edit-status').value = w.status;
                 openModal($('modal-edit-warehouse'));
             });
-            $('btn-trigger-delete').addEventListener('click', () => {
-                const w = map[currentId];
-                if (!w) return showToast('Pilih lokasi terlebih dahulu.');
-                if (confirm(`Hapus lokasi "${w.name}" (${w.id})? Data belum terhubung ke backend.`)) {
-                    showToast('Hapus Lokasi belum terhubung ke database.');
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                || document.querySelector('input[name="_token"]')?.value;
+
+            // 1. Submit Tambah Lokasi via fetch()
+            $('form-create-warehouse').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const formData = new FormData(form);
+
+                try {
+                    const response = await fetch(form.action || '{{ route('warehouse.store') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: formData,
+                    });
+
+                    const data = await response.json().catch(() => ({}));
+
+                    if (!response.ok) {
+                        const errMsg = data.message || Object.values(data.errors || {})[0]?.[0] || 'Gagal menyimpan lokasi.';
+                        showToast(errMsg);
+                        return;
+                    }
+
+                    closeAll();
+                    showToast(data.message || 'Lokasi berhasil ditambahkan.');
+                    setTimeout(() => window.location.reload(), 500);
+                } catch (err) {
+                    showToast('Terjadi kesalahan jaringan.');
                 }
             });
-            [['form-create-warehouse', 'Tambah Lokasi'], ['form-edit-warehouse', 'Edit Lokasi']].forEach(([id, label]) => {
-                $(id).addEventListener('submit', e => {
-                    e.preventDefault();
+
+            // 2. Submit Edit Lokasi via fetch()
+            $('form-edit-warehouse').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const w = map[currentId];
+                if (!w) return showToast('Pilih lokasi terlebih dahulu.');
+
+                const form = e.target;
+                const formData = new FormData(form);
+
+                try {
+                    const response = await fetch(`{{ url('/warehouse') }}/${encodeURIComponent(w.id)}`, {
+                        method: 'POST', // Menggunakan _method PUT dari form
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: formData,
+                    });
+
+                    const data = await response.json().catch(() => ({}));
+
+                    if (!response.ok) {
+                        const errMsg = data.message || Object.values(data.errors || {})[0]?.[0] || 'Gagal memperbarui lokasi.';
+                        showToast(errMsg);
+                        return;
+                    }
+
                     closeAll();
-                    showToast(label + ': belum terhubung ke backend, data belum tersimpan.');
+                    showToast(data.message || 'Lokasi berhasil diperbarui.');
+                    setTimeout(() => window.location.reload(), 500);
+                } catch (err) {
+                    showToast('Terjadi kesalahan jaringan.');
+                }
+            });
+
+            // 3. Ubah Status Cepat via fetch()
+            if ($('action-status-select')) {
+                $('action-status-select').addEventListener('change', async (e) => {
+                    const w = map[currentId];
+                    if (!w) return;
+                    const newStatus = e.target.value;
+
+                    try {
+                        const response = await fetch(`{{ url('/warehouse') }}/${encodeURIComponent(w.id)}/status`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            body: JSON.stringify({ status: newStatus }),
+                        });
+
+                        const data = await response.json().catch(() => ({}));
+
+                        if (!response.ok) {
+                            showToast(data.message || 'Gagal memperbarui status lokasi.');
+                            e.target.value = w.status;
+                            return;
+                        }
+
+                        w.status = newStatus;
+                        showToast(data.message || 'Status lokasi berhasil diperbarui.');
+                        populateDetail(w.id);
+                        setTimeout(() => window.location.reload(), 500);
+                    } catch (err) {
+                        showToast('Terjadi kesalahan jaringan.');
+                        e.target.value = w.status;
+                    }
                 });
+            }
+
+            // 4. Hapus Lokasi via fetch()
+            $('btn-trigger-delete').addEventListener('click', async () => {
+                const w = map[currentId];
+                if (!w) return showToast('Pilih lokasi terlebih dahulu.');
+
+                if (!confirm(`Hapus lokasi "${w.name}" (${w.id})? Tindakan ini bersifat permanen.`)) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`{{ url('/warehouse') }}/${encodeURIComponent(w.id)}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+
+                    const data = await response.json().catch(() => ({}));
+
+                    if (!response.ok) {
+                        showToast(data.message || 'Gagal menghapus lokasi.');
+                        return;
+                    }
+
+                    showToast(data.message || 'Lokasi berhasil dihapus.');
+                    setTimeout(() => window.location.reload(), 500);
+                } catch (err) {
+                    showToast('Terjadi kesalahan jaringan.');
+                }
             });
 
             if (currentId) populateDetail(currentId);
