@@ -17,7 +17,19 @@
         $availabilities = \App\Models\InventoryItem::AVAILABILITIES;
 
         $productsById = collect($products)->keyBy('id')->all();
+        $warehouseOptions = collect($warehouses ?? [])
+            ->map(fn ($warehouse) => [
+                'id' => $warehouse->id,
+                'name' => $warehouse->name,
+                'status' => $warehouse->status,
+            ])
+            ->values();
     @endphp
+
+    <style>
+        .product-row.stock-level-menipis:not(.is-selected) { background-color: rgb(255 251 235 / 0.65); }
+        .product-row.stock-level-habis:not(.is-selected) { background-color: rgb(254 242 242 / 0.75); }
+    </style>
 
     <div class="space-y-6">
 
@@ -74,13 +86,16 @@
             </div>
 
             {{-- Low Stock --}}
-            <div class="bg-white rounded-xl border border-border p-4.5 flex items-center gap-3.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+            <div id="low-stock-card" role="button" tabindex="0" class="bg-white rounded-xl border border-border p-4.5 flex items-center gap-3.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)] cursor-pointer hover:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300">
                 <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
                     <i data-lucide="alert-triangle" class="w-5 h-5"></i>
                 </div>
                 <div>
                     <p class="text-xs text-secondary font-medium">Stok Menipis</p>
                     <p class="text-2xl font-bold text-dark mt-0.5">{{ $summary['low_stock'] }}</p>
+                    @if (($summary['out_of_stock'] ?? 0) > 0)
+                        <p class="text-[10px] text-secondary">{{ $summary['out_of_stock'] }} di antaranya habis</p>
+                    @endif
                 </div>
             </div>
 
@@ -129,6 +144,7 @@
                             <option value="code_desc">Kode Inventaris (Z-A)</option>
                             <option value="stock_desc">Jumlah Terbanyak</option>
                             <option value="stock_asc">Jumlah Tersedikit</option>
+                            <option value="restock_first">Perlu restock dulu</option>
                         </select>
                     </div>
 
@@ -148,11 +164,27 @@
                             @endforeach
                         </select>
 
+                        <select id="filter-stock-level" class="text-xs rounded-lg border border-border bg-white px-2.5 py-1.5 text-dark">
+                            <option value="">Semua Level Stok</option>
+                            <option value="Perlu Restock">Perlu Restock (Menipis &amp; Habis)</option>
+                            <option value="Menipis">Menipis</option>
+                            <option value="Habis">Habis</option>
+                        </select>
+
                         <button type="button" id="btn-reset-filters"
                                 class="text-xs rounded-lg border border-border px-3 py-1.5 text-secondary hover:bg-gray-50 text-center font-medium">
                             Reset Filter
                         </button>
                     </div>
+                </div>
+
+                <div id="active-filter-chip" class="hidden items-center gap-2 border-t border-border bg-blue-50/60 px-4 py-2 text-[11px] text-secondary">
+                    <span>Filter aktif:</span>
+                    <span id="active-filter-summary" class="font-semibold text-dark"></span>
+                    <button type="button" id="btn-clear-active-filters" class="ml-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 font-medium text-primary hover:bg-white">
+                        <span aria-hidden="true">✕</span>
+                        <span>Tampilkan semua</span>
+                    </button>
                 </div>
 
                 {{-- Tabel Data Inventory --}}
@@ -181,6 +213,12 @@
                                     $availability = $item['availability'];
                                     $isLow = $item['status'] === 'Low Stock';
                                     $isOut = $item['status'] === 'Habis';
+                                    $stockLevel = $item['stock_level'] ?? 'Aman';
+                                    $stockBadgeClass = match ($stockLevel) {
+                                        'Menipis' => 'bg-amber-50 text-amber-700 border border-amber-200',
+                                        'Habis' => 'bg-red-50 text-red-700 border border-red-200',
+                                        default => '',
+                                    };
 
                                     $conditionClass = match($condition) {
                                         'Baru', 'Baik'          => 'bg-emerald-50 text-emerald-600 border border-emerald-200/60',
@@ -195,16 +233,22 @@
                                         'Hilang'                  => 'bg-red-50 text-red-600 border border-red-200/60',
                                         default                   => 'bg-slate-100 text-slate-500 border border-slate-200/60',
                                     };
+                                    $warehouseBreakdown = collect($item['warehouses'] ?? [])
+                                        ->filter(fn ($warehouse) => (int) ($warehouse['stock'] ?? 0) > 0)
+                                        ->map(fn ($warehouse) => ($warehouse['name'] ?? '-') . ': ' . number_format((int) $warehouse['stock']))
+                                        ->implode(' · ');
+                                    $warehouseBreakdown = $warehouseBreakdown ?: 'Belum ada stok di gudang mana pun';
                                 @endphp
-                                <tr class="product-row cursor-pointer transition-colors hover:bg-blue-50/40 {{ $idx === 0 ? 'bg-blue-50/70 border-l-4 border-l-primary' : '' }}"
+                                <tr class="product-row cursor-pointer transition-colors hover:bg-blue-50/40 {{ $idx === 0 ? 'is-selected bg-blue-50/70 border-l-4 border-l-primary' : '' }} {{ $stockLevel === 'Menipis' ? 'stock-level-menipis' : ($stockLevel === 'Habis' ? 'stock-level-habis' : '') }}"
                                     data-id="{{ $item['id'] }}"
                                     data-name="{{ $item['name'] }}"
                                     data-category="{{ $item['category'] }}"
                                     data-stock="{{ $item['total_stock'] }}"
                                     data-min="{{ $item['min_stock'] }}"
                                     data-status="{{ $item['status'] }}"
+                                    data-stock-level="{{ $stockLevel }}"
                                     data-availability="{{ $availability }}"
-                                    data-search="{{ strtolower($item['id'] . ' ' . $item['name'] . ' ' . ($item['brand'] ?? '') . ' ' . $item['category'] . ' ' . ($item['location'] ?? '')) }}">
+                                    data-search="{{ strtolower($item['id'] . ' ' . $item['name'] . ' ' . ($item['brand'] ?? '') . ' ' . $item['category'] . ' ' . ($item['location_label'] ?? $item['location'] ?? '')) }}">
                                     <td class="pl-4 py-3">
                                         <input type="checkbox" class="row-checkbox rounded border-gray-300 text-primary focus:ring-primary/20">
                                     </td>
@@ -227,9 +271,16 @@
                                     <td class="py-3 pr-3 whitespace-nowrap text-secondary">
                                         {{ $item['category'] }}
                                     </td>
-                                    <td class="py-3 pr-3 text-right font-bold whitespace-nowrap {{ $isLow ? 'text-amber-600' : ($isOut ? 'text-danger' : 'text-dark') }}">
+                                    <td class="py-3 pr-3 text-right font-bold whitespace-nowrap {{ $isLow ? 'text-amber-600' : ($isOut ? 'text-danger' : 'text-dark') }}"
+                                        title="Stok {{ $item['total_stock'] }}, minimum {{ $item['min_stock'] }}, kurang {{ $item['restock_needed'] ?? 0 }}">
                                         {{ number_format($item['total_stock']) }}
                                         <span class="font-normal text-[11px] text-secondary">{{ $item['unit'] }}</span>
+                                        @if ($stockLevel !== 'Aman')
+                                            <span class="block mt-1">
+                                                <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $stockBadgeClass }}">{{ $stockLevel }}</span>
+                                            </span>
+                                            <span class="block text-[10px] font-normal text-secondary">Min: {{ number_format($item['min_stock']) }} {{ $item['unit'] }}</span>
+                                        @endif
                                     </td>
                                     <td class="py-3 pr-3 text-center">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap {{ $conditionClass }}">
@@ -241,8 +292,8 @@
                                             {{ $availability }}
                                         </span>
                                     </td>
-                                    <td class="py-3 pr-3 text-secondary">
-                                        {{ $item['location'] }}
+                                    <td class="py-3 pr-3 text-secondary" title="{{ $warehouseBreakdown }}">
+                                        {{ $item['location_label'] }}
                                     </td>
                                     <td class="py-3 pr-4 text-center">
                                         <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" data-product-action="edit" aria-label="Edit {{ $item['name'] }}">
@@ -255,29 +306,18 @@
                             <tr id="empty-state-row" class="{{ count($products) ? 'hidden' : '' }}">
                                 <td colspan="10" class="py-12 text-center text-gray-400">
                                     <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-gray-300"></i>
-                                    Tidak ada peralatan yang cocok dengan kriteria pencarian / filter.
+                                    <p>Tidak ada peralatan yang cocok</p>
+                                    <button type="button" id="btn-empty-show-all" class="mt-2 font-medium text-primary underline underline-offset-2 hover:no-underline">
+                                        Tampilkan semua
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                {{-- Pagination Dummy --}}
                 <div class="p-3.5 border-t border-border flex flex-wrap items-center justify-between gap-3 text-xs">
-                    <p id="table-info" class="text-secondary">Menampilkan 1-10 dari {{ count($products) }} peralatan</p>
-                    <div class="flex items-center gap-1">
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border flex items-center justify-center text-secondary hover:bg-gray-50" data-dummy-action="Halaman Sebelumnya">
-                            <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button type="button" class="w-7 h-7 rounded-lg bg-primary text-white font-medium flex items-center justify-center">1</button>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border text-secondary hover:bg-gray-50 flex items-center justify-center" data-dummy-action="Halaman 2">2</button>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border text-secondary hover:bg-gray-50 flex items-center justify-center" data-dummy-action="Halaman 3">3</button>
-                        <span class="px-1 text-gray-400">...</span>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border text-secondary hover:bg-gray-50 flex items-center justify-center" data-dummy-action="Halaman 25">25</button>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border flex items-center justify-center text-secondary hover:bg-gray-50" data-dummy-action="Halaman Berikutnya">
-                            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-                        </button>
-                    </div>
+                    <p id="table-info" class="text-secondary">Menampilkan {{ count($products) ? '1-' . count($products) : '0' }} dari {{ count($products) }} peralatan</p>
                 </div>
 
             </div>
@@ -307,12 +347,14 @@
                     </button>
                 </div>
 
+                <div id="detail-stock-alert" role="status" class="hidden mt-4 rounded-xl border px-3 py-2 text-xs font-medium"></div>
+
                 {{-- Kartu Metrik Ringkas 4 Kolom --}}
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-xl bg-surface border border-border/80 text-xs my-4">
                     <div>
-                        <p class="text-[10px] text-secondary uppercase font-semibold">Jumlah Unit</p>
+                        <p class="text-[10px] text-secondary uppercase font-semibold">Total Stok</p>
                         <p id="detail-card-stock" class="text-base font-bold text-dark mt-0.5">-</p>
-                        <p id="detail-card-unit" class="text-[10px] text-secondary">Unit</p>
+                        <p id="detail-card-unit" class="text-[10px] text-secondary">Semua lokasi</p>
                     </div>
                     <div>
                         <p class="text-[10px] text-secondary uppercase font-semibold">Batas Minimum</p>
@@ -322,7 +364,7 @@
                     <div>
                         <p class="text-[10px] text-secondary uppercase font-semibold">Lokasi</p>
                         <p id="detail-card-location" class="font-bold text-dark mt-0.5 truncate">-</p>
-                        <p class="text-[10px] text-secondary">Lokasi Utama</p>
+                        <p class="text-[10px] text-secondary">Lokasi dengan stok terbanyak</p>
                     </div>
                     <div>
                         <p class="text-[10px] text-secondary uppercase font-semibold">Contoh SN</p>
@@ -460,9 +502,9 @@
                 @csrf
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-medium text-dark mb-1">Kode Inventaris <span class="text-danger">*</span></label>
-                        <input type="text" id="create-code" placeholder="INV-001" required
-                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                        <label class="block font-medium text-dark mb-1">Kode Inventaris</label>
+                        <input type="text" id="create-code" value="{{ $skuPreview ?? 'PRD-001' }}" readonly
+                               class="w-full rounded-xl border border-border px-3 py-2 text-xs bg-gray-50 text-gray-500 cursor-not-allowed">
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Kategori <span class="text-danger">*</span></label>
@@ -541,6 +583,13 @@
                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"></textarea>
                 </div>
 
+                <div>
+                    <label class="block font-medium text-dark mb-1">Contoh Serial Number</label>
+                    <input type="text" id="create-serial-example" maxlength="80"
+                           placeholder="Contoh: ZTE001234"
+                           class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                </div>
+
                 <div class="pt-3 border-t border-border flex items-center justify-end gap-2">
                     <button type="button" id="btn-cancel-create-modal" class="px-3.5 py-2 rounded-xl border border-border text-secondary hover:bg-gray-50 font-medium">Batal</button>
                     <button type="submit" class="px-4 py-2 rounded-xl bg-primary text-white font-semibold hover:bg-blue-700 shadow-sm">Simpan Peralatan</button>
@@ -563,7 +612,7 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <form id="form-edit-product" method="POST" class="p-5 space-y-3.5 text-xs">
+            <form id="form-edit-product" method="POST" class="p-5 space-y-3.5 text-xs max-h-[75vh] overflow-y-auto">
                 @csrf
                 @method('PUT')
                 <input type="hidden" id="edit-id-hidden">
@@ -594,23 +643,14 @@
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                     <div>
-                        <label class="block font-medium text-dark mb-1">Jumlah di Lokasi</label>
-                        <input type="number" id="edit-stock" min="0" required
-                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
-                    </div>
-                    <div>
                         <label class="block font-medium text-dark mb-1">Batas Minimum</label>
                         <input type="number" id="edit-min" min="0" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
-                    <div>
-                        <label class="block font-medium text-dark mb-1">Lokasi Penyimpanan</label>
-                        <select id="edit-warehouse" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
-                            <option value="">Pilih lokasi penyimpanan</option>
-                            @foreach (($locations ?? []) as $loc)
-                                <option value="{{ $loc }}">{{ $loc }}</option>
-                            @endforeach
-                        </select>
+                    <div class="col-span-2">
+                        <p class="block font-medium text-dark mb-2">Stok per Gudang</p>
+                        <div id="edit-warehouse-stocks" class="space-y-2"></div>
+                        <p id="edit-stock-total" class="mt-2 text-[10px] text-secondary">Total: 0 Unit</p>
                     </div>
                 </div>
 
@@ -634,18 +674,16 @@
                 </div>
 
                 <div>
-                    <label class="block font-medium text-dark mb-1">Gudang untuk Penyesuaian Stok</label>
-                    <select id="edit-warehouse" name="warehouse_id" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
-                        @foreach ($warehouses as $warehouse)
-                            <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
                     <label class="block font-medium text-dark mb-1">Deskripsi</label>
                     <textarea id="edit-desc" name="description" rows="2"
                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"></textarea>
+                </div>
+
+                <div>
+                    <label class="block font-medium text-dark mb-1">Contoh Serial Number</label>
+                    <input type="text" id="edit-serial-example" maxlength="80"
+                           placeholder="Contoh: ZTE001234"
+                           class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                 </div>
 
                 <div class="pt-3 border-t border-border flex items-center justify-end gap-2">
@@ -672,6 +710,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             // Data produk dari Blade
             let productList = @json($products);
+            const warehouseList = @json($warehouseOptions);
             const inventoryStoreUrl = @json(route('inventory.store'));
             const inventoryUpdateUrl = @json(route('inventory.update', ['id' => '__ID__']));
             const inventoryDestroyUrl = @json(route('inventory.destroy', ['id' => '__ID__']));
@@ -722,18 +761,41 @@
             // 1. Search & Filter & Sort
             const searchInput = document.getElementById('product-search');
             const categoryFilter = document.getElementById('filter-category');
-            const statusFilter = document.getElementById('filter-status');
+            const availabilityFilter = document.getElementById('filter-status');
+            const stockLevelFilter = document.getElementById('filter-stock-level');
             const sortSelect = document.getElementById('product-sort');
             const rows = Array.from(document.querySelectorAll('.product-row'));
             const tbody = document.getElementById('inventory-table-body');
             const emptyState = document.getElementById('empty-state-row');
             const tableInfo = document.getElementById('table-info');
+            const activeFilterChip = document.getElementById('active-filter-chip');
+            const activeFilterSummary = document.getElementById('active-filter-summary');
+
+            function resetFilters() {
+                searchInput.value = '';
+                categoryFilter.value = '';
+                availabilityFilter.value = '';
+                stockLevelFilter.value = '';
+                sortSelect.value = 'code_asc';
+                applyFilters();
+            }
 
             function applyFilters() {
                 const q = searchInput.value.toLowerCase().trim();
                 const cat = categoryFilter.value;
-                const st = statusFilter.value;
+                const availability = availabilityFilter.value;
+                const stockLevel = stockLevelFilter.value;
                 const sortMode = sortSelect.value;
+                const activeFilters = [];
+
+                if (q) activeFilters.push(`Pencarian: ${searchInput.value.trim()}`);
+                if (cat) activeFilters.push(`Kategori: ${categoryFilter.options[categoryFilter.selectedIndex].text}`);
+                if (availability) activeFilters.push(`Ketersediaan: ${availabilityFilter.options[availabilityFilter.selectedIndex].text}`);
+                if (stockLevel) activeFilters.push(stockLevel === 'Perlu Restock' ? 'Perlu Restock' : stockLevel);
+
+                activeFilterSummary.textContent = activeFilters.join(' · ');
+                activeFilterChip.classList.toggle('hidden', activeFilters.length === 0);
+                activeFilterChip.classList.toggle('flex', activeFilters.length > 0);
 
                 // Sorting rows
                 const sortedRows = rows.slice().sort((a, b) => {
@@ -741,6 +803,11 @@
                     if (sortMode === 'code_desc') return b.dataset.id.localeCompare(a.dataset.id);
                     if (sortMode === 'stock_desc') return parseInt(b.dataset.stock) - parseInt(a.dataset.stock);
                     if (sortMode === 'stock_asc') return parseInt(a.dataset.stock) - parseInt(b.dataset.stock);
+                    if (sortMode === 'restock_first') {
+                        const levelOrder = { Habis: 0, Menipis: 1, Aman: 2 };
+                        const levelDifference = levelOrder[a.dataset.stockLevel] - levelOrder[b.dataset.stockLevel];
+                        return levelDifference || a.dataset.id.localeCompare(b.dataset.id);
+                    }
                     return 0;
                 });
 
@@ -750,21 +817,41 @@
                 sortedRows.forEach(r => {
                     const matchQ = !q || r.dataset.search.includes(q);
                     const matchCat = !cat || r.dataset.category === cat;
-                    const matchSt = !st || r.dataset.availability === st;
+                    const matchAvailability = !availability || r.dataset.availability === availability;
+                    const matchStockLevel = stockLevel === 'Perlu Restock'
+                        ? ['Menipis', 'Habis'].includes(r.dataset.stockLevel)
+                        : !stockLevel || r.dataset.stockLevel === stockLevel;
 
-                    const match = matchQ && matchCat && matchSt;
+                    const match = matchQ && matchCat && matchAvailability && matchStockLevel;
                     r.classList.toggle('hidden', !match);
                     if (match) visibleCount++;
                 });
 
                 emptyState.classList.toggle('hidden', visibleCount > 0);
-                tableInfo.textContent = `Menampilkan ${visibleCount} dari ${rows.length} peralatan`;
+                tableInfo.textContent = `Menampilkan ${visibleCount ? `1-${visibleCount}` : '0'} dari ${rows.length} peralatan`;
             }
 
-            [searchInput, categoryFilter, statusFilter, sortSelect].forEach(el => {
+            [searchInput, categoryFilter, availabilityFilter, stockLevelFilter, sortSelect].forEach(el => {
                 el.addEventListener(el === searchInput ? 'input' : 'change', applyFilters);
             });
+            applyFilters();
 
+            const showRestockItems = () => {
+                stockLevelFilter.value = 'Perlu Restock';
+                if (filterDropdown.classList.contains('hidden')) {
+                    filterDropdown.classList.remove('hidden');
+                    filterDropdown.classList.add('grid');
+                }
+                applyFilters();
+            };
+            const lowStockCard = document.getElementById('low-stock-card');
+            lowStockCard.addEventListener('click', showRestockItems);
+            lowStockCard.addEventListener('keydown', event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    showRestockItems();
+                }
+            });
             // Toggle Filter Box
             const toggleFiltersBtn = document.getElementById('btn-toggle-filters');
             const filterDropdown = document.getElementById('filter-dropdown-panel');
@@ -773,13 +860,9 @@
                 filterDropdown.classList.toggle('grid');
             });
 
-            document.getElementById('btn-reset-filters').addEventListener('click', () => {
-                searchInput.value = '';
-                categoryFilter.value = '';
-                statusFilter.value = '';
-                sortSelect.value = 'code_asc';
-                applyFilters();
-            });
+            document.getElementById('btn-reset-filters').addEventListener('click', resetFilters);
+            document.getElementById('btn-clear-active-filters').addEventListener('click', resetFilters);
+            document.getElementById('btn-empty-show-all').addEventListener('click', resetFilters);
 
             // Check All
             const checkAll = document.getElementById('check-all');
@@ -817,10 +900,26 @@
 
                 // 4 Kotak Metrik
                 document.getElementById('detail-card-stock').textContent = Number(p.total_stock).toLocaleString('id-ID');
-                document.getElementById('detail-card-unit').textContent = p.unit;
+                document.getElementById('detail-card-unit').textContent = 'Semua lokasi';
                 document.getElementById('detail-card-min').textContent = Number(p.min_stock).toLocaleString('id-ID');
-                document.getElementById('detail-card-location').textContent = p.location || '-';
+                document.getElementById('detail-card-location').textContent = p.location_label || '-';
                 document.getElementById('detail-card-serial').textContent = p.serial_example || '-';
+                const stockAlert = document.getElementById('detail-stock-alert');
+                const stockCardValue = document.getElementById('detail-card-stock');
+                stockCardValue.classList.remove('text-dark', 'text-amber-700', 'text-red-700');
+                stockAlert.classList.remove('hidden', 'border-amber-200', 'bg-amber-50', 'text-amber-800', 'border-red-200', 'bg-red-50', 'text-red-800');
+                if (p.stock_level === 'Habis') {
+                    stockAlert.textContent = 'Stok habis';
+                    stockAlert.classList.add('border-red-200', 'bg-red-50', 'text-red-800');
+                    stockCardValue.classList.add('text-red-700');
+                } else if (p.stock_level === 'Menipis') {
+                    stockAlert.textContent = `Stok menipis: ${Number(p.total_stock).toLocaleString('id-ID')} ${p.unit} dari minimum ${Number(p.min_stock).toLocaleString('id-ID')}, segera restock`;
+                    stockAlert.classList.add('border-amber-200', 'bg-amber-50', 'text-amber-800');
+                    stockCardValue.classList.add('text-amber-700');
+                } else {
+                    stockAlert.classList.add('hidden');
+                    stockCardValue.classList.add('text-dark');
+                }
 
                 // Tab Detail
                 document.getElementById('info-code').textContent = p.id;
@@ -859,7 +958,6 @@
                     <div class="p-2.5 rounded-xl border border-border bg-surface flex items-center justify-between">
                         <div>
                             <p class="font-medium text-dark">${wh.name}</p>
-                            <p class="text-[10px] text-secondary">Min: ${wh.min} ${p.unit}</p>
                         </div>
                         <div class="text-right">
                             <span class="font-bold text-dark text-sm">${wh.stock}</span>
@@ -893,19 +991,23 @@
                 if (window.lucide) window.lucide.createIcons();
             }
 
+            function selectProduct(productId) {
+                const selectedRow = rows.find(row => row.dataset.id === productId);
+                if (!selectedRow) return;
+
+                rows.forEach(row => {
+                    row.classList.remove('is-selected', 'bg-blue-50/70', 'border-l-4', 'border-l-primary');
+                });
+                selectedRow.classList.add('is-selected', 'bg-blue-50/70', 'border-l-4', 'border-l-primary');
+                populateDetail(productId);
+                detailPanel.classList.remove('hidden');
+            }
+
             // Click Row Event
             rows.forEach(r => {
                 r.addEventListener('click', (e) => {
                     if (e.target.closest('input, button')) return;
-                    const id = r.dataset.id;
-
-                    rows.forEach(other => {
-                        other.classList.remove('bg-blue-50/70', 'border-l-4', 'border-l-primary');
-                    });
-                    r.classList.add('bg-blue-50/70', 'border-l-4', 'border-l-primary');
-
-                    populateDetail(id);
-                    detailPanel.classList.remove('hidden');
+                    selectProduct(r.dataset.id);
                 });
             });
 
@@ -965,6 +1067,7 @@
                         condition: document.getElementById('create-condition').value,
                         availability: document.getElementById('create-availability').value,
                         description: document.getElementById('create-desc').value.trim(),
+                        serial_example: document.getElementById('create-serial-example').value.trim() || null,
                     });
 
                     showToast(data.message || 'Peralatan berhasil ditambahkan.');
@@ -978,6 +1081,47 @@
             // 5. Modal Edit Produk
             const editModal = document.getElementById('modal-edit-product');
             const editForm = document.getElementById('form-edit-product');
+            const editStockTotal = document.getElementById('edit-stock-total');
+            const editWarehouseStocks = document.getElementById('edit-warehouse-stocks');
+
+            function updateEditStockTotal(unit) {
+                const total = Array.from(editWarehouseStocks.querySelectorAll('.edit-warehouse-stock'))
+                    .reduce((sum, input) => sum + (Number.parseInt(input.value, 10) || 0), 0);
+                editStockTotal.textContent = `Total: ${total.toLocaleString('id-ID')} ${unit}`;
+            }
+
+            function renderEditWarehouseStocks(current) {
+                const stockByWarehouse = new Map(
+                    (current.warehouses || []).map(stock => [Number(stock.id), Number(stock.stock)])
+                );
+                editWarehouseStocks.replaceChildren();
+
+                warehouseList.forEach(warehouse => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center justify-between gap-3';
+
+                    const label = document.createElement('label');
+                    label.htmlFor = `edit-stock-${warehouse.id}`;
+                    label.className = 'text-xs text-dark';
+                    label.textContent = warehouse.name;
+
+                    const input = document.createElement('input');
+                    input.id = `edit-stock-${warehouse.id}`;
+                    input.type = 'number';
+                    input.min = '0';
+                    input.value = stockByWarehouse.get(Number(warehouse.id)) || 0;
+                    input.dataset.warehouseId = warehouse.id;
+                    input.className = 'edit-warehouse-stock w-28 rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-gray-100 disabled:text-gray-500';
+                    input.disabled = warehouse.status === 'Nonaktif';
+                    input.setAttribute('aria-label', `Stok ${warehouse.name}`);
+                    input.addEventListener('input', () => updateEditStockTotal(current.unit));
+                    row.append(label, input);
+                    editWarehouseStocks.append(row);
+                });
+
+                updateEditStockTotal(current.unit);
+            }
+
             document.getElementById('btn-edit-product').addEventListener('click', () => {
                 const current = productMap[currentSelectedId];
                 if (!current) return;
@@ -988,13 +1132,12 @@
                 document.getElementById('edit-name').value = current.name;
                 document.getElementById('edit-category').value = current.category;
                 document.getElementById('edit-unit').value = current.unit;
-                const currentWarehouse = (current.warehouses || []).find(warehouse => warehouse.name === current.location);
-                document.getElementById('edit-stock').value = currentWarehouse ? currentWarehouse.stock : 0;
                 document.getElementById('edit-min').value = current.min_stock;
-                document.getElementById('edit-warehouse').value = current.location === '-' ? '' : current.location;
+                renderEditWarehouseStocks(current);
                 document.getElementById('edit-condition').value = current.condition;
                 document.getElementById('edit-availability').value = current.availability;
                 document.getElementById('edit-desc').value = current.description;
+                document.getElementById('edit-serial-example').value = current.serial_example || '';
 
                 editModal.classList.remove('hidden');
             });
@@ -1022,12 +1165,15 @@
                             name: document.getElementById('edit-name').value.trim(),
                             category: document.getElementById('edit-category').value,
                             unit: document.getElementById('edit-unit').value.trim(),
-                            quantity: parseInt(document.getElementById('edit-stock').value) || 0,
                             min_stock: parseInt(document.getElementById('edit-min').value) || 0,
-                            warehouse: document.getElementById('edit-warehouse').value,
+                            stocks: Array.from(editWarehouseStocks.querySelectorAll('.edit-warehouse-stock')).map(input => ({
+                                warehouse_id: Number(input.dataset.warehouseId),
+                                quantity: Number.parseInt(input.value, 10) || 0,
+                            })),
                             condition: document.getElementById('edit-condition').value,
                             availability: document.getElementById('edit-availability').value,
                             description: document.getElementById('edit-desc').value.trim(),
+                            serial_example: document.getElementById('edit-serial-example').value.trim() || null,
                         }
                     );
 

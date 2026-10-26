@@ -28,8 +28,10 @@ class AssetController extends Controller
                 'serial' => $asset->serial_number ?? '-',
                 'inventory_item_id' => $asset->inventory_item_id,
                 'location' => $location,
+                'location_name' => $asset->location_name,
                 'warehouse_id' => $asset->warehouse_id,
                 'customer_id' => $asset->customer_id,
+                'opd' => $asset->customer?->name,
                 'status' => $asset->status,
                 'vendor' => $asset->vendor ?? '-',
                 'purchase_date' => $asset->purchase_date?->format('d F Y') ?? '-',
@@ -176,6 +178,13 @@ class AssetController extends Controller
             'description' => 'Data aset diperbarui.',
         ]);
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Data aset berhasil diperbarui.',
+                'asset' => $asset,
+            ]);
+        }
+
         return redirect()->route('assets.index')->with('success', 'Data aset berhasil diperbarui.');
     }
 
@@ -188,6 +197,10 @@ class AssetController extends Controller
             'description' => 'Aset diarsipkan dari daftar aktif.',
         ]);
         $asset->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Aset berhasil dihapus.']);
+        }
 
         return redirect()->route('assets.index')->with('success', 'Aset berhasil dihapus.');
     }
@@ -207,6 +220,13 @@ class AssetController extends Controller
             'description' => 'Status diubah dari '.$previousStatus.' menjadi '.$validated['status'].'.',
         ]);
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Status aset berhasil diperbarui.',
+                'status' => $asset->status,
+            ]);
+        }
+
         return redirect()->route('assets.index')->with('success', 'Status aset berhasil diperbarui.');
     }
 
@@ -225,6 +245,12 @@ class AssetController extends Controller
             'description' => $validated['work_type'].' oleh '.$validated['technician'].': '.$validated['note'],
         ]);
         $asset->update(['status' => 'Maintenance']);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Catatan maintenance tersimpan dan status aset diperbarui.',
+            ]);
+        }
 
         return redirect()->route('assets.index')->with('success', 'Catatan maintenance tersimpan dan status aset diperbarui.');
     }

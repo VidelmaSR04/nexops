@@ -426,17 +426,14 @@
                             <option value="Rusak">Rusak</option>
                             <option value="Nonaktif">Nonaktif</option>
                         </select>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button type="button" id="btn-trigger-edit" class="py-2 px-3 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-blue-700 shadow-sm transition-colors text-center">
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" id="btn-trigger-edit" class="py-2 px-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-blue-700 shadow-sm transition-colors text-center">
                                 Edit Aset
                             </button>
-                            <button type="button" id="btn-trigger-maintenance" class="py-2 px-3 rounded-lg bg-white border border-border text-dark text-xs font-medium hover:bg-gray-50 transition-colors text-center">
+                            <button type="button" id="btn-trigger-maintenance" class="py-2 px-2 rounded-lg bg-white border border-border text-dark text-xs font-medium hover:bg-gray-50 transition-colors text-center">
                                 Maintenance
                             </button>
-                            <button type="button" id="btn-trigger-exchange" class="py-2 px-3 rounded-lg bg-white border border-border text-dark text-xs font-medium hover:bg-gray-50 transition-colors text-center">
-                                Tukar Aset
-                            </button>
-                            <button type="button" id="btn-trigger-delete" class="py-2 px-3 rounded-lg bg-white border border-red-200 text-danger text-xs font-medium hover:bg-red-50 transition-colors text-center">
+                            <button type="button" id="btn-trigger-delete" class="py-2 px-2 rounded-lg bg-white border border-red-200 text-danger text-xs font-medium hover:bg-red-50 transition-colors text-center">
                                 Hapus Aset
                             </button>
                         </div>
@@ -549,7 +546,7 @@
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Lokasi Penyimpanan <span class="text-danger">*</span></label>
-                        <input type="text" id="create-location" placeholder="Lokasi penempatan" required
+                        <input type="text" id="create-location" name="location_name" placeholder="Lokasi penempatan" required
                                class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                 </div>
@@ -1071,7 +1068,7 @@
                 }
                 document.getElementById('edit-warehouse').value = current.warehouse_id || '';
                 document.getElementById('edit-customer').value = current.customer_id || '';
-                document.getElementById('edit-location').value = (current.warehouse_id || current.customer_id) ? '' : (current.location || '');
+                document.getElementById('edit-location').value = current.location_name || '';
                 document.getElementById('edit-vendor').value = current.vendor || '';
                 document.getElementById('edit-status').value = current.status;
                 document.getElementById('edit-purchase-date').value = current.purchase_date_value || '';
@@ -1086,36 +1083,73 @@
             document.getElementById('btn-close-edit-modal').addEventListener('click', closeEditModal);
             document.getElementById('btn-cancel-edit-modal').addEventListener('click', closeEditModal);
 
-            document.getElementById('form-edit-asset').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const code = document.getElementById('edit-id-hidden').value;
-                const current = assetMap[code];
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                || document.querySelector('input[name="_token"]')?.value;
+
+            document.getElementById('action-status-select').addEventListener('change', async (e) => {
+                const newStatus = e.target.value;
+                const current = assetMap[currentSelectedId];
                 if (!current) return;
 
-                current.name = document.getElementById('edit-name').value.trim();
-                current.serial = document.getElementById('edit-serial').value.trim();
-                current.category = document.getElementById('edit-category').value;
-                current.location = document.getElementById('edit-location').value.trim();
-                current.vendor = document.getElementById('edit-vendor').value.trim();
-                current.status = document.getElementById('edit-status').value;
-                current.description = document.getElementById('edit-desc').value.trim();
+                try {
+                    const response = await fetch(`{{ url('/assets') }}/${encodeURIComponent(current.id)}/status`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({ status: newStatus }),
+                    });
 
-                closeEditModal();
-                showToast(`Perubahan asset ${code} berhasil disimpan!`);
-                populateDetail(code);
+                    const data = await response.json().catch(() => ({}));
 
-                // Update table row
-                const row = document.querySelector(`.asset-row[data-id="${code}"]`);
-                if (row) {
-                    row.querySelector('td:nth-child(3) p:first-child').textContent = current.name;
-                    row.querySelector('td:nth-child(3) p:last-child').textContent = current.vendor;
-                    row.querySelector('td:nth-child(4) span').textContent = current.category;
-                    row.querySelector('td:nth-child(6)').textContent = current.location;
-                    row.dataset.name = current.name;
-                    row.dataset.category = current.category;
-                    row.dataset.serial = current.serial;
-                    row.dataset.location = current.location;
-                    row.dataset.status = current.status;
+                    if (!response.ok) {
+                        showToast(data.message || 'Gagal memperbarui status aset.');
+                        e.target.value = current.status;
+                        return;
+                    }
+
+                    current.status = newStatus;
+                    showToast(data.message || `Status aset ${current.id} diubah menjadi ${newStatus}.`);
+                    populateDetail(current.id);
+                    setTimeout(() => window.location.reload(), 500);
+                } catch (err) {
+                    showToast('Terjadi kesalahan jaringan.');
+                    e.target.value = current.status;
+                }
+            });
+
+            document.getElementById('form-edit-asset').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const code = document.getElementById('edit-id-hidden').value;
+                const form = e.target;
+                const formData = new FormData(form);
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: formData,
+                    });
+
+                    const data = await response.json().catch(() => ({}));
+
+                    if (!response.ok) {
+                        const errMsg = data.message || Object.values(data.errors || {})[0]?.[0] || 'Gagal menyimpan perubahan aset.';
+                        showToast(errMsg);
+                        return;
+                    }
+
+                    closeEditModal();
+                    showToast(data.message || `Perubahan asset ${code} berhasil disimpan!`);
+                    setTimeout(() => window.location.reload(), 500);
+                } catch (err) {
+                    showToast('Terjadi kesalahan jaringan.');
                 }
             });
 
@@ -1133,20 +1167,37 @@
             document.getElementById('btn-close-maint-modal').addEventListener('click', closeMaintModal);
             document.getElementById('btn-cancel-maint-modal').addEventListener('click', closeMaintModal);
 
-            document.getElementById('form-maintenance').addEventListener('submit', (e) => {
+            document.getElementById('form-maintenance').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                closeMaintModal();
-                showToast('Catatan maintenance berhasil direkam!');
-            });
+                const form = e.target;
+                const formData = new FormData(form);
 
-            // 7. Tukar Asset (Exchange)
-            document.getElementById('btn-trigger-exchange').addEventListener('click', () => {
-                const current = assetMap[currentSelectedId];
-                if (!current) return;
-                if (confirm(`Apakah Anda ingin memulai proses Tukar Aset untuk "${current.name}" (${current.id})?`)) {
-                    showToast(`Proses pergantian unit untuk ${current.id} telah dicatat.`);
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: formData,
+                    });
+
+                    const data = await response.json().catch(() => ({}));
+
+                    if (!response.ok) {
+                        const errMsg = data.message || Object.values(data.errors || {})[0]?.[0] || 'Gagal menyimpan catatan maintenance.';
+                        showToast(errMsg);
+                        return;
+                    }
+
+                    closeMaintModal();
+                    showToast(data.message || 'Catatan maintenance berhasil direkam!');
+                    setTimeout(() => window.location.reload(), 500);
+                } catch (err) {
+                    showToast('Terjadi kesalahan jaringan.');
                 }
             });
+
             document.getElementById('maintenance-work-type').value = document.getElementById('maintenance-work-select').value;
 
             // 8. Hapus Aset
