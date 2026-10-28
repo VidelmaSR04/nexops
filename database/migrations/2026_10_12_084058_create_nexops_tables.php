@@ -18,10 +18,8 @@ return new class extends Migration
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
             $table->string('customer_code', 30)->unique();        // contoh: CST0001
-            $table->string('nik', 30)->nullable()->index();
             $table->string('name');
             $table->string('type', 20)->default('individual');    // individual | business
-            $table->string('phone', 30)->nullable();
             $table->string('email')->nullable();
             $table->text('address')->nullable();
             $table->string('area', 60)->nullable()->index();      // Situbondo, Besuki, Lapangan, dst.

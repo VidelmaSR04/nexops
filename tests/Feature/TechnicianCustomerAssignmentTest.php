@@ -88,7 +88,7 @@ class TechnicianCustomerAssignmentTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors('latitude');
     }
 
-    public function test_customer_crud_uses_real_relations_and_rejects_duplicate_nik(): void
+    public function test_customer_crud_uses_reporter_contact_and_rejects_duplicate_name(): void
     {
         $this->actingAs(User::factory()->create());
 
@@ -109,9 +109,12 @@ class TechnicianCustomerAssignmentTest extends TestCase
             'name' => 'Customer Updated',
         ])->assertOk()->assertJsonPath('data.name', 'Customer Updated');
 
-        $this->postJson('/api/customers', $this->customerData())
+        $this->postJson('/api/customers', [
+            ...$this->customerData(),
+            'name' => 'Customer Updated',
+        ])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors('nik');
+            ->assertJsonValidationErrors('name');
 
         $this->patchJson("/api/customers/{$customerId}/status", [
             'status' => 'Nonaktif',
@@ -227,10 +230,9 @@ class TechnicianCustomerAssignmentTest extends TestCase
     private function customerData(): array
     {
         return [
-            'nik' => 'CUST-001',
             'name' => 'Customer One',
             'type' => 'individual',
-            'phone' => '081234567891',
+            'reporter_contact' => '081234567891',
             'email' => 'customer@example.test',
             'address' => 'Jl. Contoh 1',
             'area' => 'Situbondo',

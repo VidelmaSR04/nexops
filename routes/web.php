@@ -33,7 +33,7 @@ Route::patch('/tickets/{id}/status', [TicketController::class, 'updateStatus'])
     ->name('tickets.update-status');
 
 Route::resource('tickets', TicketController::class)->except([
-    'index', 'store', 'updateStatus'
+    'index', 'store', 'updateStatus',
 ])->middleware(['auth', 'verified']);
 
 Route::get('/inventory', [InventoryController::class, 'index'])
@@ -147,6 +147,14 @@ Route::post('/customers', [CustomerController::class, 'store'])
 Route::put('/customers/{customer}', [CustomerController::class, 'update'])
     ->middleware(['auth', 'verified'])
     ->name('customers.update');
+
+Route::patch('/customers/{customer}/status', [CustomerController::class, 'updateStatus'])
+    ->middleware(['auth', 'verified'])
+    ->name('customers.update-status');
+
+Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])
+    ->middleware(['auth', 'verified'])
+    ->name('customers.destroy');
 
 Route::view('/reports', 'reports')
     ->middleware(['auth', 'verified'])
