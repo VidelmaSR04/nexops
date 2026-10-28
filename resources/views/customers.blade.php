@@ -77,7 +77,7 @@
                         <div class="relative flex-1 min-w-[220px]">
                             <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
                             <input id="searchInput" type="text"
-                                   placeholder="Cari nama, NIK, nomor pelanggan, atau alamat..."
+                                   placeholder="Cari nama, nomor pelanggan, atau alamat..."
                                    class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-border bg-surface focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
                         </div>
 
@@ -113,7 +113,6 @@
                                 <th class="py-3 pr-3">OPD</th>
                                 <th class="py-3 pr-3">Nama Pelapor</th>
                                 <th class="py-3 pr-3">Kontak Pelapor</th>
-                                <th class="py-3 pr-3">NIK</th>
                                 <th class="py-3 pr-3">No. Pelanggan</th>
                                 <th class="py-3 pr-3">Area</th>
                                 <th class="py-3 pr-3">Status</th>
@@ -159,11 +158,11 @@
                 <div class="flex items-center gap-3.5 p-3.5 rounded-xl bg-surface border border-border/80 mb-4">
                     <img id="detailAvatar" src="https://ui-avatars.com/api/?name=Budi+Santoso&background=0D6EFD&color=fff" alt="Avatar" class="w-12 h-12 rounded-full shrink-0">
                     <div class="flex-1 min-w-0">
-                        <h4 id="detailName" class="font-bold text-dark text-sm truncate">Budi Santoso</h4>
-                        <span id="detailCustNo" class="inline-block px-2 py-0.5 mt-0.5 rounded text-[11px] font-semibold bg-blue-50 text-primary border border-blue-200">CST0003</span>
+                        <h4 id="detailName" class="font-bold text-dark text-sm truncate">Pilih OPD</h4>
+                        <span id="detailCustNo" class="inline-block px-2 py-0.5 mt-0.5 rounded text-[11px] font-semibold bg-blue-50 text-primary border border-blue-200">-</span>
                     </div>
                     <div id="detailStatusBadge">
-                        <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600">Aktif</span>
+                        <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-500">-</span>
                     </div>
                 </div>
 
@@ -196,15 +195,15 @@
                     <div class="grid grid-cols-3 gap-2 pt-1">
                         <div>
                             <span class="opacity-75 text-[10px] block">Area</span>
-                            <strong id="qiArea" class="text-sm">Situbondo</strong>
+                            <strong id="qiArea" class="text-sm">-</strong>
                         </div>
                         <div>
                             <span class="opacity-75 text-[10px] block">Paket</span>
-                            <strong id="qiPaket" class="text-sm">50 Mbps</strong>
+                            <strong id="qiPaket" class="text-sm">-</strong>
                         </div>
                         <div>
                             <span class="opacity-75 text-[10px] block">Tagihan Terakhir</span>
-                            <strong id="qiTagihan" class="text-sm">Rp350.000</strong>
+                            <strong id="qiTagihan" class="text-sm">-</strong>
                         </div>
                     </div>
                 </div>
@@ -222,14 +221,6 @@
                     {{-- Tab 1: Detail --}}
                     <div id="tab-pane-detail" class="tab-pane space-y-2.5">
                         <div class="flex justify-between py-1 border-b border-gray-100">
-                            <span class="text-secondary">NIK</span>
-                            <span id="valNik" class="font-medium text-dark">NIK001003</span>
-                        </div>
-                        <div class="flex justify-between py-1 border-b border-gray-100">
-                            <span class="text-secondary">Nomor Telepon</span>
-                            <span id="valPhone" class="font-medium text-dark">0812 3456 7890</span>
-                        </div>
-                        <div class="flex justify-between py-1 border-b border-gray-100">
                             <span class="text-secondary">Nama Pelapor</span>
                             <span id="valReporter" class="font-medium text-dark">-</span>
                         </div>
@@ -239,7 +230,7 @@
                         </div>
                         <div class="flex justify-between py-1 border-b border-gray-100">
                             <span class="text-secondary">Email</span>
-                            <span id="valEmail" class="font-medium text-dark">budi.santoso@email.com</span>
+                            <span id="valEmail" class="font-medium text-dark">-</span>
                         </div>
                         <div class="flex justify-between py-1 border-b border-gray-100">
                             <span class="text-secondary">Alamat</span>
@@ -378,25 +369,13 @@
                         <input id="customer-reporter-contact" type="text" name="reporter_contact" value="{{ old('reporter_contact') }}" maxlength="50" placeholder="No. HP / WhatsApp" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-medium text-dark mb-1">NIK</label>
-                        <input id="customer-nik" type="text" name="nik" value="{{ old('nik') }}" placeholder="Opsional" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
-                    </div>
-                    <div>
-                        <label class="block font-medium text-dark mb-1">No. Pelanggan</label>
-                        <p class="rounded-xl border border-border bg-gray-50 px-3 py-2 text-xs text-secondary">Kode dibuat otomatis saat disimpan</p>
-                    </div>
+                <div>
+                    <label class="block font-medium text-dark mb-1">No. Pelanggan</label>
+                    <p class="rounded-xl border border-border bg-gray-50 px-3 py-2 text-xs text-secondary">Kode dibuat otomatis saat disimpan</p>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-medium text-dark mb-1">Nomor Telepon</label>
-                        <input id="customer-phone" type="text" name="phone" value="{{ old('phone') }}" placeholder="Nomor telepon OPD" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
-                    </div>
-                    <div>
-                        <label class="block font-medium text-dark mb-1">Area</label>
-                        <input id="customer-area" type="text" name="area" value="{{ old('area') }}" placeholder="Area OPD" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
-                    </div>
+                <div>
+                    <label class="block font-medium text-dark mb-1">Area</label>
+                    <input id="customer-area" type="text" name="area" value="{{ old('area') }}" placeholder="Area OPD" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                 </div>
                 <div>
                     <label class="block font-medium text-dark mb-1">Alamat Lengkap</label>
@@ -482,18 +461,12 @@
     {{-- JAVASCRIPT LOGIC --}}
     <script>
         const serverData = @json($customersData ?? null);
-        const customersData = serverData || [
-            { id: 1, name: "Andi Pratama", nik: "NIK001001", custNo: "CST0001", area: "Situbondo", status: "Aktif", paket: "100 Mbps", phone: "081211112222", email: "andi.pratama@email.com", address: "Jl. Melati No. 10, Situbondo", tagihan: "Rp450.000" },
-            { id: 2, name: "Siti Rahmawati", nik: "NIK001002", custNo: "CST0002", area: "Besuki", status: "Aktif", paket: "200 Mbps", phone: "081222223333", email: "siti.rahmawati@email.com", address: "Jl. A. Yani No. 12, Besuki", tagihan: "Rp650.000" },
-            { id: 3, name: "Budi Santoso", nik: "NIK001003", custNo: "CST0003", area: "Situbondo", status: "Aktif", paket: "50 Mbps", phone: "0812 3456 7890", email: "budi.santoso@email.com", address: "Jl. Sudirman No. 45, Situbondo", tagihan: "Rp350.000" },
-            { id: 4, name: "Dewi Lestari", nik: "NIK001004", custNo: "CST0004", area: "Lapangan", status: "Baru", paket: "100 Mbps", phone: "081233334444", email: "dewi.lestari@email.com", address: "Komplek Lapangan No. 8, Situbondo", tagihan: "Rp450.000" },
-            { id: 5, name: "Rizky Maulana", nik: "NIK001005", custNo: "CST0005", area: "Besuki", status: "Aktif", paket: "200 Mbps", phone: "081244445555", email: "rizky.maulana@email.com", address: "Jl. Pantai No. 5, Besuki", tagihan: "Rp650.000" },
-            { id: 6, name: "Agus Setiawan", nik: "NIK001006", custNo: "CST0006", area: "Situbondo", status: "Aktif", paket: "50 Mbps", phone: "081255556666", email: "agus.setiawan@email.com", address: "Jl. Diponegoro No. 20, Situbondo", tagihan: "Rp350.000" },
-            { id: 7, name: "Rina Amelia", nik: "NIK001007", custNo: "CST0007", area: "Besuki", status: "Nonaktif", paket: "100 Mbps", phone: "081266667777", email: "rina.amelia@email.com", address: "Jl. Mawar No. 3, Besuki", tagihan: "Rp0" },
-            { id: 8, name: "Fajar Nugroho", nik: "NIK001008", custNo: "CST0008", area: "Lapangan", status: "Aktif", paket: "300 Mbps", phone: "081277778888", email: "fajar.nugroho@email.com", address: "Jl. Lapangan Timur No. 15, Situbondo", tagihan: "Rp850.000" },
-            { id: 9, name: "Maya Sari", nik: "NIK001009", custNo: "CST0009", area: "Situbondo", status: "Aktif", paket: "50 Mbps", phone: "081288889999", email: "maya.sari@email.com", address: "Jl. Kenanga No. 7, Situbondo", tagihan: "Rp350.000" },
-            { id: 10, name: "Irfan Hidayat", nik: "NIK001010", custNo: "CST0010", area: "Besuki", status: "Aktif", paket: "100 Mbps", phone: "081299990000", email: "irfan.hidayat@email.com", address: "Jl. Pelabuhan No. 22, Besuki", tagihan: "Rp450.000" }
-        ];
+        const customersData = serverData || [];
+        const customerBaseUrl = @json(url('/customers'));
+        const customersPerPage = 10;
+        const customerCountLabel = document.getElementById('totalVisibleCount').parentElement;
+        let customerPage = 1;
+        let customerDetailRequest = 0;
 
         function escapeHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -531,10 +504,6 @@
             if (window.lucide) window.lucide.createIcons();
         });
 
-        const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-        }[character]));
-
         async function requestJson(url, method, data) {
             const response = await fetch(url, {
                 method,
@@ -562,7 +531,7 @@
             const visibleCustomers = data.slice(start, start + customersPerPage);
 
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-gray-400">Tidak ada data OPD yang ditemukan.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-gray-400">Tidak ada data OPD yang ditemukan.</td></tr>`;
                 document.getElementById('totalVisibleCount').innerText = 0;
                 return;
             }
@@ -596,7 +565,6 @@
                     </td>
                     <td class="py-3 pr-3 text-dark">${escapeHtml(cust.reporter_name || '-')}</td>
                     <td class="py-3 pr-3 text-dark">${escapeHtml(cust.reporter_contact || '-')}</td>
-                    <td class="py-3 pr-3 text-secondary">${cust.nik}</td>
                     <td class="py-3 pr-3 font-bold text-primary">${cust.custNo}</td>
                     <td class="py-3 pr-3 text-dark">${cust.area}</td>
                     <td class="py-3 pr-3"><span class="px-2.5 py-1 rounded-full text-[11px] font-semibold ${badgeClass}">${cust.status}</span></td>
@@ -653,8 +621,8 @@
             if (!cust) {
                 document.getElementById('detailName').innerText = '';
                 document.getElementById('detailCustNo').innerText = '';
-                document.getElementById('valNik').innerText = '';
-                document.getElementById('valPhone').innerText = '';
+                document.getElementById('valReporter').innerText = '';
+                document.getElementById('valReporterContact').innerText = '';
                 document.getElementById('valEmail').innerText = '';
                 document.getElementById('valAddress').innerText = '';
                 document.getElementById('qiArea').innerText = '';
@@ -674,8 +642,6 @@
             document.getElementById('detailStatusBadge').innerHTML = `<span class="px-2.5 py-1 rounded-full text-[11px] font-semibold ${badgeClass}">${cust.status}</span>`;
             document.getElementById('quickStatusSelect').value = cust.status;
 
-            document.getElementById('valNik').innerText = cust.nik;
-            document.getElementById('valPhone').innerText = cust.phone;
             document.getElementById('valReporter').innerText = cust.reporter_name || '-';
             document.getElementById('valReporterContact').innerText = cust.reporter_contact || '-';
             document.getElementById('valEmail').innerText = cust.email;
@@ -737,10 +703,8 @@
                 const matchQuery = cust.name.toLowerCase().includes(query) ||
                                    String(cust.reporter_name || '').toLowerCase().includes(query) ||
                                    String(cust.reporter_contact || '').toLowerCase().includes(query) ||
-                                   cust.nik.toLowerCase().includes(query) ||
                                    cust.custNo.toLowerCase().includes(query) ||
                                    cust.address.toLowerCase().includes(query) ||
-                                   cust.phone.toLowerCase().includes(query) ||
                                    cust.email.toLowerCase().includes(query);
                 const matchStatus = statusVal === "" || cust.status === statusVal;
                 const matchArea = areaVal === "" || cust.area === areaVal;
@@ -758,11 +722,9 @@
             return customersData.filter(cust => {
                 const matchQuery = cust.name.toLowerCase().includes(query) ||
                                    String(cust.reporter_name || '').toLowerCase().includes(query) ||
-                                   String(cust.reporter_contact || '').toLowerCase().includes(query) ||
-                                   cust.nik.toLowerCase().includes(query) ||
-                                   cust.custNo.toLowerCase().includes(query) ||
+                               String(cust.reporter_contact || '').toLowerCase().includes(query) ||
+                               cust.custNo.toLowerCase().includes(query) ||
                                cust.address.toLowerCase().includes(query) ||
-                               cust.phone.toLowerCase().includes(query) ||
                                cust.email.toLowerCase().includes(query);
                 const matchStatus = statusVal === "" || cust.status === statusVal;
                 const matchArea = areaVal === "" || cust.area === areaVal;
@@ -838,8 +800,6 @@
             document.getElementById('customer-name').value = customer.name;
             document.getElementById('customer-reporter-name').value = blank(customer.reporter_name);
             document.getElementById('customer-reporter-contact').value = blank(customer.reporter_contact);
-            document.getElementById('customer-nik').value = blank(customer.nik);
-            document.getElementById('customer-phone').value = blank(customer.phone);
             document.getElementById('customer-area').value = blank(customer.area);
             document.getElementById('customer-address').value = blank(customer.address);
             document.getElementById('customer-package').value = blank(customer.package_name);
@@ -854,7 +814,7 @@
             const previousCustomerValues = @json(old());
             if (failedCustomerId) openEditModal(failedCustomerId);
             else openAddModal();
-            ['name', 'reporter_name', 'reporter_contact', 'nik', 'phone', 'area', 'address', 'package_name', 'status'].forEach(name => {
+            ['name', 'reporter_name', 'reporter_contact', 'area', 'address', 'package_name', 'status'].forEach(name => {
                 if (Object.prototype.hasOwnProperty.call(previousCustomerValues, name)) {
                     customerForm.elements[name].value = previousCustomerValues[name] || '';
                 }
@@ -866,29 +826,6 @@
 
         function openDeactivateModal() { document.getElementById('modal-deactivate').classList.remove('hidden'); }
         function closeDeactivateModal() { document.getElementById('modal-deactivate').classList.add('hidden'); }
-
-        async function handleSimulatedSubmit(event) {
-            event.preventDefault();
-            const form = event.currentTarget;
-            const inputs = form.querySelectorAll('input');
-            const selects = form.querySelectorAll('select');
-            const values = {
-                name: inputs[0].value.trim(),
-                nik: inputs[1].value.trim(),
-                phone: inputs[3].value.trim(),
-                area: selects[0].value,
-                address: form.querySelector('textarea').value.trim(),
-                package_name: selects[1].value,
-                status: selects[2].value,
-            };
-
-            try {
-                await requestJson(customerBaseUrl, 'POST', values);
-                window.location.reload();
-            } catch (error) {
-                window.alert(error.message);
-            }
-        }
 
         function handleTicketSubmit(event) {
             event.preventDefault();

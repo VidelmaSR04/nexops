@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\ActivityLog;
 use App\Models\Asset;
 use App\Models\Category;
-use App\Models\Customer;
 use App\Models\InventoryItem;
 use App\Models\LoginHistory;
 use App\Models\Setting;
@@ -277,28 +276,8 @@ class NexopsDataSeeder extends Seeder
             }
         }
 
-        // 5. CUSTOMERS (PELANGGAN)
-        $customersData = [
-            ['name' => 'Andi Pratama',   'nik' => 'NIK001001', 'customer_code' => 'CST0001', 'area' => 'Situbondo', 'status' => 'Aktif',    'package_name' => '100 Mbps', 'phone' => '081211112222', 'email' => 'andi.pratama@email.com',   'address' => 'Jl. Melati No. 10, Situbondo',         'monthly_bill' => 'Rp450.000'],
-            ['name' => 'Siti Rahmawati', 'nik' => 'NIK001002', 'customer_code' => 'CST0002', 'area' => 'Besuki',    'status' => 'Aktif',    'package_name' => '200 Mbps', 'phone' => '081222223333', 'email' => 'siti.rahmawati@email.com', 'address' => 'Jl. A. Yani No. 12, Besuki',            'monthly_bill' => 'Rp650.000'],
-            ['name' => 'Budi Santoso',   'nik' => 'NIK001003', 'customer_code' => 'CST0003', 'area' => 'Situbondo', 'status' => 'Aktif',    'package_name' => '50 Mbps',  'phone' => '0812 3456 7890', 'email' => 'budi.santoso@email.com',  'address' => 'Jl. Sudirman No. 45, Situbondo',       'monthly_bill' => 'Rp350.000'],
-            ['name' => 'Dewi Lestari',   'nik' => 'NIK001004', 'customer_code' => 'CST0004', 'area' => 'Lapangan',  'status' => 'Baru',     'package_name' => '100 Mbps', 'phone' => '081233334444', 'email' => 'dewi.lestari@email.com',   'address' => 'Komplek Lapangan No. 8, Situbondo',    'monthly_bill' => 'Rp450.000'],
-            ['name' => 'Rizky Maulana',  'nik' => 'NIK001005', 'customer_code' => 'CST0005', 'area' => 'Besuki',    'status' => 'Aktif',    'package_name' => '200 Mbps', 'phone' => '081244445555', 'email' => 'rizky.maulana@email.com',  'address' => 'Jl. Pantai No. 5, Besuki',             'monthly_bill' => 'Rp650.000'],
-            ['name' => 'Agus Setiawan',  'nik' => 'NIK001006', 'customer_code' => 'CST0006', 'area' => 'Situbondo', 'status' => 'Aktif',    'package_name' => '50 Mbps',  'phone' => '081255556666', 'email' => 'agus.setiawan@email.com',  'address' => 'Jl. Diponegoro No. 20, Situbondo',     'monthly_bill' => 'Rp350.000'],
-            ['name' => 'Rina Amelia',    'nik' => 'NIK001007', 'customer_code' => 'CST0007', 'area' => 'Besuki',    'status' => 'Nonaktif', 'package_name' => '100 Mbps', 'phone' => '081266667777', 'email' => 'rina.amelia@email.com',    'address' => 'Jl. Mawar No. 3, Besuki',              'monthly_bill' => 'Rp0'],
-            ['name' => 'Fajar Nugroho',  'nik' => 'NIK001008', 'customer_code' => 'CST0008', 'area' => 'Lapangan',  'status' => 'Aktif',    'package_name' => '300 Mbps', 'phone' => '081277778888', 'email' => 'fajar.nugroho@email.com',  'address' => 'Jl. Lapangan Timur No. 15, Situbondo', 'monthly_bill' => 'Rp850.000'],
-            ['name' => 'Maya Sari',      'nik' => 'NIK001009', 'customer_code' => 'CST0009', 'area' => 'Situbondo', 'status' => 'Aktif',    'package_name' => '50 Mbps',  'phone' => '081288889999', 'email' => 'maya.sari@email.com',      'address' => 'Jl. Kenanga No. 7, Situbondo',         'monthly_bill' => 'Rp350.000'],
-            ['name' => 'Irfan Hidayat',  'nik' => 'NIK001010', 'customer_code' => 'CST0010', 'area' => 'Besuki',    'status' => 'Aktif',    'package_name' => '100 Mbps', 'phone' => '081299990000', 'email' => 'irfan.hidayat@email.com',  'address' => 'Jl. Pelabuhan No. 22, Besuki',         'monthly_bill' => 'Rp450.000'],
-        ];
-
+        // Customers are managed through the OPD seeder and application.
         $customers = [];
-        foreach ($customersData as $cData) {
-            $cust = Customer::updateOrCreate(
-                ['customer_code' => $cData['customer_code']],
-                $cData
-            );
-            $customers[$cData['customer_code']] = $cust;
-        }
 
         // 6. TECHNICIANS (TEKNISI)
         $techniciansData = [
@@ -800,4 +779,3 @@ class NexopsDataSeeder extends Seeder
         ]);
     }
 }
-
