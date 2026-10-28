@@ -30,7 +30,7 @@
                 </div>
                 <div>
                     <label for="reporter_contact" class="mb-1 block text-sm font-medium text-dark">Kontak Pelapor</label>
-                    <input id="reporter_contact" type="text" name="reporter_contact" value="{{ old('reporter_contact') }}" maxlength="50" class="w-full rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    <input id="reporter_contact" type="tel" name="reporter_contact" value="{{ old('reporter_contact') }}" maxlength="14" inputmode="numeric" pattern="[0-9]{1,14}" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 14)" class="w-full rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
                     @error('reporter_contact') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
             </div>

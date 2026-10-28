@@ -495,7 +495,7 @@
                 </div>
                 <div>
                     <label for="tf-contact" class="block font-medium text-dark mb-1">Kontak Pelapor</label>
-                    <input id="tf-contact" type="text" name="reporter_contact" maxlength="50" placeholder="No. HP / WhatsApp" class="{{ $modalInput }}">
+                    <input id="tf-contact" type="tel" name="reporter_contact" maxlength="14" inputmode="numeric" pattern="[0-9]{1,14}" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 14)" placeholder="No. HP / WhatsApp" class="{{ $modalInput }}">
                 </div>
             </div>
 

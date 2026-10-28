@@ -30,7 +30,7 @@ class CustomerRequest extends FormRequest
             ],
             'name' => 'required|string|max:255',
             'type' => 'sometimes|required|string|in:individual,business',
-            'reporter_contact' => 'nullable|string|max:50',
+            'reporter_contact' => ['nullable', 'string', 'regex:/^[0-9]{1,14}$/'],
             'email' => 'nullable|email|max:255',
             'address' => 'required|string|max:65535',
             'area' => 'required|string|max:60',

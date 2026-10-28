@@ -142,39 +142,137 @@ class TicketCrudTest extends TestCase
     public function test_customer_page_can_save_opd_reporter_details(): void
     {
         $this->actingAs(User::factory()->create());
+        $this->seed(OpdSeeder::class);
+        $this->assertDatabaseCount('customers', 52);
+        $customer = Customer::where('name', 'Dinas Komunikasi dan Informatika')->firstOrFail();
+        $validOpdDetails = [
+            'name' => $customer->name,
+            'type' => 'opd',
+            'reporter_name' => 'Nama Pelapor',
+            'area' => 'Situbondo',
+            'address' => 'Jl. Basuki Rahmat, Kabupaten Situbondo',
+            'latitude' => '-7.706',
+            'longitude' => '114.009',
+            'registration_date' => '2026-10-28',
+            'package_name' => '50 Mbps',
+            'status' => 'Aktif',
+        ];
+
+        $this->from(route('customers.index'))->post(route('customers.store'), [
+            ...$validOpdDetails,
+            'reporter_contact' => '081234567890123',
+        ])->assertSessionHasErrors('reporter_contact');
+
+        $this->from(route('customers.index'))->post(route('customers.store'), [
+            ...$validOpdDetails,
+            'reporter_contact' => '0812ABC567',
+        ])->assertSessionHasErrors('reporter_contact');
+
+        $this->from(route('customers.index'))->post(route('customers.store'), [
+            ...$validOpdDetails,
+            'reporter_contact' => '081234567890',
+            'package_name' => 'Lainnya',
+        ])->assertSessionHasErrors('package_name');
 
         $this->post(route('customers.store'), [
-            'name' => 'Dinas Uji OPD',
+            'name' => $customer->name,
             'type' => 'opd',
             'reporter_name' => 'Nama Pelapor',
             'reporter_contact' => '081234567890',
-        ])->assertRedirect(route('customers.index'));
-
-        $this->assertDatabaseHas('customers', [
-            'name' => 'Dinas Uji OPD',
-            'type' => 'opd',
-            'reporter_name' => 'Nama Pelapor',
-            'reporter_contact' => '081234567890',
-        ]);
-
-        $customer = Customer::where('name', 'Dinas Uji OPD')->firstOrFail();
-        $this->put(route('customers.update', $customer->id), [
-            'name' => 'Dinas Uji OPD',
-            'type' => 'opd',
-            'reporter_name' => 'Pelapor Diperbarui',
-            'reporter_contact' => '081111111111',
+            'area' => 'Situbondo',
+            'address' => 'Jl. Basuki Rahmat, Kabupaten Situbondo',
+            'latitude' => '-7.706',
+            'longitude' => '114.009',
+            'registration_date' => '2026-10-28',
+            'package_name' => '50 Mbps',
             'status' => 'Aktif',
         ])->assertRedirect(route('customers.index'));
 
         $this->assertDatabaseHas('customers', [
             'id' => $customer->id,
-            'reporter_name' => 'Pelapor Diperbarui',
-            'reporter_contact' => '081111111111',
+            'name' => 'Dinas Komunikasi dan Informatika',
+            'type' => 'opd',
+            'reporter_name' => 'Nama Pelapor',
+            'reporter_contact' => '081234567890',
+            'registration_date' => '2026-10-28',
+            'package_name' => '50 Mbps',
+        ]);
+
+        $customer->refresh();
+        $this->assertEqualsWithDelta(-7.706, (float) $customer->latitude, 0.000001);
+        $this->assertEqualsWithDelta(114.009, (float) $customer->longitude, 0.000001);
+        $this->assertSame('OPD0001', $customer->customer_code);
+
+        $this->post(route('customers.store'), [
+            'name' => $customer->name,
+            'reporter_name' => 'Pelapor Kedua',
+            'reporter_contact' => '081122223333',
+            'area' => 'Situbondo',
+            'address' => 'Alamat pelanggan kedua',
+            'latitude' => '-7.706',
+            'longitude' => '114.009',
+            'registration_date' => '2026-10-28',
+            'package_name' => '50 Mbps',
+            'status' => 'Aktif',
+        ])->assertRedirect(route('customers.index'));
+
+        $additionalOpd = Customer::where('type', 'opd')
+            ->where('name', $customer->name)
+            ->where('id', '!=', $customer->id)
+            ->firstOrFail();
+        $this->assertSame(2, Customer::where('type', 'opd')->where('name', $customer->name)->count());
+        $this->assertSame('Nama Pelapor', $customer->fresh()->reporter_name);
+        $this->assertSame('Jl. Basuki Rahmat, Kabupaten Situbondo', $customer->fresh()->address);
+        $this->assertSame('Pelapor Kedua', $additionalOpd->reporter_name);
+        $this->assertNotSame($customer->customer_code, $additionalOpd->customer_code);
+        $this->assertSame('OPD0002', $additionalOpd->customer_code);
+
+        $this->put(route('customers.update', $customer->id), [
+            'name' => 'Nama OPD Tidak Boleh Berubah',
+            'customer_code' => 'OPD9999',
+            'type' => 'opd',
+            'area' => 'Besuki',
+            'address' => 'Alamat hasil perubahan',
+            'latitude' => '-7.715',
+            'longitude' => '114.010',
+            'registration_date' => '2026-10-29',
+            'package_name' => '1 Gbps',
+            'status' => 'Aktif',
+        ])->assertRedirect(route('customers.index'));
+
+        $customer->refresh();
+        $expectedCode = 'OPD0001';
+        $this->assertSame($expectedCode, $customer->customer_code);
+        $this->assertDatabaseHas('customers', [
+            'id' => $customer->id,
+            'name' => 'Dinas Komunikasi dan Informatika',
+            'customer_code' => $expectedCode,
+            'reporter_name' => 'Nama Pelapor',
+            'reporter_contact' => '081234567890',
+            'registration_date' => '2026-10-29',
+            'area' => 'Besuki',
+            'package_name' => '1 Gbps',
+        ]);
+
+        $customer->update(['package_name' => '4000']);
+        $this->put(route('customers.update', $customer->id), [
+            'area' => 'Besuki',
+            'address' => 'Alamat hasil perubahan',
+            'latitude' => '-7.715',
+            'longitude' => '114.010',
+            'registration_date' => '2026-10-29',
+            'package_name' => '4000',
+            'status' => 'Aktif',
+        ])->assertRedirect(route('customers.index'));
+
+        $this->assertDatabaseHas('customers', [
+            'id' => $customer->id,
+            'package_name' => '4000',
         ]);
 
         $this->get(route('customers.index'))
             ->assertOk()
-            ->assertSee('Dinas Uji OPD')
-            ->assertSee('Pelapor Diperbarui');
+            ->assertSee('Dinas Komunikasi dan Informatika')
+            ->assertSee('Nama Pelapor');
     }
 }

@@ -77,7 +77,7 @@
                         <div class="relative flex-1 min-w-[220px]">
                             <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
                             <input id="searchInput" type="text"
-                                   placeholder="Cari nama, nomor pelanggan, atau alamat..."
+                                   placeholder="Cari nama, kode pelanggan, atau alamat..."
                                    class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-border bg-surface focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
                         </div>
 
@@ -96,6 +96,29 @@
                             <option value="Banyuglugur">Banyuglugur</option>
                         </select>
 
+                        <select id="monthFilter" aria-label="Filter bulan pendaftaran" class="text-xs rounded-xl border border-border bg-white px-3 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-primary/20">
+                            <option value="">Semua Bulan</option>
+                            <option value="01">Januari</option>
+                            <option value="02">Februari</option>
+                            <option value="03">Maret</option>
+                            <option value="04">April</option>
+                            <option value="05">Mei</option>
+                            <option value="06">Juni</option>
+                            <option value="07">Juli</option>
+                            <option value="08">Agustus</option>
+                            <option value="09">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
+
+                        <select id="yearFilter" aria-label="Filter tahun pendaftaran" class="text-xs rounded-xl border border-border bg-white px-3 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-primary/20">
+                            <option value="">Semua Tahun</option>
+                        </select>
+
+                        <input id="dateFilter" type="date" aria-label="Filter tanggal pendaftaran" title="Filter tanggal pendaftaran"
+                               class="text-xs rounded-xl border border-border bg-white px-3 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-primary/20">
+
                         <button type="button" id="resetFilterBtn" class="px-3 py-2 rounded-xl border border-border text-xs font-medium text-secondary hover:bg-gray-50 transition-colors">
                             Reset
                         </button>
@@ -113,7 +136,8 @@
                                 <th class="py-3 pr-3">OPD</th>
                                 <th class="py-3 pr-3">Nama Pelapor</th>
                                 <th class="py-3 pr-3">Kontak Pelapor</th>
-                                <th class="py-3 pr-3">No. Pelanggan</th>
+                                <th class="py-3 pr-3">Kode Pelanggan</th>
+                                <th class="py-3 pr-3">Tanggal</th>
                                 <th class="py-3 pr-3">Area</th>
                                 <th class="py-3 pr-3">Status</th>
                                 <th class="py-3 pr-3">Paket</th>
@@ -336,7 +360,7 @@
 
     {{-- Modal Tambah Customer --}}
     <div id="modal-add-customer" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs hidden">
-        <div class="bg-white rounded-2xl border border-border shadow-2xl max-w-lg w-full overflow-hidden">
+        <div class="bg-white rounded-2xl border border-border shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div class="p-4 border-b border-border flex items-center justify-between">
                 <h3 id="customer-form-title" class="text-base font-bold text-dark">Tambah OPD</h3>
                 <button type="button" onclick="closeAddModal()" class="p-1 rounded-lg text-gray-400 hover:text-dark hover:bg-gray-100">
@@ -355,46 +379,92 @@
                         @endforeach
                     </div>
                 @endif
-                <div>
+                <div id="customer-opd-selector">
+                    <label for="customer-name-picker" class="block font-medium text-dark mb-1">Nama OPD</label>
+                    <div class="relative">
+                        <input id="customer-name" type="hidden" name="name" value="{{ old('name') }}">
+                        <button id="customer-name-picker" type="button" aria-haspopup="listbox" aria-expanded="false"
+                                class="flex w-full items-center justify-between rounded-xl border border-border bg-white px-3 py-2 text-left text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                            <span id="customer-name-label">{{ old('name', 'Pilih OPD dari data OpdSeeder') }}</span>
+                            <i data-lucide="chevron-down" class="h-4 w-4 shrink-0 text-secondary"></i>
+                        </button>
+                        <div id="customer-opd-dropdown" class="absolute left-0 right-0 top-full z-[60] mt-1 hidden rounded-xl border border-border bg-white p-2 shadow-xl">
+                            <label for="customer-opd-search" class="sr-only">Cari nama OPD</label>
+                            <input id="customer-opd-search" type="search" autocomplete="off" placeholder="Cari nama OPD..."
+                                   class="mb-2 w-full rounded-lg border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                            <div id="customer-opd-options" role="listbox" aria-label="Daftar OPD" class="max-h-44 overflow-y-auto"></div>
+                        </div>
+                    </div>
+                    <p class="mt-1 text-[11px] text-secondary">Pilih OPD dari data OpdSeeder. OPD yang sama dapat dipilih kembali untuk membuat data baru.</p>
+                </div>
+                <div id="customer-name-locked" class="hidden">
                     <label class="block font-medium text-dark mb-1">Nama OPD</label>
-                    <input id="customer-name" type="text" name="name" value="{{ old('name') }}" required maxlength="255" placeholder="Contoh: Dinas Komunikasi dan Informatika" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    <input id="customer-name-display" type="text" disabled class="w-full rounded-xl border border-border bg-gray-100 px-3 py-2 text-xs text-gray-500">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">Nama Pelapor</label>
-                        <input id="customer-reporter-name" type="text" name="reporter_name" value="{{ old('reporter_name') }}" maxlength="150" placeholder="Nama staf OPD" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                        <input id="customer-reporter-name" type="text" name="reporter_name" value="{{ old('reporter_name') }}" required maxlength="150" placeholder="Nama staf OPD" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                     <div>
-                        <label class="block font-medium text-dark mb-1">Kontak Pelapor</label>
-                        <input id="customer-reporter-contact" type="text" name="reporter_contact" value="{{ old('reporter_contact') }}" maxlength="50" placeholder="No. HP / WhatsApp" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                        <label class="block font-medium text-dark mb-1">Kontak WhatsApp Pelapor</label>
+                        <input id="customer-reporter-contact" type="tel" name="reporter_contact" value="{{ old('reporter_contact') }}" required maxlength="14" inputmode="numeric" pattern="[0-9]{1,14}" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 14)" placeholder="No. HP / WhatsApp" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     </div>
                 </div>
                 <div>
-                    <label class="block font-medium text-dark mb-1">No. Pelanggan</label>
-                    <p class="rounded-xl border border-border bg-gray-50 px-3 py-2 text-xs text-secondary">Kode dibuat otomatis saat disimpan</p>
+                    <label for="customer-registration-date" class="block font-medium text-dark mb-1">Tanggal Pendaftaran</label>
+                    <input id="customer-registration-date" type="date" name="registration_date" value="{{ old('registration_date', now()->toDateString()) }}" required
+                           class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                </div>
+                <div>
+                    <label class="block font-medium text-dark mb-1">Kode Pelanggan</label>
+                    <p id="customer-code-display" class="rounded-xl border border-border bg-gray-100 px-3 py-2 text-xs text-gray-500">Kode otomatis muncul setelah nama OPD dan tanggal dipilih</p>
                 </div>
                 <div>
                     <label class="block font-medium text-dark mb-1">Area</label>
-                    <input id="customer-area" type="text" name="area" value="{{ old('area') }}" placeholder="Area OPD" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                    <input id="customer-area" type="text" name="area" value="{{ old('area') }}" required placeholder="Pilih OPD tersimpan atau isi area secara manual" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    <div class="relative mt-2">
+                        <label for="customer-area-search" class="sr-only">Cari area atau alamat</label>
+                        <input id="customer-area-search" type="search" autocomplete="off" placeholder="Cari area, kecamatan, atau alamat OPD..."
+                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                        <div id="customer-area-options" class="absolute left-0 right-0 top-full z-[60] mt-1 hidden max-h-48 overflow-y-auto rounded-xl border border-border bg-white p-1 shadow-xl" role="listbox" aria-label="Hasil pencarian lokasi"></div>
+                    </div>
+                    <p class="mt-1 text-[11px] text-secondary">Dengan Google Maps interaktif, klik titik di peta untuk mengisi area, alamat, dan koordinat. Jika key belum diatur, gunakan pencarian lokasi di bawah peta.</p>
                 </div>
                 <div>
-                    <label class="block font-medium text-dark mb-1">Alamat Lengkap</label>
-                    <textarea id="customer-address" name="address" rows="2" placeholder="Alamat kantor OPD..." class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"></textarea>
+                    <label class="block font-medium text-dark mb-1">Titik Lokasi Kantor OPD (Kabupaten Situbondo)</label>
+                    <p class="mb-2 text-[11px] text-secondary">Klik titik peta untuk mengisi lokasi otomatis. Google Maps JavaScript API dan Geocoding API perlu aktif pada key browser.</p>
+                    <div id="customer-location-map" class="h-56 w-full overflow-hidden rounded-xl border border-border">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mt-2">
+                        <input id="customer-latitude" type="number" name="latitude" step="any" min="-8.05" max="-7.3" required placeholder="Latitude"
+                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <input id="customer-longitude" type="number" name="longitude" step="any" min="113.5" max="114.65" required placeholder="Longitude"
+                               class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                    </div>
+                    <p id="customer-location-status" class="mt-1 min-h-4 text-[11px] text-secondary" role="status">Pilih titik lokasi di Kabupaten Situbondo.</p>
+                </div>
+                <div>
+                    <label for="customer-address" class="block font-medium text-dark mb-1">Alamat Lengkap</label>
+                    <textarea id="customer-address" name="address" rows="2" required placeholder="Alamat akan terisi setelah titik dipilih; periksa dan lengkapi bila perlu." class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary">{{ old('address') }}</textarea>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-medium text-dark mb-1">Paket Layanan</label>
-                        <select id="customer-package" name="package_name" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
-                            <option value="">Tidak ada</option>
+                        <select id="customer-package" name="package_name" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                            <option value="">Pilih paket layanan</option>
                             <option value="50 Mbps">50 Mbps</option>
                             <option value="100 Mbps">100 Mbps</option>
                             <option value="200 Mbps">200 Mbps</option>
                             <option value="300 Mbps">300 Mbps</option>
+                            <option value="500 Mbps">500 Mbps</option>
+                            <option value="750 Mbps">750 Mbps</option>
+                            <option value="1 Gbps">1 Gbps</option>
                         </select>
                     </div>
                     <div>
                         <label class="block font-medium text-dark mb-1">Status</label>
-                        <select id="customer-status" name="status" class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
+                        <select id="customer-status" name="status" required class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
                             <option value="Aktif">Aktif</option>
                             <option value="Baru">Baru</option>
                             <option value="Nonaktif">Nonaktif</option>
@@ -474,10 +544,29 @@
             })[char]);
         }
 
+        function populateYearFilter() {
+            const filter = document.getElementById('yearFilter');
+            [...new Set(customersData.map(customer => customer.registration_date?.slice(0, 4)).filter(Boolean))]
+                .sort((a, b) => b.localeCompare(a))
+                .forEach(year => filter.add(new Option(year, year)));
+        }
+
+        function formatRegistrationDate(value) {
+            if (!value) return '-';
+            const [year, month, day] = value.split('-').map(Number);
+            return new Intl.DateTimeFormat('id-ID', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+            }).format(new Date(year, month - 1, day));
+        }
+
         let currentSelectedCustomer = customersData[2] || customersData[0] || null;
 
         document.addEventListener("DOMContentLoaded", function() {
             renderTable(customersData);
+            populateAreaFilter();
+            populateYearFilter();
             if (currentSelectedCustomer) loadCustomerDetail(currentSelectedCustomer);
 
             document.getElementById('searchInput').addEventListener('input', () => {
@@ -491,6 +580,12 @@
             document.getElementById('areaFilter').addEventListener('change', () => {
                 customerPage = 1;
                 applyFilters();
+            });
+            ['monthFilter', 'yearFilter', 'dateFilter'].forEach(id => {
+                document.getElementById(id).addEventListener('change', () => {
+                    customerPage = 1;
+                    applyFilters();
+                });
             });
             document.getElementById('resetFilterBtn').addEventListener('click', resetFilters);
             document.getElementById('selectAll').addEventListener('change', toggleSelectAll);
@@ -531,7 +626,7 @@
             const visibleCustomers = data.slice(start, start + customersPerPage);
 
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-gray-400">Tidak ada data OPD yang ditemukan.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-gray-400">Tidak ada data OPD yang ditemukan.</td></tr>`;
                 document.getElementById('totalVisibleCount').innerText = 0;
                 return;
             }
@@ -565,8 +660,9 @@
                     </td>
                     <td class="py-3 pr-3 text-dark">${escapeHtml(cust.reporter_name || '-')}</td>
                     <td class="py-3 pr-3 text-dark">${escapeHtml(cust.reporter_contact || '-')}</td>
-                    <td class="py-3 pr-3 font-bold text-primary">${cust.custNo}</td>
-                    <td class="py-3 pr-3 text-dark">${cust.area}</td>
+                    <td class="py-3 pr-3 font-bold text-primary">${escapeHtml(cust.custNo)}</td>
+                    <td class="py-3 pr-3 text-dark">${formatRegistrationDate(cust.registration_date)}</td>
+                    <td class="py-3 pr-3 text-dark">${escapeHtml(cust.area || '-')}</td>
                     <td class="py-3 pr-3"><span class="px-2.5 py-1 rounded-full text-[11px] font-semibold ${badgeClass}">${cust.status}</span></td>
                     <td class="py-3 pr-3 text-dark font-medium">${cust.paket}</td>
                     <td class="py-3 pr-4 text-center">
@@ -695,40 +791,31 @@
         }
 
         function applyFilters() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            const statusVal = document.getElementById('statusFilter').value;
-            const areaVal = document.getElementById('areaFilter').value;
-
-            const filtered = customersData.filter(cust => {
-                const matchQuery = cust.name.toLowerCase().includes(query) ||
-                                   String(cust.reporter_name || '').toLowerCase().includes(query) ||
-                                   String(cust.reporter_contact || '').toLowerCase().includes(query) ||
-                                   cust.custNo.toLowerCase().includes(query) ||
-                                   cust.address.toLowerCase().includes(query) ||
-                                   cust.email.toLowerCase().includes(query);
-                const matchStatus = statusVal === "" || cust.status === statusVal;
-                const matchArea = areaVal === "" || cust.area === areaVal;
-                return matchQuery && matchStatus && matchArea;
-            });
-
-            renderTable(filtered);
+            renderTable(getCurrentFilteredData());
         }
 
         function getCurrentFilteredData() {
             const query = document.getElementById('searchInput').value.toLowerCase();
             const statusVal = document.getElementById('statusFilter').value;
             const areaVal = document.getElementById('areaFilter').value;
+            const monthVal = document.getElementById('monthFilter').value;
+            const yearVal = document.getElementById('yearFilter').value;
+            const dateVal = document.getElementById('dateFilter').value;
 
             return customersData.filter(cust => {
                 const matchQuery = cust.name.toLowerCase().includes(query) ||
-                                   String(cust.reporter_name || '').toLowerCase().includes(query) ||
-                               String(cust.reporter_contact || '').toLowerCase().includes(query) ||
-                               cust.custNo.toLowerCase().includes(query) ||
-                               cust.address.toLowerCase().includes(query) ||
-                               cust.email.toLowerCase().includes(query);
+                                       String(cust.reporter_name || '').toLowerCase().includes(query) ||
+                                       String(cust.reporter_contact || '').toLowerCase().includes(query) ||
+                                       cust.custNo.toLowerCase().includes(query) ||
+                                       cust.address.toLowerCase().includes(query) ||
+                                       cust.email.toLowerCase().includes(query);
                 const matchStatus = statusVal === "" || cust.status === statusVal;
                 const matchArea = areaVal === "" || cust.area === areaVal;
-                return matchQuery && matchStatus && matchArea;
+                const registrationDate = cust.registration_date || '';
+                const matchMonth = monthVal === '' || registrationDate.slice(5, 7) === monthVal;
+                const matchYear = yearVal === '' || registrationDate.slice(0, 4) === yearVal;
+                const matchDate = dateVal === '' || registrationDate === dateVal;
+                return matchQuery && matchStatus && matchArea && matchMonth && matchYear && matchDate;
             });
         }
 
@@ -736,6 +823,9 @@
             document.getElementById('searchInput').value = '';
             document.getElementById('statusFilter').value = '';
             document.getElementById('areaFilter').value = '';
+            document.getElementById('monthFilter').value = '';
+            document.getElementById('yearFilter').value = '';
+            document.getElementById('dateFilter').value = '';
             customerPage = 1;
             renderTable(customersData);
         }
@@ -776,15 +866,766 @@
         const customerForm = document.getElementById('customer-form');
         const customerMethodInput = document.getElementById('customer-form-method');
         const customerUpdateUrl = @json(route('customers.update', ['customer' => '__ID__']));
+        const customerNameInput = document.getElementById('customer-name');
+        const customerNamePicker = document.getElementById('customer-name-picker');
+        const customerNameLabel = document.getElementById('customer-name-label');
+        const customerNameSearch = document.getElementById('customer-opd-search');
+        const customerNameDropdown = document.getElementById('customer-opd-dropdown');
+        const customerOpdOptions = @json($opdOptions);
+        const customerCodes = @json($customerCodes);
+        const googleMapsApiKey = @json(config('services.google_maps.browser_key'));
+        const customerAreaSearch = document.getElementById('customer-area-search');
+        const customerAreaOptions = document.getElementById('customer-area-options');
+        let customerMap = null;
+        let customerMarker = null;
+        let customerGeocoder = null;
+        let googleMapsPromise = null;
+        let areaSearchTimer = null;
+        let areaSearchRequest = 0;
+        let opdLocationRequest = 0;
+        let nominatimQueue = Promise.resolve();
+        let lastNominatimRequestAt = 0;
+        const opdLocationCache = new Map();
+        let locationLookupRequest = 0;
+        let isApplyingLocation = false;
+        let originalEditCode = null;
+
+        function setCustomerLocationStatus(message, isError = false, isLoading = false) {
+            const status = document.getElementById('customer-location-status');
+            status.textContent = message;
+            status.className = `mt-1 min-h-4 text-[11px] ${isError ? 'text-red-600' : 'text-secondary'}`;
+            status.setAttribute('aria-busy', String(isLoading));
+        }
+
+        function getGeocodingErrorMessage(error, fallback) {
+            const code = String(error?.code || error?.message || '').toUpperCase();
+            if (code.includes('REQUEST_DENIED')) {
+                return 'Google menolak permintaan geocoding. Periksa Geocoding API, billing, dan batasan key/referrer di Google Cloud.';
+            }
+            if (code.includes('OVER_QUERY_LIMIT')) {
+                return 'Batas permintaan alamat Google Maps tercapai. Tunggu sebentar lalu coba lagi.';
+            }
+            if (code.includes('ZERO_RESULTS')) {
+                return 'Alamat untuk titik yang dipilih tidak ditemukan.';
+            }
+            if (code.includes('UNKNOWN_ERROR') || code.includes('ERROR')) {
+                return 'Google Maps gagal mencari alamat sementara. Silakan coba lagi.';
+            }
+            return error?.message || fallback;
+        }
+
+        function setCustomerLocationField(id, value) {
+            const field = document.getElementById(id);
+            field.value = value;
+            field.dispatchEvent(new Event('input', { bubbles: true }));
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        function searchNominatim(url) {
+            const request = nominatimQueue.then(async () => {
+                const wait = Math.max(0, 1100 - (Date.now() - lastNominatimRequestAt));
+                if (wait) await new Promise(resolve => window.setTimeout(resolve, wait));
+                lastNominatimRequestAt = Date.now();
+                const response = await fetch(url, { headers: { Accept: 'application/json' } });
+                if (!response.ok) throw new Error('Layanan pencarian lokasi tidak dapat diakses.');
+                return response.json();
+            });
+            nominatimQueue = request.then(() => undefined, () => undefined);
+            return request;
+        }
+
+        function populateAreaFilter() {
+            const filter = document.getElementById('areaFilter');
+            const existingAreas = new Set(Array.from(filter.options, option => option.value));
+            [...new Set(customersData.map(customer => customer.area).filter(Boolean))]
+                .sort((a, b) => a.localeCompare(b, 'id'))
+                .forEach(area => {
+                    if (!existingAreas.has(area)) filter.add(new Option(area, area));
+                });
+        }
+
+        function setCustomerCoordinates(latitude, longitude) {
+            setCustomerLocationField('customer-latitude', Number(latitude).toFixed(7));
+            setCustomerLocationField('customer-longitude', Number(longitude).toFixed(7));
+            updateCustomerMap(latitude, longitude);
+        }
+
+        function setGoogleMapsFallback(latitude = null, longitude = null, search = '') {
+            const container = document.getElementById('customer-location-map');
+            const query = latitude !== null && longitude !== null
+                ? `${Number(latitude)},${Number(longitude)}`
+                : (search || 'Situbondo, Jawa Timur, Indonesia');
+            const url = new URL('https://maps.google.com/maps');
+            url.search = new URLSearchParams({
+                q: query,
+                t: '',
+                z: latitude !== null && longitude !== null ? '17' : '13',
+                ie: 'UTF8',
+                iwloc: '',
+                output: 'embed',
+            });
+            let frame = document.getElementById('customer-location-map-frame');
+            if (!frame) {
+                frame = document.createElement('iframe');
+                frame.id = 'customer-location-map-frame';
+                frame.title = 'Google Maps Kabupaten Situbondo';
+                frame.className = 'h-full w-full border-0';
+                frame.allowFullscreen = true;
+                frame.loading = 'lazy';
+                frame.referrerPolicy = 'no-referrer-when-downgrade';
+                container.replaceChildren(frame);
+            }
+            if (frame.src !== url.toString()) frame.src = url.toString();
+        }
+
+        function updateCustomerMap(latitude = null, longitude = null, search = '') {
+            const query = latitude !== null && longitude !== null
+                ? `${Number(latitude)},${Number(longitude)}`
+                : (search || 'Situbondo, Jawa Timur, Indonesia');
+            if (!customerMap || !window.google?.maps) {
+                setGoogleMapsFallback(latitude, longitude, search);
+                return;
+            }
+            if (latitude !== null && longitude !== null) {
+                const point = { lat: Number(latitude), lng: Number(longitude) };
+                customerMap.setCenter(point);
+                customerMap.setZoom(17);
+                if (!customerMarker) {
+                    customerMarker = new google.maps.Marker({ map: customerMap, position: point, draggable: true });
+                    customerMarker.addListener('dragend', event => selectCustomerLocation(event.latLng));
+                } else {
+                    customerMarker.setMap(customerMap);
+                    customerMarker.setPosition(point);
+                }
+            } else if (search) {
+                customerGeocoder?.geocode({ address: search, region: 'id' })
+                    .then(({ results }) => {
+                        const result = results.find(item => isInsideSitubondo(
+                            item.geometry.location.lat(),
+                            item.geometry.location.lng(),
+                            item,
+                        ));
+                        if (!result) return;
+                        customerMap.setCenter(result.geometry.location);
+                        customerMap.setZoom(15);
+                    })
+                    .catch(error => setCustomerLocationStatus(
+                        getGeocodingErrorMessage(error, 'Pencarian Google Maps gagal.'),
+                        true,
+                    ));
+            }
+        }
+
+        function loadGoogleMaps() {
+            if (window.google?.maps) return Promise.resolve();
+            if (!googleMapsApiKey || /key_asli|key_dari_google|your[_ -]?key|placeholder|\.\.\./i.test(googleMapsApiKey)) {
+                return Promise.reject(new Error('Untuk memilih titik langsung, isi GOOGLE_MAPS_API_KEY dengan key asli dan aktifkan Maps JavaScript API serta Geocoding API. Peta sematan tetap dapat digunakan untuk melihat lokasi.'));
+            }
+            if (googleMapsPromise) return googleMapsPromise;
+
+            googleMapsPromise = new Promise((resolve, reject) => {
+                const timeout = window.setTimeout(() => {
+                    googleMapsPromise = null;
+                    reject(new Error('Google Maps terlalu lama dimuat. Periksa key, API, billing, dan HTTP referrer di Google Cloud.'));
+                }, 15000);
+                window.initCustomerGoogleMaps = () => {
+                    window.clearTimeout(timeout);
+                    resolve();
+                };
+                window.gm_authFailure = () => {
+                    window.clearTimeout(timeout);
+                    googleMapsPromise = null;
+                    reject(new Error('Google menolak key. Periksa Maps JavaScript API, Geocoding API, billing, dan HTTP referrer.'));
+                };
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(googleMapsApiKey)}&callback=initCustomerGoogleMaps&v=weekly`;
+                script.async = true;
+                script.defer = true;
+                script.onerror = () => {
+                    window.clearTimeout(timeout);
+                    googleMapsPromise = null;
+                    reject(new Error('Google Maps gagal dimuat. Periksa koneksi internet dan konfigurasi key.'));
+                };
+                document.head.appendChild(script);
+            });
+            return googleMapsPromise;
+        }
+
+        function initializeCustomerMap() {
+            const latitude = document.getElementById('customer-latitude').value;
+            const longitude = document.getElementById('customer-longitude').value;
+            if (customerMap) {
+                google.maps.event.trigger(customerMap, 'resize');
+                if (latitude && longitude) updateCustomerMap(latitude, longitude);
+                return;
+            }
+
+            loadGoogleMaps().then(() => {
+                const container = document.getElementById('customer-location-map');
+                customerMap = new google.maps.Map(container, {
+                    center: { lat: -7.706, lng: 114.009 },
+                    zoom: 10,
+                    restriction: {
+                        latLngBounds: new google.maps.LatLngBounds(
+                            { lat: -8.05, lng: 113.5 },
+                            { lat: -7.3, lng: 114.65 },
+                        ),
+                        strictBounds: true,
+                    },
+                    mapTypeControl: true,
+                    streetViewControl: false,
+                    fullscreenControl: true,
+                });
+                customerGeocoder = new google.maps.Geocoder();
+                customerMap.addListener('click', event => selectCustomerLocation(event.latLng));
+                if (latitude && longitude) updateCustomerMap(latitude, longitude);
+                setCustomerLocationStatus('Peta Google Maps interaktif siap. Klik titik lokasi untuk mengisi alamat dan area.');
+            }).catch(error => {
+                setGoogleMapsFallback(latitude || null, longitude || null);
+                setCustomerLocationStatus(error.message, true);
+            });
+        }
+
+        function showCustomerMapPoint(latitude, longitude) {
+            updateCustomerMap(latitude, longitude);
+        }
+
+        function applyCustomerLocation(location) {
+            locationLookupRequest++;
+            isApplyingLocation = true;
+            const latitude = Number(location.latitude ?? location.lat);
+            const longitude = Number(location.longitude ?? location.lon ?? location.lng);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+                latitude < -8.05 || latitude > -7.3 || longitude < 113.5 || longitude > 114.65) {
+                isApplyingLocation = false;
+                setCustomerLocationStatus('Lokasi tidak berada di wilayah Kabupaten Situbondo.', true);
+                return;
+            }
+
+            const area = location.area || location.address?.village || location.address?.suburb ||
+                location.address?.city_district || location.address?.town || location.address?.municipality ||
+                location.address?.city || location.address?.county || 'Situbondo';
+            const address = location.address_text || location.display_name || location.address || '';
+            setCustomerLocationField('customer-area', area);
+            setCustomerLocationField('customer-address', typeof address === 'string' ? address : '');
+            customerAreaSearch.value = location.name ? `${area} - ${location.name}` : area;
+            setCustomerCoordinates(latitude, longitude);
+            isApplyingLocation = false;
+            showCustomerMapPoint(latitude, longitude);
+            customerAreaOptions.classList.add('hidden');
+            setCustomerLocationStatus('Area dan titik lokasi berhasil dipilih.');
+        }
+
+        function getGoogleAddressArea(result) {
+            const components = result.address_components || [];
+            const areaTypes = [
+                'administrative_area_level_4',
+                'sublocality_level_1',
+                'administrative_area_level_3',
+                'locality',
+                'administrative_area_level_2',
+            ];
+            for (const type of areaTypes) {
+                const component = components.find(item => item.types.includes(type));
+                if (component) return component.long_name;
+            }
+            return 'Situbondo';
+        }
+
+        function isInsideSitubondo(latitude, longitude, result = null) {
+            const insideBounds = latitude >= -8.05 && latitude <= -7.3 &&
+                longitude >= 113.5 && longitude <= 114.65;
+            const address = result?.formatted_address?.toLocaleLowerCase('id') || '';
+            return insideBounds && (!address || address.includes('situbondo'));
+        }
+
+        async function reverseGeocodeOpenStreetMap(latitude, longitude) {
+            const url = new URL('https://nominatim.openstreetmap.org/reverse');
+            url.search = new URLSearchParams({
+                format: 'jsonv2',
+                lat: String(latitude),
+                lon: String(longitude),
+                zoom: '18',
+                addressdetails: '1',
+                'accept-language': 'id',
+            });
+            const result = await searchNominatim(url);
+            if (!result.display_name) throw new Error('Alamat untuk titik ini tidak ditemukan.');
+            return {
+                area: result.address?.village || result.address?.suburb ||
+                    result.address?.city_district || result.address?.town ||
+                    result.address?.municipality || result.address?.city ||
+                    result.address?.county || 'Situbondo',
+                address: result.display_name,
+            };
+        }
+
+        async function selectCustomerLocation(point) {
+            const latitude = typeof point.lat === 'function' ? point.lat() : Number(point.lat);
+            const longitude = typeof point.lng === 'function' ? point.lng() : Number(point.lng);
+            if (latitude < -8.05 || latitude > -7.3 || longitude < 113.5 || longitude > 114.65) {
+                setCustomerLocationStatus('Pilih titik di wilayah Kabupaten Situbondo.', true);
+                return;
+            }
+
+            const requestId = ++locationLookupRequest;
+            isApplyingLocation = true;
+            setCustomerCoordinates(latitude, longitude);
+            setCustomerLocationField('customer-area', '');
+            setCustomerLocationField('customer-address', '');
+            isApplyingLocation = false;
+            setCustomerLocationStatus('Mengambil alamat dan area dari titik yang dipilih...', false, true);
+            try {
+                let area;
+                let address;
+                let usedFallback = false;
+                try {
+                    const { results } = await customerGeocoder.geocode({
+                        location: { lat: latitude, lng: longitude },
+                        region: 'id',
+                    });
+                    const result = results.find(item => isInsideSitubondo(latitude, longitude, item));
+                    if (!result) throw new Error('Google tidak menemukan alamat untuk titik ini.');
+                    area = getGoogleAddressArea(result);
+                    address = result.formatted_address;
+                } catch {
+                    const fallback = await reverseGeocodeOpenStreetMap(latitude, longitude);
+                    area = fallback.area;
+                    address = fallback.address;
+                    usedFallback = true;
+                }
+                if (requestId !== locationLookupRequest) return;
+
+                isApplyingLocation = true;
+                setCustomerLocationField('customer-area', area);
+                setCustomerLocationField('customer-address', address);
+                customerAreaSearch.value = document.getElementById('customer-area').value;
+                isApplyingLocation = false;
+                setCustomerLocationStatus(usedFallback
+                    ? 'Area, alamat, dan koordinat terisi. Geocoding Google tidak tersedia; alamat diambil dari layanan lokasi alternatif.'
+                    : 'Alamat lengkap dan area berhasil diisi dari Google Maps.');
+            } catch (error) {
+                if (requestId === locationLookupRequest) {
+                    isApplyingLocation = true;
+                    setCustomerLocationField('customer-area', '');
+                    setCustomerLocationField('customer-address', '');
+                    isApplyingLocation = false;
+                    setCustomerLocationStatus(
+                        getGeocodingErrorMessage(error, 'Alamat titik tidak dapat ditemukan.'),
+                        true,
+                    );
+                }
+            }
+        }
+
+        function resetCustomerMap() {
+            if (customerMap && customerMarker) customerMarker.setMap(null);
+            if (customerMap) {
+                customerMap = null;
+                customerGeocoder = null;
+            }
+            setGoogleMapsFallback();
+        }
+
+        function renderOpdOptions() {
+            const query = customerNameSearch.value.trim().toLocaleLowerCase('id');
+            const matches = customerOpdOptions.filter(option => option.name.toLocaleLowerCase('id').includes(query));
+            const container = document.getElementById('customer-opd-options');
+            container.replaceChildren();
+
+            if (!matches.length) {
+                const empty = document.createElement('p');
+                empty.className = 'px-3 py-2 text-xs text-secondary';
+                empty.textContent = 'OPD tidak ditemukan.';
+                container.appendChild(empty);
+                return;
+            }
+
+            matches.forEach(option => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.setAttribute('role', 'option');
+                button.className = 'block w-full rounded-lg px-3 py-2 text-left text-xs text-dark hover:bg-blue-50';
+                button.textContent = option.name;
+                button.addEventListener('click', () => selectOpd(option));
+                container.appendChild(button);
+            });
+        }
+
+        function setOpdDropdownOpen(open) {
+            customerNameDropdown.classList.toggle('hidden', !open);
+            customerNamePicker.setAttribute('aria-expanded', String(open));
+            if (open) {
+                renderOpdOptions();
+                customerNameSearch.focus();
+            }
+        }
+
+        function selectOpd(opd) {
+            const requestId = ++opdLocationRequest;
+            locationLookupRequest++;
+            customerNameInput.value = opd.name;
+            customerNameLabel.textContent = opd.name;
+            setOpdDropdownOpen(false);
+            updateCustomerCodePreview();
+            if (opd.latitude && opd.longitude) {
+                applyCustomerLocation({
+                    ...opd,
+                    address_text: opd.address || '',
+                });
+                return;
+            }
+
+            if (opd.area || opd.address) {
+                isApplyingLocation = true;
+                setCustomerLocationField('customer-area', opd.area || '');
+                setCustomerLocationField('customer-address', opd.address || '');
+                isApplyingLocation = false;
+            }
+
+            const cachedLocation = opdLocationCache.get(opd.name);
+            if (cachedLocation) {
+                applyCustomerLocation(cachedLocation);
+                return;
+            }
+
+            isApplyingLocation = true;
+            setCustomerLocationField('customer-area', opd.area || '');
+            setCustomerLocationField('customer-address', opd.address || '');
+            setCustomerLocationField('customer-latitude', '');
+            setCustomerLocationField('customer-longitude', '');
+            isApplyingLocation = false;
+            if (customerMarker) customerMarker.setMap(null);
+            customerAreaSearch.value = opd.name;
+
+            lookupOpdLocation(opd, requestId);
+        }
+
+        function parseOpdSearchResults(results) {
+            return results
+                .filter(result => {
+                    const latitude = Number(result.lat);
+                    const longitude = Number(result.lon);
+                    return latitude >= -8.05 && latitude <= -7.3 &&
+                        longitude >= 113.5 && longitude <= 114.65;
+                })
+                .map(result => ({
+                    name: result.name,
+                    area: result.address?.village || result.address?.suburb ||
+                        result.address?.city_district || result.address?.town ||
+                        result.address?.municipality || result.address?.city ||
+                        result.address?.county || 'Situbondo',
+                    latitude: result.lat,
+                    longitude: result.lon,
+                    address: result.address,
+                    address_text: result.display_name,
+                    display_name: result.display_name,
+                    label: result.display_name,
+                    importance: result.importance || 0,
+                    category: result.category || '',
+                    type: result.type || '',
+                }))
+                .sort((a, b) => {
+                    const aOffice = /office|government|civic|amenity/i.test(`${a.category} ${a.type}`) ? 1 : 0;
+                    const bOffice = /office|government|civic|amenity/i.test(`${b.category} ${b.type}`) ? 1 : 0;
+                    return bOffice - aOffice || b.importance - a.importance;
+                });
+        }
+
+        async function lookupOpdLocation(opd, requestId) {
+            setCustomerLocationStatus(`Mencari titik lokasi ${opd.name} di Situbondo...`, false, true);
+            customerAreaSearch.value = opd.name;
+            if (customerMap) {
+                customerMap.setCenter({ lat: -7.706, lng: 114.009 });
+                customerMap.setZoom(10);
+            }
+            updateCustomerMap(null, null, `${opd.name}, Kabupaten Situbondo, Jawa Timur, Indonesia`);
+
+            const queries = [
+                `${opd.name}, Kabupaten Situbondo, Jawa Timur, Indonesia`,
+                `Kantor ${opd.name}, Kabupaten Situbondo, Jawa Timur, Indonesia`,
+                `${opd.name.replace(/^(Dinas|Badan|Kantor|Sekretariat)\\s+/i, '')}, Situbondo, Jawa Timur, Indonesia`,
+            ];
+            let locations = [];
+
+            try {
+                for (const query of queries) {
+                    const url = new URL('https://nominatim.openstreetmap.org/search');
+                    url.search = new URLSearchParams({
+                        format: 'jsonv2',
+                        q: query,
+                        viewbox: '113.5,-7.3,114.65,-8.05',
+                        bounded: '1',
+                        addressdetails: '1',
+                        limit: '8',
+                        countrycodes: 'id',
+                        'accept-language': 'id',
+                    });
+                    locations = parseOpdSearchResults(await searchNominatim(url));
+                    if (locations.length) break;
+                }
+
+                if (requestId !== opdLocationRequest) return;
+                const exactOffice = locations.find(location =>
+                    /office|government|civic/i.test(`${location.category} ${location.type}`));
+                const selectedLocation = exactOffice || locations[0];
+                if (selectedLocation) {
+                    opdLocationCache.set(opd.name, selectedLocation);
+                    applyCustomerLocation(selectedLocation);
+                    return;
+                }
+
+                renderAreaOptions([], `Titik khusus ${opd.name} belum ditemukan di data peta. Klik lokasi kantornya langsung pada peta atau cari alamat lengkap di kolom ini.`);
+                setCustomerLocationStatus(
+                    `Titik khusus ${opd.name} belum terdaftar pada data peta. Peta dipusatkan ke Situbondo; klik lokasi kantor di peta untuk mengisi koordinat, area, dan alamat otomatis.`,
+                    true,
+                );
+            } catch (error) {
+                if (requestId !== opdLocationRequest) return;
+                renderAreaOptions([], `${error.message} Coba ulangi pencarian area/alamat.`);
+                setCustomerLocationStatus(
+                    `Lokasi ${opd.name} gagal dicari: ${error.message}`,
+                    true,
+                );
+            }
+        }
+
+        function previewCustomerCode() {
+            const name = customerNameInput.value || document.getElementById('customer-name-display').value;
+            if (!name) return '';
+
+            if (customerMethodInput.disabled === false && originalEditCode) {
+                return originalEditCode;
+            }
+
+            const lastSequence = customerCodes.reduce((max, code) => {
+                const match = String(code).match(/^OPD(\d+)$/);
+                return match ? Math.max(max, Number(match[1])) : max;
+            }, 0);
+            return `OPD${String(lastSequence + 1).padStart(4, '0')}`;
+        }
+
+        function updateCustomerCodePreview() {
+            document.getElementById('customer-code-display').textContent =
+                previewCustomerCode() || 'Kode otomatis muncul setelah nama OPD dan tanggal dipilih';
+        }
+
+        function searchSavedLocations(query) {
+            const normalizedQuery = query.toLocaleLowerCase('id');
+            return customersData
+                .filter(customer => customer.latitude && customer.longitude &&
+                    `${customer.name} ${customer.area || ''} ${customer.address || ''}`.toLocaleLowerCase('id').includes(normalizedQuery))
+                .slice(0, 5)
+                .map(customer => ({
+                    name: customer.name,
+                    area: customer.area,
+                    address_text: customer.address,
+                    latitude: customer.latitude,
+                    longitude: customer.longitude,
+                    label: `${customer.area || 'Situbondo'} - ${customer.name}`,
+                }));
+        }
+
+        function renderAreaOptions(locations, message = '') {
+            customerAreaOptions.replaceChildren();
+            if (!locations.length && message) {
+                const empty = document.createElement('p');
+                empty.className = 'px-3 py-2 text-xs text-secondary';
+                empty.textContent = message;
+                customerAreaOptions.appendChild(empty);
+            }
+
+            locations.forEach(location => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.setAttribute('role', 'option');
+                button.className = 'block w-full rounded-lg px-3 py-2 text-left text-xs text-dark hover:bg-blue-50';
+                button.textContent = location.label || location.display_name;
+                button.addEventListener('click', () => applyCustomerLocation(location));
+                customerAreaOptions.appendChild(button);
+            });
+
+            customerAreaOptions.classList.toggle('hidden', !locations.length && !message);
+        }
+
+        function searchCustomerArea(query) {
+            const requestId = ++areaSearchRequest;
+            const savedLocations = searchSavedLocations(query);
+            updateCustomerMap(null, null, `${query}, Kabupaten Situbondo, Jawa Timur, Indonesia`);
+            renderAreaOptions(savedLocations, 'Mencari lokasi di Situbondo...');
+
+            const url = new URL('https://nominatim.openstreetmap.org/search');
+            url.search = new URLSearchParams({
+                format: 'jsonv2',
+                q: `${query}, Kabupaten Situbondo, Jawa Timur, Indonesia`,
+                viewbox: '113.5,-7.3,114.65,-8.05',
+                bounded: '1',
+                addressdetails: '1',
+                limit: '8',
+                countrycodes: 'id',
+                'accept-language': 'id',
+            });
+
+            searchNominatim(url)
+                .then(results => {
+                    if (requestId !== areaSearchRequest) return;
+                    const geocodedLocations = parseOpdSearchResults(results);
+                    const knownCoordinates = new Set(
+                        savedLocations.map(location => `${location.latitude},${location.longitude}`),
+                    );
+                    const locations = [
+                        ...savedLocations,
+                        ...geocodedLocations.filter(location =>
+                            !knownCoordinates.has(`${location.latitude},${location.longitude}`)),
+                    ];
+                    renderAreaOptions(
+                        locations,
+                        locations.length ? '' : 'Lokasi tidak ditemukan. Coba nama jalan, desa, kecamatan, atau OPD.',
+                    );
+                })
+                .catch(error => {
+                    if (requestId !== areaSearchRequest) return;
+                    renderAreaOptions(
+                        savedLocations,
+                        savedLocations.length ? '' : `${error.message} Periksa koneksi internet atau coba lagi.`,
+                    );
+                });
+        }
+
+        async function lookupAddressFromCoordinates(latitude, longitude) {
+            const requestId = ++locationLookupRequest;
+            if (latitude < -8.05 || latitude > -7.3 || longitude < 113.5 || longitude > 114.65) {
+                setCustomerLocationStatus('Koordinat harus berada di wilayah Kabupaten Situbondo.', true);
+                return;
+            }
+
+            updateCustomerMap(latitude, longitude);
+            setCustomerLocationStatus('Mencari alamat dan area dari koordinat...', false, true);
+            if (customerGeocoder) {
+                try {
+                    const { results } = await customerGeocoder.geocode({
+                        location: { lat: latitude, lng: longitude },
+                        region: 'id',
+                    });
+                    if (requestId !== locationLookupRequest) return;
+                    const result = results.find(item => isInsideSitubondo(latitude, longitude, item));
+                    if (!result) throw new Error('Alamat untuk koordinat ini tidak ditemukan di Situbondo.');
+                    isApplyingLocation = true;
+                    setCustomerLocationField('customer-area', getGoogleAddressArea(result));
+                    setCustomerLocationField('customer-address', result.formatted_address);
+                    customerAreaSearch.value = document.getElementById('customer-area').value;
+                    isApplyingLocation = false;
+                    setCustomerLocationStatus('Alamat lengkap dan area berhasil diisi dari Google Maps.');
+                } catch (error) {
+                    if (requestId === locationLookupRequest) {
+                        isApplyingLocation = false;
+                        setCustomerLocationStatus(
+                            getGeocodingErrorMessage(error, 'Pencarian alamat Google gagal.'),
+                            true,
+                        );
+                    }
+                }
+                return;
+            }
+
+            const url = new URL('https://nominatim.openstreetmap.org/reverse');
+            url.search = new URLSearchParams({
+                format: 'jsonv2',
+                lat: String(latitude),
+                lon: String(longitude),
+                zoom: '18',
+                addressdetails: '1',
+                'accept-language': 'id',
+            });
+
+            try {
+                const result = await searchNominatim(url);
+                if (requestId !== locationLookupRequest) return;
+                if (!result.display_name) throw new Error('Alamat tidak ditemukan untuk koordinat tersebut.');
+
+                const area = result.address?.city_district || result.address?.village ||
+                    result.address?.town || result.address?.suburb ||
+                    result.address?.municipality || result.address?.city ||
+                    result.address?.county || 'Situbondo';
+                isApplyingLocation = true;
+                setCustomerLocationField('customer-area', area);
+                setCustomerLocationField('customer-address', result.display_name);
+                customerAreaSearch.value = area;
+                isApplyingLocation = false;
+                setCustomerLocationStatus('Alamat lengkap dan area berhasil diisi dari koordinat.');
+            } catch (error) {
+                if (requestId === locationLookupRequest) {
+                    isApplyingLocation = false;
+                    setCustomerLocationStatus(`${error.message} Isi area dan alamat secara manual bila perlu.`, true);
+                }
+            }
+        }
+
+        function localDateInputValue() {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        }
+
+        function setCustomerFieldLocked(id, locked) {
+            const field = document.getElementById(id);
+            field.disabled = locked;
+            field.classList.toggle('bg-gray-100', locked);
+            field.classList.toggle('text-gray-500', locked);
+        }
+
+        function setCustomerPackageSelection(packageName, allowLegacyPackage = false) {
+            const packageSelect = document.getElementById('customer-package');
+            packageSelect.querySelectorAll('option[data-legacy-package]').forEach(option => option.remove());
+
+            const standardPackages = [
+                '50 Mbps',
+                '100 Mbps',
+                '200 Mbps',
+                '300 Mbps',
+                '500 Mbps',
+                '750 Mbps',
+                '1 Gbps',
+            ];
+            const isStandardPackage = standardPackages.includes(packageName);
+
+            if (allowLegacyPackage && packageName && !isStandardPackage) {
+                const legacyOption = new Option(`${packageName} (tersimpan)`, packageName);
+                legacyOption.dataset.legacyPackage = 'true';
+                packageSelect.add(legacyOption);
+            }
+
+            packageSelect.value = isStandardPackage || allowLegacyPackage ? packageName : '';
+        }
 
         function openAddModal() {
             customerForm.reset();
+            setCustomerPackageSelection('');
             customerForm.action = @json(route('customers.store'));
             customerMethodInput.disabled = true;
             document.getElementById('customer-form-id').value = '';
             document.getElementById('customer-form-title').innerText = 'Tambah OPD';
             document.getElementById('customer-form-submit').innerText = 'Simpan OPD';
+            document.getElementById('customer-opd-selector').classList.remove('hidden');
+            document.getElementById('customer-name-locked').classList.add('hidden');
+            customerNameInput.value = '';
+            customerNameLabel.textContent = 'Pilih OPD dari data OpdSeeder';
+            customerNameSearch.value = '';
+            setOpdDropdownOpen(false);
+            customerAreaSearch.value = '';
+            customerAreaOptions.classList.add('hidden');
+            areaSearchRequest++;
+            document.getElementById('customer-registration-date').value = localDateInputValue();
+            originalEditCode = null;
+            ['customer-reporter-name', 'customer-reporter-contact'].forEach(id => setCustomerFieldLocked(id, false));
+            document.getElementById('customer-latitude').value = '';
+            document.getElementById('customer-longitude').value = '';
+            document.getElementById('customer-area').value = '';
+            document.getElementById('customer-address').value = '';
+            resetCustomerMap();
+            setCustomerLocationStatus('Cari lokasi di Google Maps, pilih OPD tersimpan untuk koordinat otomatis, atau isi koordinat secara manual.');
+            updateCustomerCodePreview();
             document.getElementById('modal-add-customer').classList.remove('hidden');
+            window.setTimeout(initializeCustomerMap, 100);
         }
 
         function openEditModal(id) {
@@ -797,29 +1638,101 @@
             document.getElementById('customer-form-id').value = customer.id;
             document.getElementById('customer-form-title').innerText = `Edit OPD: ${customer.name}`;
             document.getElementById('customer-form-submit').innerText = 'Simpan Perubahan';
-            document.getElementById('customer-name').value = customer.name;
+            document.getElementById('customer-opd-selector').classList.add('hidden');
+            document.getElementById('customer-name-locked').classList.remove('hidden');
+            document.getElementById('customer-name-display').value = customer.name;
+            customerNameInput.value = customer.name;
+            document.getElementById('customer-registration-date').value = customer.registration_date || '';
+            originalEditCode = customer.custNo || '';
             document.getElementById('customer-reporter-name').value = blank(customer.reporter_name);
             document.getElementById('customer-reporter-contact').value = blank(customer.reporter_contact);
+            ['customer-reporter-name', 'customer-reporter-contact'].forEach(id => setCustomerFieldLocked(id, true));
+            updateCustomerCodePreview();
             document.getElementById('customer-area').value = blank(customer.area);
+            customerAreaSearch.value = blank(customer.area);
+            customerAreaOptions.classList.add('hidden');
             document.getElementById('customer-address').value = blank(customer.address);
-            document.getElementById('customer-package').value = blank(customer.package_name);
+            const packageName = blank(customer.package_name);
+            setCustomerPackageSelection(packageName, true);
             document.getElementById('customer-status').value = customer.status;
+            document.getElementById('customer-latitude').value = customer.latitude ?? '';
+            document.getElementById('customer-longitude').value = customer.longitude ?? '';
+            resetCustomerMap();
+            setCustomerLocationStatus(customer.latitude && customer.longitude
+                ? 'Titik lokasi tersimpan. Peta menampilkan koordinat OPD.'
+                : 'Cari lokasi di Google Maps dan isi koordinat kantor OPD.');
             document.getElementById('modal-add-customer').classList.remove('hidden');
+            window.setTimeout(() => {
+                initializeCustomerMap();
+                if (customer.latitude && customer.longitude) {
+                    showCustomerMapPoint(customer.latitude, customer.longitude);
+                }
+            }, 100);
         }
 
         function closeAddModal() { document.getElementById('modal-add-customer').classList.add('hidden'); }
         document.getElementById('btn-open-add-modal').addEventListener('click', openAddModal);
+        customerNamePicker.addEventListener('click', () => setOpdDropdownOpen(customerNameDropdown.classList.contains('hidden')));
+        customerNameSearch.addEventListener('input', renderOpdOptions);
+        customerAreaSearch.addEventListener('input', () => {
+            const query = customerAreaSearch.value.trim();
+            window.clearTimeout(areaSearchTimer);
+            areaSearchRequest++;
+            locationLookupRequest++;
+            if (query.length < 2) {
+                document.getElementById('customer-area').value = '';
+                document.getElementById('customer-address').value = '';
+                document.getElementById('customer-latitude').value = '';
+                document.getElementById('customer-longitude').value = '';
+                customerAreaOptions.classList.add('hidden');
+                return;
+            }
+            document.getElementById('customer-area').value = '';
+            document.getElementById('customer-address').value = '';
+            document.getElementById('customer-latitude').value = '';
+            document.getElementById('customer-longitude').value = '';
+            setCustomerLocationStatus('Pilih hasil pencarian untuk mengisi area dan titik lokasi.');
+            areaSearchTimer = window.setTimeout(() => searchCustomerArea(query), 1000);
+        });
+        document.getElementById('customer-registration-date').addEventListener('change', updateCustomerCodePreview);
+        document.addEventListener('click', event => {
+            if (!event.target.closest('#customer-opd-selector')) setOpdDropdownOpen(false);
+            if (!event.target.closest('#customer-area-search') && !event.target.closest('#customer-area-options')) {
+                customerAreaOptions.classList.add('hidden');
+            }
+        });
         @if ($errors->any())
             const failedCustomerId = @json(old('_customer_id'));
             const previousCustomerValues = @json(old());
             if (failedCustomerId) openEditModal(failedCustomerId);
             else openAddModal();
-            ['name', 'reporter_name', 'reporter_contact', 'area', 'address', 'package_name', 'status'].forEach(name => {
+            ['name', 'reporter_name', 'reporter_contact', 'area', 'address', 'latitude', 'longitude', 'registration_date', 'package_name', 'status'].forEach(name => {
                 if (Object.prototype.hasOwnProperty.call(previousCustomerValues, name)) {
-                    customerForm.elements[name].value = previousCustomerValues[name] || '';
+                    const field = customerForm.elements[name];
+                    if (field && !field.disabled) field.value = previousCustomerValues[name] || '';
                 }
             });
+            if (previousCustomerValues.name && !failedCustomerId) {
+                customerNameLabel.textContent = previousCustomerValues.name;
+            }
+            if (previousCustomerValues.area) customerAreaSearch.value = previousCustomerValues.area;
+            updateCustomerCodePreview();
+            if (!failedCustomerId && previousCustomerValues.latitude && previousCustomerValues.longitude) {
+                window.setTimeout(() => {
+                    showCustomerMapPoint(previousCustomerValues.latitude, previousCustomerValues.longitude);
+                }, 300);
+            }
         @endif
+
+        ['customer-latitude', 'customer-longitude'].forEach(id => {
+            document.getElementById(id).addEventListener('change', () => {
+                if (isApplyingLocation) return;
+                const latitudeValue = document.getElementById('customer-latitude').value;
+                const longitudeValue = document.getElementById('customer-longitude').value;
+                if (!latitudeValue || !longitudeValue) return;
+                lookupAddressFromCoordinates(Number(latitudeValue), Number(longitudeValue));
+            });
+        });
 
         function openAssignTicketModal() { document.getElementById('modal-assign-ticket').classList.remove('hidden'); }
         function closeAssignModal() { document.getElementById('modal-assign-ticket').classList.add('hidden'); }
