@@ -13,6 +13,7 @@ class Customer extends Model
 
     protected $fillable = [
         'customer_code',
+        'registration_date',
         'name',
         'reporter_name',
         'reporter_contact',
@@ -20,10 +21,19 @@ class Customer extends Model
         'email',
         'address',
         'area',
+        'latitude',
+        'longitude',
         'package_name',
         'monthly_bill',
         'status',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'registration_date' => 'date',
+        ];
+    }
 
     public function tickets(): HasMany
     {

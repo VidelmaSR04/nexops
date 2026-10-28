@@ -10,9 +10,31 @@ use Illuminate\Validation\Rule;
 
 class CustomerController extends Controller
 {
+    private const OPD_PACKAGES = [
+        '50 Mbps',
+        '100 Mbps',
+        '200 Mbps',
+        '300 Mbps',
+        '500 Mbps',
+        '750 Mbps',
+        '1 Gbps',
+    ];
+
+    private const OPD_LOCATION_DEFAULTS = [
+        'Dinas Komunikasi dan Informatika' => [
+            'area' => 'Kec. Situbondo',
+            'address' => '72R2+WCX, Jl. Pb. Sudirman, Plaosan, Patokan, Kec. Situbondo, Kabupaten Situbondo, Jawa Timur 68312',
+            'latitude' => -7.7076401,
+            'longitude' => 114.0011062,
+        ],
+    ];
+
     public function index(Request $request)
     {
-        $customers = Customer::where('type', 'opd')->orderBy('name')->get();
+        $customers = Customer::where('type', 'opd')
+            ->orderByDesc('registration_date')
+            ->orderByDesc('id')
+            ->get();
         $customersList = $customers->map(function ($c) {
             return [
                 'id' => $c->id,
@@ -20,12 +42,15 @@ class CustomerController extends Controller
                 'reporter_name' => $c->reporter_name ?? '-',
                 'reporter_contact' => $c->reporter_contact ?? '-',
                 'custNo' => $c->customer_code,
+                'registration_date' => $c->registration_date?->format('Y-m-d'),
                 'area' => $c->area ?? 'Situbondo',
                 'status' => $c->status,
-                'paket' => $c->package_name ?? '50 Mbps',
+                'paket' => $c->package_name ?? '-',
                 'package_name' => $c->package_name,
                 'email' => $c->email ?? '-',
                 'address' => $c->address ?? '-',
+                'latitude' => $c->latitude,
+                'longitude' => $c->longitude,
                 'tagihan' => $c->monthly_bill ?? 'Rp0',
             ];
         })->toArray();
@@ -50,6 +75,25 @@ class CustomerController extends Controller
 
         return view('customers', [
             'customersData' => $customersList,
+            'opdOptions' => $customers
+                ->groupBy('name')
+                ->map(function ($opdRecords): array {
+                    $customer = $opdRecords->sortByDesc('id')->first();
+                    $opdId = $opdRecords->min('id');
+                    $defaults = self::OPD_LOCATION_DEFAULTS[$customer->name] ?? [];
+                    $existingValue = fn ($value) => filled($value) && $value !== '-' ? $value : null;
+
+                    return [
+                        'id' => $opdId,
+                        'name' => $customer->name,
+                        'area' => $existingValue($customer->area) ?? ($defaults['area'] ?? null),
+                        'address' => $existingValue($customer->address) ?? ($defaults['address'] ?? null),
+                        'latitude' => $existingValue($customer->latitude) ?? ($defaults['latitude'] ?? null),
+                        'longitude' => $existingValue($customer->longitude) ?? ($defaults['longitude'] ?? null),
+                    ];
+                })
+                ->values(),
+            'customerCodes' => Customer::withTrashed()->pluck('customer_code')->all(),
             'stats' => $stats,
         ]);
     }
@@ -78,10 +122,38 @@ class CustomerController extends Controller
 
     public function store(Request $request): JsonResponse|RedirectResponse
     {
-        $validated = $this->validateCustomer($request);
-        $validated['customer_code'] = 'CST'.str_pad((Customer::max('id') ?? 0) + 1, 4, '0', STR_PAD_LEFT);
-        $validated['status'] = $validated['status'] ?? 'Aktif';
+        if (! $request->expectsJson()) {
+            $validated = $this->validateOpdDetails($request);
+            $opdRecords = Customer::query()
+                ->where('type', 'opd')
+                ->where('name', $validated['name'])
+                ->orderBy('id')
+                ->get();
+            $customer = $opdRecords->first(
+                fn (Customer $record): bool => ! $this->isGeneratedOpdCode($record->customer_code),
+            );
 
+            if ($customer) {
+                $customer->customer_code = $this->generateOpdCustomerCode();
+                unset($validated['name']);
+                $customer->fill($validated)->save();
+            } else {
+                $customer = Customer::create([
+                    ...$validated,
+                    'type' => 'opd',
+                    'customer_code' => $this->generateOpdCustomerCode(),
+                ]);
+            }
+
+            return redirect()->route('customers.index')->with('success', 'Data OPD berhasil disimpan.');
+        }
+
+        $validated = $this->validateCustomer($request);
+        $validated['registration_date'] ??= $validated['type'] === 'opd' ? now()->toDateString() : null;
+        $validated['customer_code'] = $validated['type'] === 'opd'
+            ? $this->generateOpdCustomerCode()
+            : 'CST'.str_pad((Customer::max('id') ?? 0) + 1, 4, '0', STR_PAD_LEFT);
+        $validated['status'] = $validated['status'] ?? 'Aktif';
         $customer = Customer::create($validated);
 
         if ($request->expectsJson()) {
@@ -101,7 +173,14 @@ class CustomerController extends Controller
             $customer->where('type', 'opd');
         }
         $customer = $customer->findOrFail($customerId);
-        $validated = $this->validateCustomer($request, $customer->id);
+
+        if ($customer->type === 'opd') {
+            $validated = $this->validateOpdDetails($request, false, $customer);
+            unset($validated['reporter_name'], $validated['reporter_contact']);
+        } else {
+            $validated = $this->validateCustomer($request, $customer->id);
+        }
+
         $customer->update($validated);
 
         if ($request->expectsJson()) {
@@ -163,7 +242,7 @@ class CustomerController extends Controller
         return $request->validate([
             'name' => ['required', 'string', 'max:255', $nameRule],
             'reporter_name' => 'nullable|string|max:150',
-            'reporter_contact' => 'nullable|string|max:50',
+            'reporter_contact' => ['nullable', 'string', 'regex:/^[0-9]{1,14}$/'],
             'type' => ['required', Rule::in($request->expectsJson()
                 ? ['individual', 'business', 'opd']
                 : ['opd'])],
@@ -172,7 +251,73 @@ class CustomerController extends Controller
             'address' => 'nullable|string',
             'package_name' => 'nullable|string|max:60',
             'status' => 'nullable|string|max:20',
+            'registration_date' => ['nullable', 'date'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ]);
+    }
+
+    private function validateOpdDetails(
+        Request $request,
+        bool $includeName = true,
+        ?Customer $existingCustomer = null,
+    ): array
+    {
+        $rules = [
+            'area' => ['required', 'string', 'max:60'],
+            'address' => ['required', 'string', 'max:65535'],
+            'package_name' => [
+                'required',
+                'string',
+                'max:60',
+                Rule::in(array_unique([
+                    ...self::OPD_PACKAGES,
+                    ...($existingCustomer && ! in_array($existingCustomer->package_name, self::OPD_PACKAGES, true)
+                        ? [$existingCustomer->package_name]
+                        : []),
+                ])),
+            ],
+            'status' => ['required', Rule::in(['Aktif', 'Baru', 'Nonaktif'])],
+            'registration_date' => ['required', 'date'],
+            'latitude' => ['required', 'numeric', 'between:-8.05,-7.3'],
+            'longitude' => ['required', 'numeric', 'between:113.5,114.65'],
+        ];
+
+        if ($includeName) {
+            $rules['reporter_name'] = ['required', 'string', 'max:150'];
+            $rules['reporter_contact'] = ['required', 'string', 'regex:/^[0-9]{1,14}$/'];
+            $rules['name'] = [
+                'required',
+                'string',
+                Rule::exists('customers', 'name')->where('type', 'opd'),
+            ];
+        } else {
+            $rules['reporter_name'] = ['sometimes', 'nullable', 'string', 'max:150'];
+            $rules['reporter_contact'] = ['sometimes', 'nullable', 'string', 'regex:/^[0-9]{1,14}$/'];
+        }
+
+        $validated = $request->validate($rules);
+
+        return $validated;
+    }
+
+    private function generateOpdCustomerCode(): string
+    {
+        $sequence = Customer::withTrashed()
+            ->where('customer_code', 'like', 'OPD%')
+            ->pluck('customer_code')
+            ->map(static fn (string $code): int => preg_match('/^OPD(\d+)$/', $code, $matches)
+                ? (int) $matches[1]
+                : 0)
+            ->max() ?? 0;
+
+        return 'OPD'.str_pad((string) ($sequence + 1), 4, '0', STR_PAD_LEFT);
+    }
+
+    private function isGeneratedOpdCode(?string $code): bool
+    {
+        return is_string($code) &&
+            preg_match('/^OPD(?:\d+|-)/', $code) === 1;
     }
 
     private function customerData(Customer $customer): array
