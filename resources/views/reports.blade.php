@@ -1,14 +1,4 @@
 <x-app-layout>
-    {{--
-        Laporan NEXOPS.
-        Sumber data tunggal: variabel $reportTickets (array tiket, satu baris per tiket) dari controller.
-        Bentuk tiap baris:
-          id, created_at (Y-m-d), resolved_at (Y-m-d|null), due_at (Y-m-d|null, batas SLA),
-          category, opd, technician_code, technician_name, rating (angka|null)
-        Seluruh kartu dan grafik dihitung di browser dari array ini, jadi angkanya selalu konsisten.
-        Jika $reportTickets belum dikirim, halaman memakai data PREVIEW yang dibuat di browser
-        (ditandai banner) dan sama sekali bukan data produksi.
-    --}}
     <div class="space-y-6">
 
         {{-- 1. HEADER --}}
@@ -40,11 +30,6 @@
                     <span>Download Laporan</span>
                 </button>
             </div>
-        </div>
-
-        <div id="preview-banner" class="hidden items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-700">
-            <i data-lucide="info" class="w-4 h-4 shrink-0 mt-px"></i>
-            <p>Data preview untuk melihat tampilan. Laporan belum terhubung ke database dan angka di bawah bukan data produksi.</p>
         </div>
 
         {{-- 2. KARTU STATISTIK --}}
@@ -119,44 +104,11 @@
         const pctText = (v) => v.toFixed(1).replace('.', ',') + '%';
         const initials = (n) => String(n).trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const todayStr = ymd(today);
+        let today = new Date(); today.setHours(0, 0, 0, 0);
+        let todayStr = ymd(today);
 
-        // Data PREVIEW (deterministik). Hanya dipakai bila controller belum mengirim $reportTickets.
-        function previewTickets() {
-            let seed = 20261021;
-            const rnd = () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-            const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-            const spread = (pairs) => shuffle(pairs.flatMap(([v, n]) => Array(n).fill(v)));
-            const cats = spread([['Internet', 86], ['Perangkat', 62], ['Jaringan', 48], ['Power', 32], ['Lainnya', 20]]);
-            const opds = spread([['Dinas Pendidikan dan Kebudayaan', 52], ['Dinas Kesehatan', 47], ['Sekretariat Daerah', 41], ['Dinas Sosial', 33],
-                ['Kantor Kecamatan Situbondo', 28], ['Dinas Pariwisata', 18], ['Inspektorat', 16], ['Dinas Perhubungan', 13]]);
-            const states = spread([['selesai', 198], ['pending', 42], ['overdue', 8]]);
-            const techs = [['TK001', 'Budi Santoso'], ['TK002', 'Ahmad Fauzi'], ['TK003', 'Dimas Priyanto'], ['TK004', 'Rizky Maulana'], ['TK005', 'Fajar Ramadhan'], ['TK006', 'Siti Nurhaliza']];
-            const techPool = spread([[0, 60], [1, 52], [2, 44], [3, 38], [4, 30], [5, 24]]);
-            const SLA = 7;
-            const out = [];
-            states.forEach((st, i) => {
-                let age;
-                if (st === 'pending') age = Math.floor(rnd() * (SLA + 1));        // masih di dalam batas SLA
-                else if (st === 'overdue') age = SLA + 1 + Math.floor(rnd() * (29 - SLA)); // sudah lewat SLA
-                else age = Math.floor(rnd() * 30);
-                const created = addDays(today, -age);
-                let resolved = null;
-                if (st === 'selesai') { resolved = addDays(created, Math.floor(rnd() * 4)); if (resolved > today) resolved = today; }
-                const [code, name] = techs[techPool[i]];
-                out.push({ created_at: ymd(created), resolved_at: resolved ? ymd(resolved) : null, due_at: ymd(addDays(created, SLA)),
-                    category: cats[i], opd: opds[i], technician_code: code, technician_name: name, rating: null });
-            });
-            out.sort((a, b) => a.created_at.localeCompare(b.created_at));
-            out.forEach((t, i) => { t.id = 'TK-' + (1001 + i); });
-            return out;
-        }
-
-        const serverData = @json($reportTickets ?? null);
-        const isPreview = !Array.isArray(serverData);
-        const TICKETS = isPreview ? previewTickets() : serverData;
-        if (isPreview) { $('preview-banner').classList.remove('hidden'); $('preview-banner').classList.add('flex'); }
+        let TICKETS = @json($reportTickets);
+        const reportDataUrl = @json($reportDataUrl);
 
         // ======================================================
         // Periode
@@ -464,12 +416,39 @@
             const csv = '\uFEFF' + [head.map(cell).join(','), ...body].join('\r\n');
             const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
             const a = document.createElement('a');
-            a.href = url; a.download = (isPreview ? 'preview-' : '') + 'laporan-tiket-' + ymd(current.start) + '_' + ymd(current.end) + '.csv';
+            a.href = url; a.download = 'laporan-tiket-' + ymd(current.start) + '_' + ymd(current.end) + '.csv';
             document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-            showToast(isPreview ? 'CSV berisi data preview, bukan data produksi.' : 'Laporan diunduh (' + rows.length + ' tiket).');
+            showToast('Laporan diunduh (' + rows.length + ' tiket).');
         });
 
+        let refreshInProgress = false;
+        async function refreshReportData() {
+            if (refreshInProgress) return;
+            refreshInProgress = true;
+            try {
+                const response = await fetch(reportDataUrl, {
+                    headers: { Accept: 'application/json' },
+                    cache: 'no-store',
+                });
+                if (!response.ok) throw new Error('Data laporan gagal diperbarui.');
+                const payload = await response.json();
+                if (!Array.isArray(payload.data)) throw new Error('Format data laporan tidak valid.');
+                TICKETS = payload.data;
+                today = new Date(); today.setHours(0, 0, 0, 0);
+                todayStr = ymd(today);
+                renderAll();
+            } catch (error) {
+                showToast(error.message || 'Data laporan gagal diperbarui.');
+            } finally {
+                refreshInProgress = false;
+            }
+        }
+
         renderAll();
+        window.setInterval(refreshReportData, 60000);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') refreshReportData();
+        });
     });
     </script>
 </x-app-layout>

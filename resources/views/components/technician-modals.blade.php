@@ -27,12 +27,12 @@
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                    <label for="f-nik" class="block font-medium text-dark mb-1">NIK</label>
-                    <input id="f-nik" type="text" required placeholder="NIK001246" class="{{ $inputClass }}">
+                    <label for="f-nik" class="block font-medium text-dark mb-1">Kode Teknisi</label>
+                    <input id="f-nik" type="text" readonly aria-readonly="true" placeholder="Otomatis" class="{{ $inputClass }} cursor-not-allowed bg-gray-100 text-gray-500">
                 </div>
                 <div>
                     <label for="f-role" class="block font-medium text-dark mb-1">Jabatan</label>
-                    <input id="f-role" type="text" required placeholder="Teknisi" class="{{ $inputClass }}">
+                    <input id="f-role" type="text" readonly aria-readonly="true" value="Teknisi" class="{{ $inputClass }} cursor-not-allowed bg-gray-100 text-gray-500">
                 </div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -48,11 +48,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label for="f-area" class="block font-medium text-dark mb-1">Area</label>
-                    <select id="f-area" class="{{ $inputClass }}">
-                        @foreach ($areas as $area)
-                            <option value="{{ $area }}">{{ $area }}</option>
-                        @endforeach
-                    </select>
+                    <input id="f-area" type="text" readonly aria-readonly="true" value="Dinas Komunikasi dan Informatika" class="{{ $inputClass }} cursor-not-allowed bg-gray-100 text-gray-500">
                 </div>
                 <div>
                     <label for="f-status" class="block font-medium text-dark mb-1">Status</label>
@@ -63,28 +59,15 @@
                     </select>
                 </div>
             </div>
-            <div>
-                <p class="font-medium text-dark mb-1">Koordinat lokasi</p>
-                <p class="text-[11px] text-secondary mb-2">Masukkan koordinat GPS teknisi. Kosongkan keduanya jika belum tersedia.</p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label for="f-latitude" class="block font-medium text-dark mb-1">Latitude</label>
-                        <input id="f-latitude" type="number" step="any" min="-90" max="90" class="{{ $inputClass }}">
-                    </div>
-                    <div>
-                        <label for="f-longitude" class="block font-medium text-dark mb-1">Longitude</label>
-                        <input id="f-longitude" type="number" step="any" min="-180" max="180" class="{{ $inputClass }}">
-                    </div>
-                </div>
+            <div id="f-opd-container" class="hidden">
+                <label for="f-opd" class="block font-medium text-dark mb-1">OPD Tujuan</label>
+                <input id="f-opd" type="text" readonly aria-readonly="true"
+                       class="{{ $inputClass }} cursor-not-allowed bg-gray-100 text-gray-500">
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
                 <div>
                     <label for="f-joined" class="block font-medium text-dark mb-1">Tanggal Bergabung</label>
                     <input id="f-joined" type="date" required class="{{ $inputClass }}">
-                </div>
-                <div>
-                    <label for="f-exp" class="block font-medium text-dark mb-1">Pengalaman (tahun)</label>
-                    <input id="f-exp" type="number" min="0" max="50" required value="0" class="{{ $inputClass }}">
                 </div>
             </div>
             <div class="pt-3 border-t border-border flex items-center justify-end gap-2">

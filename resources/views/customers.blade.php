@@ -30,7 +30,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-secondary font-medium">Total Customer</p>
-                    <p class="text-2xl font-bold text-dark mt-0.5">{{ number_format($stats['total']) }}</p>
+                    <p id="totalCustomerStat" class="text-2xl font-bold text-dark mt-0.5">{{ number_format($stats['total']) }}</p>
                 </div>
             </div>
 
@@ -40,7 +40,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-secondary font-medium">Pelanggan Aktif</p>
-                    <p class="text-2xl font-bold text-dark mt-0.5">{{ number_format($stats['active']) }}</p>
+                    <p id="activeCustomerStat" class="text-2xl font-bold text-dark mt-0.5">{{ number_format($stats['active']) }}</p>
                 </div>
             </div>
 
@@ -50,7 +50,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-secondary font-medium">Pelanggan Baru</p>
-                    <p class="text-2xl font-bold text-dark mt-0.5">{{ number_format($stats['new']) }}</p>
+                    <p id="newCustomerStat" class="text-2xl font-bold text-dark mt-0.5">{{ number_format($stats['new']) }}</p>
                 </div>
             </div>
 
@@ -60,7 +60,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-secondary font-medium">Pelanggan Nonaktif</p>
-                    <p class="text-2xl font-bold text-dark mt-0.5">{{ number_format($stats['inactive']) }}</p>
+                    <p id="inactiveCustomerStat" class="text-2xl font-bold text-dark mt-0.5">{{ number_format($stats['inactive']) }}</p>
                 </div>
             </div>
         </div>
@@ -122,26 +122,44 @@
                         <button type="button" id="resetFilterBtn" class="px-3 py-2 rounded-xl border border-border text-xs font-medium text-secondary hover:bg-gray-50 transition-colors">
                             Reset
                         </button>
+                        <button type="button" id="deleteSelectedCustomersBtn" disabled
+                                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-red-200 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                                title="Hapus data yang dipilih" aria-label="Hapus data yang dipilih">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            <span id="deleteSelectedCustomersLabel">Hapus</span>
+                        </button>
                     </div>
                 </div>
 
                 {{-- Tabel Data --}}
-                <div class="overflow-x-auto">
-                    <table class="w-full text-xs text-left">
+                <div class="max-h-[480px] overflow-auto">
+                    <table class="w-full table-fixed text-xs text-left">
+                        <colgroup>
+                            <col style="width: 4%">
+                            <col style="width: 47%">
+                            <col style="width: 8%">
+                            <col style="width: 8%">
+                            <col style="width: 8%">
+                            <col style="width: 7%">
+                            <col style="width: 6%">
+                            <col style="width: 5%">
+                            <col style="width: 4%">
+                            <col style="width: 3%">
+                        </colgroup>
                         <thead>
                             <tr class="text-secondary bg-[#FAFCFF] border-b border-border font-medium text-[11px] uppercase tracking-wider">
-                                <th class="pl-4 py-3 w-8">
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] pl-4 py-3 w-8">
                                     <input id="selectAll" type="checkbox" class="rounded border-gray-300 text-primary focus:ring-primary/20">
                                 </th>
-                                <th class="py-3 pr-3">OPD</th>
-                                <th class="py-3 pr-3">Nama Pelapor</th>
-                                <th class="py-3 pr-3">Kontak Pelapor</th>
-                                <th class="py-3 pr-3">Kode Pelanggan</th>
-                                <th class="py-3 pr-3">Tanggal</th>
-                                <th class="py-3 pr-3">Area</th>
-                                <th class="py-3 pr-3">Status</th>
-                                <th class="py-3 pr-3">Paket</th>
-                                <th class="py-3 pr-4 text-center w-8">Aksi</th>
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] py-3 pr-3">OPD</th>
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] py-3 pr-3">Nama Pelapor</th>
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] py-3 pr-3">Kontak Pelapor</th>
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] py-3 pr-3">Kode Pelanggan</th>
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] py-3 pr-3">Tanggal</th>
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] py-3 pr-3">Area</th>
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] py-3 pr-3">Status</th>
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] py-3 pr-3">Paket</th>
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] py-3 pr-4 text-center w-8">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="customerTableBody" class="divide-y divide-gray-100">
@@ -153,17 +171,7 @@
                 {{-- Pagination --}}
                 <div class="p-3.5 border-t border-border flex flex-wrap items-center justify-between gap-3 text-xs">
                     <p class="text-secondary">Menampilkan <span id="totalVisibleCount">0</span> dari <span id="totalCustomerCount">{{ $stats['total'] }}</span> total data</p>
-                    <div class="flex items-center gap-1">
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border flex items-center justify-center text-secondary hover:bg-gray-50">
-                            <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button type="button" class="w-7 h-7 rounded-lg bg-primary text-white font-medium flex items-center justify-center">1</button>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border text-secondary hover:bg-gray-50 flex items-center justify-center">2</button>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border text-secondary hover:bg-gray-50 flex items-center justify-center">3</button>
-                        <button type="button" class="w-7 h-7 rounded-lg border border-border flex items-center justify-center text-secondary hover:bg-gray-50">
-                            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-                        </button>
-                    </div>
+                    <div class="flex items-center gap-1" aria-label="Navigasi halaman data OPD"></div>
                 </div>
 
             </div>
@@ -529,14 +537,17 @@
     </div>
 
     {{-- JAVASCRIPT LOGIC --}}
+    <div id="customer-toast" role="status" class="fixed bottom-5 right-5 z-[70] hidden max-w-sm rounded-xl bg-dark px-4 py-3 text-xs text-white shadow-xl"></div>
+
     <script>
         const serverData = @json($customersData ?? null);
         const customersData = serverData || [];
         const customerBaseUrl = @json(url('/customers'));
-        const customersPerPage = 10;
-        const customerCountLabel = document.getElementById('totalVisibleCount').parentElement;
+        const customersPerPage = 20;
         let customerPage = 1;
         let customerDetailRequest = 0;
+        const selectedCustomerIds = new Set();
+        let customerToastTimer;
 
         function escapeHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -589,6 +600,14 @@
             });
             document.getElementById('resetFilterBtn').addEventListener('click', resetFilters);
             document.getElementById('selectAll').addEventListener('change', toggleSelectAll);
+            document.getElementById('deleteSelectedCustomersBtn').addEventListener('click', deleteSelectedCustomers);
+            document.getElementById('customerTableBody').addEventListener('change', (event) => {
+                if (!event.target.matches('.row-checkbox')) return;
+                const customerId = Number(event.target.value);
+                if (event.target.checked) selectedCustomerIds.add(customerId);
+                else selectedCustomerIds.delete(customerId);
+                updateSelectionControls(getCurrentFilteredData());
+            });
             document.getElementById('totalVisibleCount').parentElement.nextElementSibling.addEventListener('click', (event) => {
                 const button = event.target.closest('[data-customer-page]');
                 if (!button || button.disabled) return;
@@ -627,7 +646,9 @@
 
             if (data.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-gray-400">Tidak ada data OPD yang ditemukan.</td></tr>`;
-                document.getElementById('totalVisibleCount').innerText = 0;
+                updateCustomerCount(0, 0, 0);
+                renderPagination(pageCount);
+                updateSelectionControls(data);
                 return;
             }
 
@@ -650,21 +671,21 @@
 
                 tr.innerHTML = `
                     <td class="pl-4 py-3" onclick="event.stopPropagation()">
-                        <input type="checkbox" class="row-checkbox rounded border-gray-300 text-primary focus:ring-primary/20" value="${escapeHtml(cust.custNo)}">
+                        <input type="checkbox" class="row-checkbox rounded border-gray-300 text-primary focus:ring-primary/20" value="${Number(cust.id)}" ${selectedCustomerIds.has(Number(cust.id)) ? 'checked' : ''} aria-label="Pilih ${escapeHtml(cust.name)}">
                     </td>
-                    <td class="py-3 pr-3">
+                    <td class="py-3 pr-3 overflow-hidden text-ellipsis whitespace-nowrap" title="${escapeHtml(cust.name)}">
                         <div class="flex items-center gap-2">
                             <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(cust.name)}&background=random" class="w-8 h-8 rounded-full shrink-0">
-                            <span class="font-semibold text-dark">${escapeHtml(cust.name)}</span>
+                            <span class="font-semibold text-dark overflow-hidden text-ellipsis">${escapeHtml(cust.name)}</span>
                         </div>
                     </td>
-                    <td class="py-3 pr-3 text-dark">${escapeHtml(cust.reporter_name || '-')}</td>
-                    <td class="py-3 pr-3 text-dark">${escapeHtml(cust.reporter_contact || '-')}</td>
-                    <td class="py-3 pr-3 font-bold text-primary">${escapeHtml(cust.custNo)}</td>
-                    <td class="py-3 pr-3 text-dark">${formatRegistrationDate(cust.registration_date)}</td>
-                    <td class="py-3 pr-3 text-dark">${escapeHtml(cust.area || '-')}</td>
-                    <td class="py-3 pr-3"><span class="px-2.5 py-1 rounded-full text-[11px] font-semibold ${badgeClass}">${cust.status}</span></td>
-                    <td class="py-3 pr-3 text-dark font-medium">${cust.paket}</td>
+                    <td class="py-3 pr-3 text-dark overflow-hidden text-ellipsis whitespace-nowrap">${escapeHtml(cust.reporter_name || '-')}</td>
+                    <td class="py-3 pr-3 text-dark overflow-hidden text-ellipsis whitespace-nowrap">${escapeHtml(cust.reporter_contact || '-')}</td>
+                    <td class="py-3 pr-3 font-bold text-primary overflow-hidden text-ellipsis whitespace-nowrap">${escapeHtml(cust.custNo)}</td>
+                    <td class="py-3 pr-3 text-dark overflow-hidden text-ellipsis whitespace-nowrap">${formatRegistrationDate(cust.registration_date)}</td>
+                    <td class="py-3 pr-3 text-dark overflow-hidden text-ellipsis whitespace-nowrap">${escapeHtml(cust.area || '-')}</td>
+                    <td class="py-3 pr-3 overflow-hidden text-ellipsis whitespace-nowrap"><span class="px-2.5 py-1 rounded-full text-[11px] font-semibold ${badgeClass}">${escapeHtml(cust.status)}</span></td>
+                    <td class="py-3 pr-3 text-dark font-medium overflow-hidden text-ellipsis whitespace-nowrap">${escapeHtml(cust.paket)}</td>
                     <td class="py-3 pr-4 text-center">
                         <div class="flex justify-center gap-1">
                             <button type="button" class="p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" onclick="event.stopPropagation(); selectCustomer('${cust.custNo}')" aria-label="Lihat detail OPD">
@@ -681,12 +702,13 @@
 
             if (window.lucide) window.lucide.createIcons();
             renderPagination(pageCount);
+            updateSelectionControls(data);
         }
 
         function updateCustomerCount(from, to, total) {
             const visibleCount = from === 0 ? 0 : (to - from + 1);
-            customerCountLabel.innerHTML =
-                'Menampilkan <span id="totalVisibleCount">' + visibleCount + '</span> dari ' + total + ' total data';
+            document.getElementById('totalVisibleCount').textContent = visibleCount;
+            document.getElementById('totalCustomerCount').textContent = total;
         }
 
         function renderPagination(pageCount) {
@@ -695,9 +717,23 @@
             const activeClass = 'w-7 h-7 rounded-lg bg-primary text-white font-medium flex items-center justify-center';
             const disabledClass = 'opacity-40 cursor-not-allowed';
             let buttons = '<button type="button" data-customer-page="' + (customerPage - 1) + '" aria-label="Halaman sebelumnya" class="' + buttonClass + (customerPage <= 1 ? ' ' + disabledClass : '') + '"' + (customerPage <= 1 ? ' disabled' : '') + '><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i></button>';
-            for (let page = 1; page <= pageCount; page++) {
-                buttons += '<button type="button" data-customer-page="' + page + '" class="' + (page === customerPage ? activeClass : buttonClass) + '"' + (page === customerPage ? ' aria-current="page"' : '') + '>' + page + '</button>';
+            let pages = [];
+            if (pageCount <= 7) {
+                pages = Array.from({ length: pageCount }, (_, index) => index + 1);
+            } else if (customerPage <= 4) {
+                pages = [1, 2, 3, 4, 5, '...', pageCount];
+            } else if (customerPage >= pageCount - 3) {
+                pages = [1, '...', pageCount - 4, pageCount - 3, pageCount - 2, pageCount - 1, pageCount];
+            } else {
+                pages = [1, '...', customerPage - 1, customerPage, customerPage + 1, '...', pageCount];
             }
+            pages.forEach(page => {
+                if (page === '...') {
+                    buttons += '<span class="px-1 text-secondary" aria-hidden="true">...</span>';
+                    return;
+                }
+                buttons += '<button type="button" data-customer-page="' + page + '" class="' + (page === customerPage ? activeClass : buttonClass) + '"' + (page === customerPage ? ' aria-current="page"' : '') + '>' + page + '</button>';
+            });
             buttons += '<button type="button" data-customer-page="' + (customerPage + 1) + '" aria-label="Halaman berikutnya" class="' + buttonClass + (customerPage >= pageCount ? ' ' + disabledClass : '') + '"' + (customerPage >= pageCount ? ' disabled' : '') + '><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>';
             container.innerHTML = buttons;
             if (window.lucide) window.lucide.createIcons();
@@ -831,7 +867,67 @@
         }
 
         function toggleSelectAll(e) {
+            const visibleCustomers = getCurrentFilteredData().slice((customerPage - 1) * customersPerPage, customerPage * customersPerPage);
+            visibleCustomers.forEach(customer => {
+                const id = Number(customer.id);
+                if (e.target.checked) selectedCustomerIds.add(id);
+                else selectedCustomerIds.delete(id);
+            });
             document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = e.target.checked);
+            updateSelectionControls(getCurrentFilteredData());
+        }
+
+        function updateSelectionControls(filteredCustomers) {
+            const currentPageCustomers = filteredCustomers.slice((customerPage - 1) * customersPerPage, customerPage * customersPerPage);
+            const selectedOnPage = currentPageCustomers.filter(customer => selectedCustomerIds.has(Number(customer.id))).length;
+            const selectAll = document.getElementById('selectAll');
+            selectAll.checked = currentPageCustomers.length > 0 && selectedOnPage === currentPageCustomers.length;
+            selectAll.indeterminate = selectedOnPage > 0 && selectedOnPage < currentPageCustomers.length;
+
+            const deleteButton = document.getElementById('deleteSelectedCustomersBtn');
+            const selectedCount = selectedCustomerIds.size;
+            deleteButton.disabled = selectedCount === 0;
+            document.getElementById('deleteSelectedCustomersLabel').textContent = selectedCount ? `Hapus (${selectedCount})` : 'Hapus';
+        }
+
+        function showCustomerToast(message) {
+            const toast = document.getElementById('customer-toast');
+            toast.textContent = message;
+            toast.classList.remove('hidden');
+            clearTimeout(customerToastTimer);
+            customerToastTimer = window.setTimeout(() => toast.classList.add('hidden'), 2800);
+        }
+
+        async function deleteSelectedCustomers() {
+            const ids = [...selectedCustomerIds];
+            if (!ids.length) return;
+            const confirmation = `Apakah Anda yakin ingin menghapus ${ids.length} data yang dipilih?`;
+            if (!window.confirm(confirmation)) return;
+
+            try {
+                const result = await requestJson(@json(route('customers.bulk-destroy')), 'DELETE', { ids });
+                ids.forEach(id => selectedCustomerIds.delete(id));
+                for (let index = customersData.length - 1; index >= 0; index--) {
+                    if (ids.includes(Number(customersData[index].id))) customersData.splice(index, 1);
+                }
+
+                if (!currentSelectedCustomer || ids.includes(Number(currentSelectedCustomer.id))) {
+                    currentSelectedCustomer = customersData[0] || null;
+                    loadCustomerDetail(currentSelectedCustomer);
+                    if (currentSelectedCustomer) loadCustomerRecords(currentSelectedCustomer);
+                }
+
+                document.getElementById('totalCustomerStat').textContent = customersData.length.toLocaleString('id-ID');
+                document.getElementById('activeCustomerStat').textContent = customersData.filter(customer => customer.status === 'Aktif').length.toLocaleString('id-ID');
+                document.getElementById('newCustomerStat').textContent = customersData.filter(customer => customer.status === 'Baru').length.toLocaleString('id-ID');
+                document.getElementById('inactiveCustomerStat').textContent = customersData.filter(customer => customer.status === 'Nonaktif').length.toLocaleString('id-ID');
+                document.getElementById('totalCustomerCount').textContent = customersData.length;
+                customerPage = Math.min(customerPage, Math.max(1, Math.ceil(getCurrentFilteredData().length / customersPerPage)));
+                renderTable(getCurrentFilteredData());
+                showCustomerToast(result.message);
+            } catch (error) {
+                window.alert(error.message);
+            }
         }
 
         function switchTab(tabName) {
