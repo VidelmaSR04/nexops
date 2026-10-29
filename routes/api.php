@@ -31,6 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/technicians', [TechnicianController::class, 'store']);
     Route::put('/technicians/{technician}', [TechnicianController::class, 'update']);
     Route::patch('/technicians/{technician}/status', [TechnicianController::class, 'updateStatus']);
+    Route::delete('/technicians/bulk', [TechnicianController::class, 'bulkDestroy']);
     Route::delete('/technicians/{technician}', [TechnicianController::class, 'destroy']);
 
     Route::get('/customers', [CustomerController::class, 'index']);

@@ -6,6 +6,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\TicketController;
@@ -120,6 +121,10 @@ Route::patch('/technicians/{technician}/status', [TechnicianController::class, '
     ->middleware(['auth', 'verified'])
     ->name('technicians.update-status');
 
+Route::delete('/technicians/bulk', [TechnicianController::class, 'bulkDestroy'])
+    ->middleware(['auth', 'verified'])
+    ->name('technicians.bulk-destroy');
+
 Route::delete('/technicians/{technician}', [TechnicianController::class, 'destroy'])
     ->middleware(['auth', 'verified'])
     ->name('technicians.destroy');
@@ -152,13 +157,21 @@ Route::patch('/customers/{customer}/status', [CustomerController::class, 'update
     ->middleware(['auth', 'verified'])
     ->name('customers.update-status');
 
+Route::delete('/customers/bulk', [CustomerController::class, 'bulkDestroy'])
+    ->middleware(['auth', 'verified'])
+    ->name('customers.bulk-destroy');
+
 Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])
     ->middleware(['auth', 'verified'])
     ->name('customers.destroy');
 
-Route::view('/reports', 'reports')
+Route::get('/reports', [ReportController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('reports.index');
+
+Route::get('/reports/data', [ReportController::class, 'data'])
+    ->middleware(['auth', 'verified'])
+    ->name('reports.data');
 
 Route::get('/settings', [SettingController::class, 'index'])
     ->middleware(['auth', 'verified'])

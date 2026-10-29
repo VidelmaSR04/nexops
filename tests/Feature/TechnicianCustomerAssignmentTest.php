@@ -88,6 +88,41 @@ class TechnicianCustomerAssignmentTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors('latitude');
     }
 
+    public function test_status_can_be_changed_from_detail_or_edit_while_assignments_remain_active(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $customer = Customer::create([
+            ...$this->customerData(),
+            'customer_code' => 'CST0001',
+        ]);
+        $technician = Technician::create($this->technicianData());
+        $ticket = $this->ticketFor($customer);
+
+        $this->postJson("/api/tickets/{$ticket->ticket_number}/assignments", [
+            'technician_id' => $technician->id,
+        ])->assertCreated();
+
+        $this->patchJson("/api/technicians/{$technician->id}/status", [
+            'status' => 'Offline',
+        ])->assertOk()
+            ->assertJsonPath('data.status', 'Offline')
+            ->assertJsonPath('data.tickets', 1);
+
+        $this->putJson("/api/technicians/{$technician->id}", [
+            ...$this->technicianData(),
+            'status' => 'Cuti',
+        ])->assertOk()
+            ->assertJsonPath('data.status', 'Cuti')
+            ->assertJsonPath('data.tickets', 1);
+
+        $this->assertDatabaseHas('ticket_assignments', [
+            'ticket_id' => $ticket->id,
+            'technician_id' => $technician->id,
+            'is_active' => true,
+        ]);
+        $this->assertSame('Cuti', $technician->fresh()->status);
+    }
+
     public function test_customer_crud_uses_reporter_contact_and_rejects_duplicate_name(): void
     {
         $this->actingAs(User::factory()->create());
@@ -207,6 +242,26 @@ class TechnicianCustomerAssignmentTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors('ticket_id');
 
         $this->assertSame(0, $ticket->assignments()->count());
+    }
+
+    public function test_technician_list_uses_ticket_customer_for_assignment_opd(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $customer = Customer::create([
+            ...$this->customerData(),
+            'customer_code' => 'CST0001',
+        ]);
+        $technician = Technician::create($this->technicianData());
+        $assignedTicket = $this->ticketFor($customer);
+
+        $this->postJson("/api/tickets/{$assignedTicket->ticket_number}/assignments", [
+            'technician_id' => $technician->id,
+        ])->assertCreated();
+
+        $this->getJson('/api/technicians')
+            ->assertOk()
+            ->assertJsonPath('data.technicians.0.active.0.opd', $customer->name)
+            ->assertJsonPath('data.assignableTickets.0.id', $assignedTicket->ticket_number);
     }
 
     private function technicianData(): array

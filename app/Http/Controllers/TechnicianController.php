@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Technician;
 use App\Models\Ticket;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Http\Requests\TechnicianRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class TechnicianController extends Controller
@@ -15,7 +18,7 @@ class TechnicianController extends Controller
     public function index(Request $request)
     {
         $query = Technician::with([
-            'assignments' => fn ($query) => $query->with('ticket')->orderByDesc('assigned_at'),
+            'assignments' => fn ($query) => $query->with('ticket.customer')->orderByDesc('assigned_at'),
         ]);
 
         if ($request->filled('search')) {
@@ -88,7 +91,7 @@ class TechnicianController extends Controller
     public function show($technicianId): JsonResponse
     {
         $technician = Technician::with([
-            'assignments' => fn ($query) => $query->with('ticket')->orderByDesc('assigned_at'),
+            'assignments' => fn ($query) => $query->with('ticket.customer')->orderByDesc('assigned_at'),
         ])->findOrFail($technicianId);
 
         return response()->json([
@@ -107,7 +110,24 @@ class TechnicianController extends Controller
             ]);
         }
 
-        $technician = Technician::create($validated);
+        $technician = DB::transaction(function () use ($validated): Technician {
+            $validated['nik'] = 'TMP-'.Str::random(24);
+            $validated['position'] = 'Teknisi';
+            $validated['area'] = 'Dinas Komunikasi dan Informatika';
+            $validated['latitude'] = null;
+            $validated['longitude'] = null;
+
+            $technician = Technician::create($validated);
+            $number = $technician->id;
+            do {
+                $code = 'TK'.str_pad((string) $number, 3, '0', STR_PAD_LEFT);
+                $number++;
+            } while (Technician::withTrashed()->where('nik', $code)->exists());
+
+            $technician->update(['nik' => $code]);
+
+            return $technician;
+        });
 
         return response()->json([
             'success' => true,
@@ -122,7 +142,10 @@ class TechnicianController extends Controller
 
         $validated = $request->validated();
 
-        $this->assertStatusMatchesAssignments($technician, $validated['status']);
+        $validated['nik'] = $technician->nik;
+        $validated['position'] = 'Teknisi';
+        $validated['area'] = 'Dinas Komunikasi dan Informatika';
+        unset($validated['latitude'], $validated['longitude']);
         $technician->update($validated);
 
         return response()->json([
@@ -138,13 +161,43 @@ class TechnicianController extends Controller
             'status' => 'required|string|in:Available,On Task,Offline,Cuti',
         ]);
         $technician = Technician::findOrFail($technicianId);
-        $this->assertStatusMatchesAssignments($technician, $validated['status']);
         $technician->update(['status' => $validated['status']]);
 
         return response()->json([
             'success' => true,
             'message' => 'Status teknisi berhasil diperbarui.',
             'data' => $this->serializeTechnician($technician->fresh()->load('assignments.ticket')),
+        ]);
+    }
+
+    public function bulkDestroy(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => [
+                'required',
+                'integer',
+                'distinct',
+                Rule::exists('technicians', 'id')->whereNull('deleted_at'),
+            ],
+        ]);
+
+        $technicians = Technician::query()->whereIn('id', $validated['ids'])->get();
+        $busyTechnician = $technicians->first(
+            fn (Technician $technician): bool => $technician->activeAssignments()->exists(),
+        );
+        if ($busyTechnician) {
+            throw ValidationException::withMessages([
+                'ids' => $busyTechnician->name.' masih menangani tiket aktif. Selesaikan atau batalkan penugasannya terlebih dahulu.',
+            ]);
+        }
+
+        $deletedCount = Technician::query()->whereIn('id', $validated['ids'])->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => $deletedCount.' teknisi berhasil dihapus.',
+            'deleted_count' => $deletedCount,
         ]);
     }
 
@@ -174,6 +227,10 @@ class TechnicianController extends Controller
             'id' => $assignment->ticket?->ticket_number ?? 'TK-' . $assignment->ticket_id,
             'title' => $assignment->ticket?->title ?? '',
             'priority' => $assignment->ticket?->priority ?? '',
+            'opd' => $assignment->ticket?->customer?->name ?? $assignment->ticket?->customer_name ?? '-',
+            'address' => $assignment->ticket?->location ?? $assignment->ticket?->customer?->area ?? '-',
+            'date' => $assignment->assigned_at?->format('d M Y') ?? '-',
+            'work_status' => 'Ditugaskan',
         ])->values()->all();
 
         $history = $assignments->map(fn ($assignment) => [
@@ -187,7 +244,7 @@ class TechnicianController extends Controller
             'id' => $technician->id,
             'name' => $technician->name,
             'nik' => $technician->nik,
-            'area' => $technician->area ?? '',
+            'area' => 'Dinas Komunikasi dan Informatika',
             'latitude' => $coordinates['latitude'] ?? null,
             'longitude' => $coordinates['longitude'] ?? null,
             'location_is_simulated' => ! $hasStoredCoordinates && $coordinates !== null,
@@ -197,7 +254,6 @@ class TechnicianController extends Controller
             'phone' => $technician->phone ?? '',
             'email' => $technician->email ?? '',
             'joined_iso' => $technician->joined_at?->format('Y-m-d'),
-            'exp_years' => $technician->exp_years,
             'rating' => (float) $technician->rating,
             'active' => $active,
             'history' => $history,

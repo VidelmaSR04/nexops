@@ -228,6 +228,30 @@ class CustomerController extends Controller
         return redirect()->route('customers.index')->with('success', 'OPD berhasil dinonaktifkan.');
     }
 
+    public function bulkDestroy(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => [
+                'required',
+                'integer',
+                'distinct',
+                Rule::exists('customers', 'id')->where('type', 'opd')->whereNull('deleted_at'),
+            ],
+        ]);
+
+        $deletedCount = Customer::query()
+            ->where('type', 'opd')
+            ->whereIn('id', $validated['ids'])
+            ->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => $deletedCount.' data OPD berhasil dihapus.',
+            'deleted_count' => $deletedCount,
+        ]);
+    }
+
     private function validateCustomer(Request $request, ?int $customerId = null): array
     {
         if ($request->exists('phone') && ! $request->filled('reporter_contact')) {

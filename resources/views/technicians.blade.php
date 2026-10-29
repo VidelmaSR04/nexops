@@ -4,7 +4,7 @@
         // Data dari TechnicianController@index. Jika belum ada, tampil kosong (tanpa data dummy).
         $technicians       = $technicians ?? [];
         $assignableTickets = $assignableTickets ?? [];
-        $areas    = $areas ?? collect($technicians)->pluck('area')->filter()->unique()->sort()->values()->all();
+        $areas    = ['Dinas Komunikasi dan Informatika'];
         $statuses = ['Available', 'On Task', 'Offline'];
         $statusLabels = ['Available' => 'Tersedia', 'On Task' => 'Sedang Bertugas', 'Offline' => 'Tidak Aktif'];
     @endphp
@@ -29,7 +29,7 @@
         </div>
 
         {{-- ============================================ --}}
-        {{-- 2. STATISTIK (dihitung dari data dummy)       --}}
+        {{-- 2. STATISTIK --}}
         {{-- ============================================ --}}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-white rounded-xl border border-border p-4.5 flex items-center gap-3.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
@@ -104,29 +104,64 @@
                             @endforeach
                         </select>
 
+                        <select id="filter-month" aria-label="Filter bulan bergabung"
+                                class="text-xs rounded-xl border border-border bg-white px-3 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-primary/20">
+                            <option value="">Semua Bulan</option>
+                            @foreach ([
+                                '01' => 'Januari', '02' => 'Februari', '03' => 'Maret', '04' => 'April',
+                                '05' => 'Mei', '06' => 'Juni', '07' => 'Juli', '08' => 'Agustus',
+                                '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember',
+                            ] as $month => $label)
+                                <option value="{{ $month }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+
+                        <select id="filter-year" aria-label="Filter tahun bergabung"
+                                class="text-xs rounded-xl border border-border bg-white px-3 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-primary/20">
+                            <option value="">Semua Tahun</option>
+                        </select>
+
+                        <input id="filter-date" type="date" aria-label="Filter tanggal bergabung" title="Filter tanggal bergabung"
+                               class="text-xs rounded-xl border border-border bg-white px-3 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-primary/20">
+
                         <button type="button" id="btn-reset-filters"
                                 class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-xs font-medium text-secondary hover:bg-gray-50 transition-colors">
                             <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
                             <span>Reset</span>
                         </button>
+                        <button type="button" id="btn-delete-selected-tech" disabled
+                                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-red-200 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                                title="Hapus teknisi yang dipilih" aria-label="Hapus teknisi yang dipilih">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            <span id="delete-selected-tech-label">Hapus</span>
+                        </button>
                     </div>
                 </div>
 
                 {{-- Tabel --}}
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-[680px] text-xs text-left">
+                <div class="max-h-[480px] overflow-x-auto overflow-y-scroll" style="scrollbar-gutter: stable;">
+                    <table class="w-full min-w-[900px] table-fixed text-xs text-left" style="width: 100%; min-width: 900px; table-layout: fixed;">
+                        <colgroup>
+                            <col style="width: 4%">
+                            <col style="width: 190px">
+                            <col style="width: 110px">
+                            <col style="width: 130px">
+                            <col style="width: 8%">
+                            <col style="width: 37.5%">
+                            <col style="width: 5%">
+                        </colgroup>
                         <thead>
                             <tr class="text-secondary bg-[#FAFCFF] border-b border-border font-medium text-[11px] uppercase tracking-wider">
-                                <th class="pl-4 py-3 w-8">
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] pl-4 py-3 text-center">
                                     <input id="check-all" type="checkbox" aria-label="Pilih semua teknisi di halaman ini"
                                            class="rounded border-gray-300 text-primary focus:ring-primary/20">
                                 </th>
-                                <th class="py-3 pr-3">Nama Teknisi</th>
-                                <th class="py-3 pr-3 whitespace-nowrap">Kode Teknisi</th>
-                                <th class="py-3 pr-3">Status</th>
-                                <th class="py-3 pr-3 whitespace-nowrap">Tiket Aktif</th>
-                                <th class="py-3 pr-3">OPD Tujuan</th>
-                                <th class="py-3 pr-4 text-center w-12">Aksi</th>
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] py-3 pr-3 text-center" style="width: 190px; min-width: 190px; max-width: 190px">Nama Teknisi</th>
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] py-3 pr-3 whitespace-nowrap text-center" style="width: 110px; min-width: 110px; max-width: 110px">Kode Teknisi</th>
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] py-3 pr-3 text-center whitespace-nowrap">Status</th>
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] py-3 pr-3 whitespace-nowrap text-center">Tiket Aktif</th>
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] py-3 pr-3 text-center">OPD Tujuan</th>
+                                <th class="sticky top-0 z-20 bg-[#FAFCFF] py-3 pr-4 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="tech-table-body" class="divide-y divide-gray-100"></tbody>
@@ -160,7 +195,7 @@
                                 <span id="d-badge"></span>
                             </div>
                             <p id="d-role" class="text-sm text-dark mt-1"></p>
-                            <p class="text-xs text-secondary mt-1">Kode Unik: <span id="d-nik" class="font-semibold text-primary"></span></p>
+                            <p class="text-xs text-secondary mt-1">Kode Teknisi: <span id="d-nik" class="font-semibold text-primary"></span></p>
                         </div>
                     </div>
                     <button type="button" id="btn-close-panel" title="Tutup panel"
@@ -207,7 +242,7 @@
                     <div class="p-3.5 rounded-xl border border-border bg-white text-xs space-y-2.5">
                         <p class="font-semibold text-dark text-sm">Informasi Teknisi</p>
                         <div class="grid grid-cols-2 gap-x-4 gap-y-2.5">
-                            <div><p class="text-secondary text-[11px]">Kode Unik</p><p id="i-nik" class="font-medium text-dark"></p></div>
+                            <div><p class="text-secondary text-[11px]">Kode Teknisi</p><p id="i-nik" class="font-medium text-dark"></p></div>
                             <div><p class="text-secondary text-[11px]">Nama Lengkap</p><p id="i-name" class="font-medium text-dark"></p></div>
                             <div><p class="text-secondary text-[11px]">Jabatan</p><p id="i-role" class="font-medium text-dark"></p></div>
                             <div><p class="text-secondary text-[11px] mb-0.5">Status</p><span id="i-status"></span></div>
@@ -216,7 +251,6 @@
                             <div><p class="text-secondary text-[11px]">Area</p><p id="i-area" class="font-medium text-dark"></p></div>
                             <div><p class="text-secondary text-[11px]">OPD Tujuan</p><p id="i-opd" class="font-medium text-dark"></p></div>
                             <div><p class="text-secondary text-[11px]">Bergabung Sejak</p><p id="i-joined" class="font-medium text-dark"></p></div>
-                            <div><p class="text-secondary text-[11px]">Pengalaman</p><p id="i-exp" class="font-medium text-dark"></p></div>
                         </div>
                     </div>
                     <div class="p-3.5 mt-3 rounded-xl border border-border bg-white text-xs space-y-2">
@@ -286,20 +320,23 @@
     </div>
 
     {{-- ============================================ --}}
-    {{-- JAVASCRIPT INTERAKTIF (simulasi frontend)     --}}
+    {{-- JAVASCRIPT INTERAKTIF                         --}}
     {{-- ============================================ --}}
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // ---------- State (hanya di memori browser, tidak disimpan ke database) ----------
+            // ---------- State halaman dan data teknisi ----------
             const state = {
                 data: @json($technicians),
                 pool: @json($assignableTickets),
                 selectedId: null,
                 page: 1,
-                perPage: 10,
+                perPage: 20,
                 search: '',
                 status: '',
                 area: '',
+                month: '',
+                year: '',
+                date: '',
                 checked: new Set(),
                 nextId: 1,
                 tab: 'detail',
@@ -308,13 +345,13 @@
             };
 
             const $ = (id) => document.getElementById(id);
+            const technicianBaseUrl = @json(url('/technicians'));
 
-            // Normalisasi data: kode unik (preview), penugasan, riwayat perbaikan, jadwal.
-            // Kode "TK001" di sini hanya turunan dari id untuk preview. Kode asli harus dibuat di backend.
+            // Normalisasi data API, penugasan, riwayat perbaikan, dan jadwal.
             const pad = (n) => String(n).padStart(3, '0');
             const TODAY = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
             function normalize(t) {
-                t.code = t.code || ('TK' + pad(t.id));
+                t.code = t.nik || t.code || ('TK' + pad(t.id));
                 t.active = (t.active || []).map((k) => Object.assign({ opd: '-', address: '-', date: '-', work_status: 'Ditugaskan' }, k));
                 t.repairs = t.repairs || [];
                 t.schedule = t.schedule || [];
@@ -366,6 +403,26 @@
                 return parseInt(d, 10) + ' ' + MONTHS[parseInt(m, 10) - 1] + ' ' + y;
             }
 
+            function populateYearFilter() {
+                const yearFilter = $('filter-year');
+                const existingYears = new Set(Array.from(yearFilter.options, (option) => option.value));
+                [...new Set(state.data.map((technician) => technician.joined_iso?.slice(0, 4)).filter(Boolean))]
+                    .sort((a, b) => b.localeCompare(a))
+                    .forEach((year) => {
+                        if (!existingYears.has(year)) yearFilter.add(new Option(year, year));
+                    });
+            }
+
+            function populateAreaFilter() {
+                const areaFilter = $('filter-area');
+                const existingAreas = new Set(Array.from(areaFilter.options, (option) => option.value));
+                [...new Set(state.data.map((technician) => technician.area).filter(Boolean))]
+                    .sort((a, b) => a.localeCompare(b, 'id'))
+                    .forEach((area) => {
+                        if (!existingAreas.has(area)) areaFilter.add(new Option(area, area));
+                    });
+            }
+
             function initials(name) {
                 const p = String(name).trim().split(/\s+/);
                 const first = (p[0] || '').charAt(0);
@@ -410,14 +467,48 @@
                 return payload;
             }
 
+            async function deleteSelectedTechnicians() {
+                const ids = [...state.checked];
+                if (!ids.length) return;
+                if (!window.confirm('Apakah Anda yakin ingin menghapus ' + ids.length + ' teknisi yang dipilih?')) return;
+
+                $('btn-delete-selected-tech').disabled = true;
+                try {
+                    const result = await requestJson(technicianBaseUrl + '/bulk', 'DELETE', { ids });
+                    state.data = state.data.filter((technician) => !ids.includes(technician.id));
+                    state.checked.clear();
+
+                    if (ids.includes(state.selectedId)) {
+                        if (state.data.length) {
+                            selectTech(state.data[0].id, true);
+                        } else {
+                            state.selectedId = null;
+                            hidePanel();
+                            renderTable();
+                        }
+                    } else {
+                        refreshAll();
+                    }
+
+                    showToast(result.message);
+                } catch (error) {
+                    showToast(error.message);
+                    renderTable();
+                }
+            }
+
             // ---------- Filter ----------
             function filtered() {
                 const q = state.search.toLowerCase().trim();
                 return state.data.filter((t) => {
                     const hay = (t.name + ' ' + t.code + ' ' + opdOf(t) + ' ' + t.area + ' ' + t.role).toLowerCase();
+                    const joinedDate = t.joined_iso || '';
                     return (!q || hay.includes(q))
                         && (!state.status || t.status === state.status)
-                        && (!state.area || t.area === state.area);
+                        && (!state.area || t.area === state.area)
+                        && (!state.month || joinedDate.slice(5, 7) === state.month)
+                        && (!state.year || joinedDate.slice(0, 4) === state.year)
+                        && (!state.date || joinedDate === state.date);
                 });
             }
 
@@ -443,14 +534,14 @@
                 $('tech-table-body').innerHTML = slice.length
                     ? slice.map((t) => {
                         const selected = t.id === state.selectedId;
-                        return '<tr class="tech-row cursor-pointer transition-colors hover:bg-blue-50/40 ' + (selected ? 'bg-blue-50/70 border-l-4 border-l-primary' : '') + '" data-id="' + t.id + '">'
-                            + '<td class="pl-4 py-3 w-8"><input type="checkbox" class="row-check rounded border-gray-300 text-primary focus:ring-primary/20" data-id="' + t.id + '" aria-label="Pilih ' + esc(t.name) + '"' + (state.checked.has(t.id) ? ' checked' : '') + '></td>'
-                            + '<td class="py-3 pr-3"><div class="flex items-center gap-3">' + avatar(t, 'w-9 h-9 text-xs')
-                            + '<div class="min-w-0"><p class="font-semibold text-primary whitespace-nowrap">' + esc(t.name) + '</p><p class="text-[11px] text-secondary">' + esc(t.role) + '</p></div></div></td>'
-                            + '<td class="py-3 pr-3 text-dark font-medium whitespace-nowrap">' + esc(t.code) + '</td>'
-                            + '<td class="py-3 pr-3">' + statusBadge(t.status) + '</td>'
-                            + '<td class="py-3 pr-3 text-dark font-semibold">' + t.tickets + '</td>'
-                            + '<td class="py-3 pr-3 text-secondary">' + esc(opdOf(t)) + '</td>'
+                        return '<tr class="tech-row cursor-pointer transition-colors hover:bg-blue-50/40 ' + (selected ? 'bg-blue-50/70 shadow-[inset_4px_0_0_0_rgb(37_99_235)]' : '') + '" data-id="' + t.id + '">'
+                            + '<td class="pl-4 py-3 overflow-hidden"><input type="checkbox" class="row-check rounded border-gray-300 text-primary focus:ring-primary/20" data-id="' + t.id + '" aria-label="Pilih ' + esc(t.name) + '"' + (state.checked.has(t.id) ? ' checked' : '') + '></td>'
+                            + '<td class="py-3 pr-3 overflow-hidden" style="width: 190px; min-width: 190px; max-width: 190px"><div class="flex items-center gap-3">' + avatar(t, 'w-9 h-9 text-xs')
+                            + '<div class="min-w-0"><p class="font-semibold text-primary truncate" title="' + esc(t.name) + '">' + esc(t.name) + '</p><p class="text-[11px] text-secondary truncate" title="' + esc(t.role) + '">' + esc(t.role) + '</p></div></div></td>'
+                            + '<td class="py-3 pr-3 text-dark font-medium overflow-hidden text-ellipsis whitespace-nowrap text-center" style="width: 110px; min-width: 110px; max-width: 110px" title="' + esc(t.code) + '">' + esc(t.code) + '</td>'
+                            + '<td class="py-3 pr-3 overflow-hidden whitespace-nowrap text-center" style="width: 130px; min-width: 130px; max-width: 130px">' + statusBadge(t.status) + '</td>'
+                            + '<td class="py-3 pr-3 text-dark font-semibold text-center whitespace-nowrap">' + t.tickets + '</td>'
+                            + '<td class="py-3 pr-3 text-secondary overflow-hidden"><span class="block truncate" title="' + esc(opdOf(t)) + '">' + esc(opdOf(t)) + '</span></td>'
                             + '<td class="py-3 pr-4 text-center"><button type="button" class="row-menu-btn p-1 rounded-md text-gray-400 hover:text-dark hover:bg-gray-100" data-id="' + t.id + '" aria-label="Aksi ' + esc(t.name) + '"><i data-lucide="more-vertical" class="w-4 h-4"></i></button></td>'
                             + '</tr>';
                     }).join('')
@@ -461,6 +552,8 @@
                 const to = start + slice.length;
                 const picked = state.checked.size;
                 $('table-info').textContent = 'Menampilkan ' + from + '–' + to + ' dari ' + list.length + ' teknisi' + (picked ? ' · ' + picked + ' dipilih' : '');
+                $('btn-delete-selected-tech').disabled = picked === 0;
+                $('delete-selected-tech-label').textContent = picked ? 'Hapus (' + picked + ')' : 'Hapus';
 
                 const checkedOnPage = slice.filter((t) => state.checked.has(t.id)).length;
                 const all = $('check-all');
@@ -503,7 +596,6 @@
                 $('i-opd').textContent = opdOf(t);
                 $('i-status').innerHTML = statusBadge(t.status);
                 $('i-joined').textContent = fmtDate(t.joined_iso);
-                $('i-exp').textContent = t.exp_years + ' Tahun';
                 $('action-status').value = t.status;
 
                 // Tiket Ditugaskan
@@ -627,61 +719,74 @@
                 $('form-title').textContent = mode === 'add' ? 'Tambah Teknisi' : 'Edit Teknisi';
                 $('form-sub').textContent = mode === 'add' ? 'Isi data teknisi baru' : 'Ubah data ' + (t ? t.name : 'teknisi');
                 $('form-submit').textContent = mode === 'add' ? 'Simpan Teknisi' : 'Simpan Perubahan';
+                const opd = t ? opdOf(t) : '';
+                $('f-opd').value = opd === '-' ? '' : opd;
+                $('f-opd-container').classList.toggle('hidden', !t || !opd || opd === '-');
                 if (t) {
-                    $('f-name').value = t.name; $('f-nik').value = t.code; $('f-role').value = t.role;
-                    $('f-phone').value = t.phone; $('f-email').value = t.email; $('f-area').value = t.area;
-                    $('f-latitude').value = t.latitude ?? ''; $('f-longitude').value = t.longitude ?? '';
-                    $('f-status').value = t.status; $('f-joined').value = t.joined_iso; $('f-exp').value = t.exp_years;
+                    $('f-name').value = t.name; $('f-nik').value = t.code; $('f-role').value = 'Teknisi';
+                    $('f-phone').value = t.phone; $('f-email').value = t.email; $('f-area').value = 'Dinas Komunikasi dan Informatika';
+                    $('f-status').value = t.status; $('f-joined').value = t.joined_iso;
                 } else {
                     $('f-nik').value = 'TK' + pad(state.nextId);
                     $('f-role').value = 'Teknisi';
-                    $('f-area').selectedIndex = 0;
-                    $('f-latitude').value = ''; $('f-longitude').value = '';
+                    $('f-area').value = 'Dinas Komunikasi dan Informatika';
                     $('f-status').value = 'Available';
                     $('f-joined').value = new Date().toISOString().slice(0, 10);
-                    $('f-exp').value = 0;
                 }
                 openModal('modal-form');
             }
 
-            $('f-nik').addEventListener('input', () => $('f-nik').setCustomValidity(''));
-
             $('form-tech').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const code = $('f-nik').value.trim().toUpperCase();
-                const dup = state.data.some((x) => x.code.toLowerCase() === code.toLowerCase() && !(state.formMode === 'edit' && x.id === state.selectedId));
-                $('f-nik').setCustomValidity(dup ? 'Kode teknisi sudah digunakan teknisi lain.' : '');
                 if (!e.target.reportValidity()) return;
 
                 const values = {
-                    name: $('f-name').value.trim(), code: code, role: $('f-role').value.trim(),
-                    phone: $('f-phone').value.trim(), email: $('f-email').value.trim(), area: $('f-area').value,
-                    status: $('f-status').value, joined_iso: $('f-joined').value, exp_years: parseInt($('f-exp').value, 10) || 0,
+                    name: $('f-name').value.trim(),
+                    nik: $('f-nik').value.trim(),
+                    position: 'Teknisi',
+                    phone: $('f-phone').value.trim(),
+                    email: $('f-email').value.trim(),
+                    area: 'Dinas Komunikasi dan Informatika',
+                    status: $('f-status').value,
+                    joined_at: $('f-joined').value,
                 };
 
-                if (state.formMode === 'edit') {
-                    const t = current();
-                    if (t.status !== values.status) {
-                        t.history.unshift({ title: 'Status diubah', desc: t.status + ' → ' + values.status, time: 'Baru saja' });
+                try {
+                    if (state.formMode === 'edit') {
+                        const t = current();
+                        const previousStatus = t.status;
+                        const response = await requestJson(technicianBaseUrl + '/' + encodeURIComponent(t.id), 'PUT', values);
+                        const updated = normalize(response.data);
+                        if (previousStatus !== updated.status) {
+                            updated.history.unshift({ title: 'Status diubah', desc: previousStatus + ' → ' + updated.status, time: 'Baru saja' });
+                        }
+                        Object.assign(t, updated);
+                        closeModal('modal-form');
+                        refreshAll();
+                        showToast('Data teknisi berhasil diperbarui.');
+                    } else {
+                        const response = await requestJson(technicianBaseUrl, 'POST', values);
+                        const t = normalize(response.data);
+                        state.data.push(t);
+                        populateAreaFilter();
+                        populateYearFilter();
+                        state.nextId = Math.max(state.nextId, Number(t.id) + 1);
+                        state.search = ''; state.status = ''; state.area = ''; state.month = ''; state.year = ''; state.date = '';
+                        $('tech-search').value = '';
+                        $('filter-status').value = '';
+                        $('filter-area').value = '';
+                        $('filter-month').value = '';
+                        $('filter-year').value = '';
+                        $('filter-date').value = '';
+                        state.page = Math.ceil(state.data.length / state.perPage);
+                        closeModal('modal-form');
+                        state.selectedId = t.id;
+                        renderStats();
+                        selectTech(t.id, true);
+                        showToast('Teknisi berhasil ditambahkan.');
                     }
-                    Object.assign(t, values);
-                    closeModal('modal-form');
-                    refreshAll();
-                    showToast('Data teknisi diperbarui (simulasi frontend).');
-                } else {
-                    const t = Object.assign({
-                        id: state.nextId++, tickets: 0, rating: null, active: [], repairs: [], schedule: [],
-                        history: [{ title: 'Teknisi ditambahkan', desc: 'Data teknisi dibuat (simulasi)', time: 'Baru saja' }],
-                    }, values);
-                    state.data.push(t);
-                    state.search = ''; state.status = ''; state.area = '';
-                    $('tech-search').value = ''; $('filter-status').value = ''; $('filter-area').value = '';
-                    state.page = Math.ceil(state.data.length / state.perPage);
-                    closeModal('modal-form');
-                    state.selectedId = t.id;
-                    renderStats();
-                    selectTech(t.id, true);
-                    showToast('Teknisi baru ditambahkan (simulasi frontend).');
+                } catch (error) {
+                    showToast(error.message);
                 }
             });
 
@@ -713,16 +818,22 @@
                 const picked = document.querySelector('input[name="assign-ticket"]:checked');
                 const t = current();
                 if (!picked || !t) return;
-                const idx = state.pool.findIndex((k) => k.id === picked.value);
-                if (idx < 0) return;
-                const k = state.pool.splice(idx, 1)[0];
-                t.active.unshift({ id: k.id, title: k.title, priority: k.priority, opd: k.customer || '-', address: k.area || k.location || '-', date: TODAY, work_status: 'Ditugaskan' });
-                t.tickets += 1;
-                if (t.status === 'Available') t.status = 'On Task';
-                t.history.unshift({ title: 'Ticket ditugaskan', desc: k.id + ' — ' + k.title, time: 'Baru saja' });
-                closeModal('modal-assign');
-                refreshAll();
-                showToast(k.id + ' ditugaskan kepada ' + t.name + ' (simulasi frontend).');
+                const ticket = state.pool.find((item) => item.id === picked.value);
+                if (!ticket) return;
+                $('assign-confirm').disabled = true;
+
+                try {
+                    await requestJson(
+                        @json(url('/tickets')) + '/' + encodeURIComponent(ticket.id) + '/assignments',
+                        'POST',
+                        { technician_id: t.id },
+                    );
+                    closeModal('modal-assign');
+                    window.location.reload();
+                } catch (error) {
+                    $('assign-confirm').disabled = false;
+                    showToast(error.message);
+                }
             });
 
             // ---------- Aksi: lokasi & jadwal ----------
@@ -785,13 +896,26 @@
 
             // ---------- Event: toolbar ----------
             $('btn-add-tech').addEventListener('click', () => openForm('add'));
+            $('btn-delete-selected-tech').addEventListener('click', deleteSelectedTechnicians);
 
             $('tech-search').addEventListener('input', (e) => { state.search = e.target.value; state.page = 1; renderTable(); });
             $('filter-status').addEventListener('change', (e) => { state.status = e.target.value; state.page = 1; renderTable(); });
             $('filter-area').addEventListener('change', (e) => { state.area = e.target.value; state.page = 1; renderTable(); });
+            ['filter-month', 'filter-year', 'filter-date'].forEach((id) => {
+                $(id).addEventListener('change', (e) => {
+                    state[id.replace('filter-', '')] = e.target.value;
+                    state.page = 1;
+                    renderTable();
+                });
+            });
             $('btn-reset-filters').addEventListener('click', () => {
-                state.search = ''; state.status = ''; state.area = ''; state.page = 1;
-                $('tech-search').value = ''; $('filter-status').value = ''; $('filter-area').value = '';
+                state.search = ''; state.status = ''; state.area = ''; state.month = ''; state.year = ''; state.date = ''; state.page = 1;
+                $('tech-search').value = '';
+                $('filter-status').value = '';
+                $('filter-area').value = '';
+                $('filter-month').value = '';
+                $('filter-year').value = '';
+                $('filter-date').value = '';
                 renderTable();
             });
 
@@ -862,12 +986,23 @@
             $('action-status').addEventListener('change', async (e) => {
                 const t = current();
                 if (!t || t.status === e.target.value) return;
+                const statusSelect = e.target;
+                const previousStatus = t.status;
+                statusSelect.disabled = true;
                 try {
-                    await requestJson(technicianBaseUrl + '/' + encodeURIComponent(t.id) + '/status', 'PATCH', { status: e.target.value });
-                    window.location.reload();
+                    const response = await requestJson(
+                        technicianBaseUrl + '/' + encodeURIComponent(t.id) + '/status',
+                        'PATCH',
+                        { status: statusSelect.value },
+                    );
+                    Object.assign(t, normalize(response.data));
+                    refreshAll();
+                    showToast(response.message || 'Status teknisi berhasil diperbarui.');
                 } catch (error) {
-                    $('action-status').value = t.status;
+                    statusSelect.value = previousStatus;
                     showToast(error.message);
+                } finally {
+                    statusSelect.disabled = false;
                 }
             });
 
@@ -890,6 +1025,8 @@
             });
 
             // ---------- Inisialisasi ----------
+            populateAreaFilter();
+            populateYearFilter();
             setTab('detail');
             refreshAll();
             if (isDesktop() && state.data.length) showPanel(); // Desktop: teknisi pertama terpilih. Tablet/mobile: panel menjadi drawer saat baris diklik.

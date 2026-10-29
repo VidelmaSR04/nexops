@@ -4,7 +4,6 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class TechnicianRequest extends FormRequest
 {
@@ -24,17 +23,10 @@ class TechnicianRequest extends FormRequest
      */
     public function rules(): array
     {
-        $technicianId = $this->route('technician');
-
         return [
-            'nik' => [
-                'required',
-                'string',
-                'max:30',
-                Rule::unique('technicians', 'nik')->ignore($technicianId),
-            ],
+            'nik' => ['nullable', 'string', 'max:30'],
             'name' => 'required|string|max:255',
-            'position' => 'required|string|max:50',
+            'position' => 'nullable|string|max:50',
             'area' => 'nullable|string|max:60',
             'latitude' => 'nullable|numeric|between:-90,90|required_with:longitude',
             'longitude' => 'nullable|numeric|between:-180,180|required_with:latitude',
