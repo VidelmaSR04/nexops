@@ -48,7 +48,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label for="f-area" class="block font-medium text-dark mb-1">Area</label>
-                    <input id="f-area" type="text" readonly aria-readonly="true" value="Dinas Komunikasi dan Informatika" class="{{ $inputClass }} cursor-not-allowed bg-gray-100 text-gray-500">
+                    <input id="f-area" type="text" required maxlength="60" placeholder="Contoh: Situbondo atau Besuki" class="{{ $inputClass }}">
                 </div>
                 <div>
                     <label for="f-status" class="block font-medium text-dark mb-1">Status</label>

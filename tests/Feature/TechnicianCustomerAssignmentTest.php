@@ -27,10 +27,11 @@ class TechnicianCustomerAssignmentTest extends TestCase
             ->assertJsonPath('data.tickets', 0);
 
         $technicianId = $response->json('data.id');
+        $generatedNik = $response->json('data.nik');
 
         $this->getJson("/api/technicians/{$technicianId}")
             ->assertOk()
-            ->assertJsonPath('data.nik', 'TECH-001');
+            ->assertJsonPath('data.nik', $generatedNik);
 
         $this->putJson("/api/technicians/{$technicianId}", [
             ...$this->technicianData(),
@@ -41,9 +42,12 @@ class TechnicianCustomerAssignmentTest extends TestCase
             'status' => 'Offline',
         ])->assertOk()->assertJsonPath('data.status', 'Offline');
 
-        $this->postJson('/api/technicians', $this->technicianData())
+        $this->postJson('/api/technicians', [
+            ...$this->technicianData(),
+            'name' => '',
+        ])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors('nik');
+            ->assertJsonValidationErrors('name');
 
         $this->assertDatabaseHas('technicians', [
             'id' => $technicianId,

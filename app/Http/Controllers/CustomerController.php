@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class CustomerController extends Controller
 {
@@ -75,6 +77,13 @@ class CustomerController extends Controller
 
         return view('customers', [
             'customersData' => $customersList,
+            'availableCustomerUsers' => $request->user()?->role === 'admin'
+                ? User::query()
+                    ->where('role', 'customer')
+                    ->whereNull('customer_id')
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'email'])
+                : collect(),
             'opdOptions' => $customers
                 ->groupBy('name')
                 ->map(function ($opdRecords): array {
@@ -113,10 +122,61 @@ class CustomerController extends Controller
             'success' => true,
             'data' => [
                 'customer' => $customerData,
+                'linked_users' => $request->user()?->role === 'admin'
+                    ? $customer->users()
+                        ->where('role', 'customer')
+                        ->orderBy('name')
+                        ->get(['id', 'name', 'email'])
+                    : collect(),
                 'ticket_history' => $customer->tickets()
                     ->latest()
                     ->get(['ticket_number', 'title', 'status', 'created_at']),
             ],
+        ]);
+    }
+
+    public function linkUser(Request $request, Customer $customer): JsonResponse
+    {
+        abort_unless($customer->type === 'opd', 404);
+
+        $validated = $request->validate([
+            'user_id' => [
+                'required',
+                'integer',
+                Rule::exists('users', 'id')->where('role', 'customer'),
+            ],
+        ]);
+
+        $user = User::query()->where('role', 'customer')->findOrFail($validated['user_id']);
+        if ($user->customer_id !== null && $user->customer_id !== $customer->id) {
+            throw ValidationException::withMessages([
+                'user_id' => 'Akun ini sudah terhubung ke OPD lain. Lepaskan tautan lama terlebih dahulu.',
+            ]);
+        }
+
+        $user->customer()->associate($customer)->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Akun berhasil dihubungkan ke OPD.',
+            'data' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+        ]);
+    }
+
+    public function unlinkUser(Customer $customer, User $user): JsonResponse
+    {
+        abort_unless($customer->type === 'opd', 404);
+        abort_unless($user->role === 'customer' && $user->customer_id === $customer->id, 404);
+
+        $user->customer()->dissociate()->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tautan akun ke OPD berhasil dilepas.',
         ]);
     }
 

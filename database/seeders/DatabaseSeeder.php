@@ -25,9 +25,6 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        $this->call([
-            NexopsDataSeeder::class,
-            OpdSeeder::class,
-        ]);
+        $this->call(OpdSeeder::class);
     }
 }
