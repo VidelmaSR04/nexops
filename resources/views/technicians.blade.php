@@ -4,7 +4,7 @@
         // Data dari TechnicianController@index. Jika belum ada, tampil kosong (tanpa data dummy).
         $technicians       = $technicians ?? [];
         $assignableTickets = $assignableTickets ?? [];
-        $areas    = ['Dinas Komunikasi dan Informatika'];
+        $areas    = collect($technicians)->pluck('area')->filter()->unique()->values()->all();
         $statuses = ['Available', 'On Task', 'Offline'];
         $statusLabels = ['Available' => 'Tersedia', 'On Task' => 'Sedang Bertugas', 'Offline' => 'Tidak Aktif'];
     @endphp
@@ -724,12 +724,12 @@
                 $('f-opd-container').classList.toggle('hidden', !t || !opd || opd === '-');
                 if (t) {
                     $('f-name').value = t.name; $('f-nik').value = t.code; $('f-role').value = 'Teknisi';
-                    $('f-phone').value = t.phone; $('f-email').value = t.email; $('f-area').value = 'Dinas Komunikasi dan Informatika';
+                    $('f-phone').value = t.phone; $('f-email').value = t.email; $('f-area').value = t.area;
                     $('f-status').value = t.status; $('f-joined').value = t.joined_iso;
                 } else {
                     $('f-nik').value = 'TK' + pad(state.nextId);
                     $('f-role').value = 'Teknisi';
-                    $('f-area').value = 'Dinas Komunikasi dan Informatika';
+                    $('f-area').value = '';
                     $('f-status').value = 'Available';
                     $('f-joined').value = new Date().toISOString().slice(0, 10);
                 }
@@ -746,7 +746,7 @@
                     position: 'Teknisi',
                     phone: $('f-phone').value.trim(),
                     email: $('f-email').value.trim(),
-                    area: 'Dinas Komunikasi dan Informatika',
+                    area: $('f-area').value.trim(),
                     status: $('f-status').value,
                     joined_at: $('f-joined').value,
                 };

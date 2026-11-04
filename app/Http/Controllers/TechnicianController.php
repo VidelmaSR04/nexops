@@ -113,9 +113,6 @@ class TechnicianController extends Controller
         $technician = DB::transaction(function () use ($validated): Technician {
             $validated['nik'] = 'TMP-'.Str::random(24);
             $validated['position'] = 'Teknisi';
-            $validated['area'] = 'Dinas Komunikasi dan Informatika';
-            $validated['latitude'] = null;
-            $validated['longitude'] = null;
 
             $technician = Technician::create($validated);
             $number = $technician->id;
@@ -144,8 +141,6 @@ class TechnicianController extends Controller
 
         $validated['nik'] = $technician->nik;
         $validated['position'] = 'Teknisi';
-        $validated['area'] = 'Dinas Komunikasi dan Informatika';
-        unset($validated['latitude'], $validated['longitude']);
         $technician->update($validated);
 
         return response()->json([
@@ -244,7 +239,7 @@ class TechnicianController extends Controller
             'id' => $technician->id,
             'name' => $technician->name,
             'nik' => $technician->nik,
-            'area' => 'Dinas Komunikasi dan Informatika',
+            'area' => $technician->area ?? '',
             'latitude' => $coordinates['latitude'] ?? null,
             'longitude' => $coordinates['longitude'] ?? null,
             'location_is_simulated' => ! $hasStoredCoordinates && $coordinates !== null,

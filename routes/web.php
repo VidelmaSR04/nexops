@@ -3,6 +3,7 @@
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\CustomerTicketController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProfileController;
@@ -17,6 +18,12 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::middleware(['auth', 'verified', 'customer'])->prefix('my')->name('customer.')->group(function () {
+    Route::get('/tickets', [CustomerTicketController::class, 'index'])->name('tickets.index');
+    Route::post('/tickets', [CustomerTicketController::class, 'store'])->name('tickets.store');
+});
+
+Route::middleware(['auth', 'verified', 'staff'])->group(function () {
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -149,6 +156,14 @@ Route::post('/customers', [CustomerController::class, 'store'])
     ->middleware(['auth', 'verified'])
     ->name('customers.store');
 
+Route::post('/customers/{customer}/users', [CustomerController::class, 'linkUser'])
+    ->middleware('admin')
+    ->name('customers.users.store');
+
+Route::delete('/customers/{customer}/users/{user}', [CustomerController::class, 'unlinkUser'])
+    ->middleware('admin')
+    ->name('customers.users.destroy');
+
 Route::put('/customers/{customer}', [CustomerController::class, 'update'])
     ->middleware(['auth', 'verified'])
     ->name('customers.update');
@@ -176,6 +191,7 @@ Route::get('/reports/data', [ReportController::class, 'data'])
 Route::get('/settings', [SettingController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('settings.index');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

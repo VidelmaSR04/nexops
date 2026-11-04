@@ -55,15 +55,19 @@
                 <dl class="grid gap-4 rounded-xl border border-border bg-surface p-4 text-sm sm:grid-cols-2">
                     <div>
                         <dt class="text-xs text-secondary">Customer</dt>
-                        <dd class="mt-1 font-medium text-dark">{{ $ticket->customer_name ?? $ticket->customer?->name ?? '-' }}</dd>
+                        <dd class="mt-1 font-medium text-dark">{{ $ticket->customer?->name ?? $ticket->customer_name ?? '-' }}</dd>
                     </div>
                     <div>
                         <dt class="text-xs text-secondary">Lokasi</dt>
                         <dd class="mt-1 font-medium text-dark">{{ $ticket->location ?? $ticket->customer?->area ?? '-' }}</dd>
                     </div>
                     <div>
+                        <dt class="text-xs text-secondary">Kategori Gangguan</dt>
+                        <dd class="mt-1 font-medium text-dark">{{ $ticket->issue_category ?? '-' }}</dd>
+                    </div>
+                    <div>
                         <dt class="text-xs text-secondary">Teknisi</dt>
-                        <dd class="mt-1 font-medium text-dark">{{ $ticket->technicians->first()?->name ?? $ticket->assigned_tech_name ?? '-' }}</dd>
+                        <dd class="mt-1 font-medium text-dark">{{ $ticket->activeTechnicians->first()?->name ?? $ticket->assigned_tech_name ?? '-' }}</dd>
                     </div>
                     <div>
                         <dt class="text-xs text-secondary">Dibuat oleh</dt>
@@ -123,6 +127,31 @@
             </section>
 
             <aside class="h-fit rounded-2xl border border-border bg-white p-5 shadow-sm">
+                @if ($ticket->customer && in_array($ticket->status, ['Open', 'Assigned', 'In Progress'], true))
+                    <section class="mb-6 border-b border-border pb-6">
+                        <h2 class="mb-4 font-semibold text-dark">Assignment Teknisi</h2>
+                        <form id="ticket-assignment-form"
+                              action="{{ route('tickets.assignments.store', $ticket->id) }}"
+                              method="POST"
+                              class="space-y-3">
+                            @csrf
+                            <label for="technician_id" class="block text-xs font-medium text-secondary">Teknisi</label>
+                            <select id="technician_id" name="technician_id" required class="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm">
+                                <option value="">Pilih teknisi</option>
+                                @foreach ($technicians as $technician)
+                                    <option value="{{ $technician->id }}" @selected($ticket->activeTechnicians->contains('id', $technician->id))>
+                                        {{ $technician->name }} ({{ $technician->status }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div id="ticket-assignment-message" class="hidden rounded-xl px-3 py-2 text-sm" role="status" aria-live="polite"></div>
+                            <button type="submit" class="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
+                                Tugaskan Teknisi
+                            </button>
+                        </form>
+                    </section>
+                @endif
+
                 <h2 class="mb-4 font-semibold text-dark">Ubah Status</h2>
                 <form action="{{ route('tickets.update-status', $ticket->id) }}" method="POST" class="space-y-3">
                     @csrf
@@ -140,4 +169,43 @@
             </aside>
         </div>
     </div>
+
+    <script>
+        const assignmentForm = document.getElementById('ticket-assignment-form');
+        if (assignmentForm) {
+            assignmentForm.addEventListener('submit', async event => {
+                event.preventDefault();
+                const button = assignmentForm.querySelector('button[type="submit"]');
+                const message = document.getElementById('ticket-assignment-message');
+                button.disabled = true;
+                message.classList.add('hidden');
+
+                try {
+                    const response = await fetch(assignmentForm.action, {
+                        method: 'POST',
+                        body: new FormData(assignmentForm),
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': assignmentForm.querySelector('input[name="_token"]').value,
+                        },
+                    });
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        const errors = Object.values(data.errors || {}).flat();
+                        throw new Error(errors.join(' ') || data.message || 'Assignment teknisi gagal disimpan.');
+                    }
+
+                    message.textContent = data.message || 'Teknisi berhasil ditugaskan.';
+                    message.className = 'rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700';
+                    window.location.reload();
+                } catch (error) {
+                    message.textContent = error.message || 'Tidak dapat menyimpan assignment teknisi.';
+                    message.className = 'rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700';
+                    button.disabled = false;
+                }
+            });
+        }
+    </script>
 </x-app-layout>

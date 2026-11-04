@@ -25,7 +25,7 @@ class TicketController extends Controller
         try {
             Log::info('TicketController@index started');
 
-            $tickets = Ticket::with(['customer', 'asset', 'creator', 'materials', 'attachments', 'technicians'])
+            $tickets = Ticket::with(['customer', 'asset', 'creator', 'materials', 'attachments', 'activeTechnicians'])
                 ->latest()
                 ->get();
             $activitiesByTicket = ActivityLog::where('subject_type', Ticket::class)
@@ -35,7 +35,7 @@ class TicketController extends Controller
                 ->groupBy('subject_id');
 
             $rawTickets = $tickets->map(function ($tk) use ($activitiesByTicket) {
-                $assignedTech = $tk->technicians->first()?->name ?? ($tk->assigned_tech_name ?? '-');
+                $assignedTech = $tk->activeTechnicians->first()?->name ?? ($tk->assigned_tech_name ?? '-');
 
                 $materials = $tk->materials->map(function ($m) {
                     return [
@@ -67,11 +67,12 @@ class TicketController extends Controller
                     'db_id'       => $tk->id,
                     'customer_id' => $tk->customer_id,
                     'id'          => '#' . $tk->ticket_number,
-                    'customer'    => $tk->customer_name ?? ($tk->customer?->name ?? '-'),
+                    'customer'    => $tk->customer?->name ?? $tk->customer_name ?? '-',
                     'location'    => $tk->location ?? ($tk->customer?->area ?? '-'),
                     'reporter_name'    => $tk->reporter_name ?? $tk->customer?->reporter_name ?? '-',
                     'reporter_contact' => $tk->reporter_contact ?? $tk->customer?->reporter_contact ?? '-',
                     'title'       => $tk->title,
+                    'category'    => $tk->issue_category ?? '-',
                     'subtitle'    => $tk->subtitle ?? $tk->title,
                     'priority'    => $tk->priority,
                     'status'      => $tk->status,
@@ -116,6 +117,7 @@ class TicketController extends Controller
                 'rawTickets'  => $rawTickets,
                 'summary'     => $summary,
                 'technicians' => $techList,
+                'issueCategories' => Ticket::ISSUE_CATEGORIES,
                 'opds'        => Customer::where('type', 'opd')->orderBy('name')->get(),
             ]);
         } catch (\Exception $e) {
@@ -134,6 +136,7 @@ class TicketController extends Controller
 
         return view('tickets.create', [
             'technicians' => $technicians,
+            'issueCategories' => Ticket::ISSUE_CATEGORIES,
             'opds' => Customer::where('type', 'opd')->orderBy('name')->get(),
         ]);
     }
@@ -144,25 +147,19 @@ class TicketController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'customer_id'        => ['nullable', 'required_without:customer_name', Rule::exists('customers', 'id')->where('type', 'opd')->whereNull('deleted_at')],
-            'customer_name'      => 'nullable|required_without:customer_id|string|max:255',
+            'customer_id'        => ['required', 'integer', Rule::exists('customers', 'id')->where('type', 'opd')->whereNull('deleted_at')],
             'location'           => 'required|string|max:100',
             'reporter_name'      => 'required|string|max:150',
             'reporter_contact'   => ['nullable', 'string', 'regex:/^[0-9]{1,14}$/'],
             'priority'           => 'required|in:Low,Normal,High,Critical',
             'title'              => 'required|string|max:255',
             'description'        => 'nullable|string',
+            'issue_category'     => ['nullable', Rule::in(Ticket::ISSUE_CATEGORIES)],
             'assigned_tech_name' => 'nullable|string',
             'asset_name'         => 'nullable|string',
         ]);
 
-        // 1. Auto-generate Nomor Tiket (TK-1026, dst)
-        $lastTicket = Ticket::orderByDesc('id')->first();
-        $nextNum = 1001;
-        if ($lastTicket && preg_match('/TK-(\d+)/', $lastTicket->ticket_number, $matches)) {
-            $nextNum = ((int) $matches[1]) + 1;
-        }
-        $ticketNumber = 'TK-' . $nextNum;
+        $ticketNumber = $this->nextTicketNumber();
 
         // 2. Hitung SLA otomatis berdasarkan prioritas
         $slaHours = match ($validated['priority']) {
@@ -175,9 +172,7 @@ class TicketController extends Controller
         $slaDueAt = Carbon::now()->addHours($slaHours);
 
         // 3. Cari Relasi Customer jika cocok
-        $customer = !empty($validated['customer_id'])
-            ? Customer::findOrFail($validated['customer_id'])
-            : Customer::where('name', $validated['customer_name'])->first();
+        $customer = Customer::findOrFail($validated['customer_id']);
 
         // 4. Cari Relasi Aset jika cocok
         $asset = null;
@@ -194,12 +189,13 @@ class TicketController extends Controller
         $ticket = Ticket::create([
             'ticket_number'      => $ticketNumber,
             'customer_id'        => $customer?->id,
-            'customer_name'      => $customer?->name ?? $validated['customer_name'],
+            'customer_name'      => $customer->name,
             'asset_id'           => $asset?->id,
             'created_by'         => Auth::id() ?? 1,
             'assigned_tech_name' => $assignedTechName !== '-' ? $assignedTechName : null,
             'title'              => $validated['title'],
             'subtitle'           => $validated['title'],
+            'issue_category'     => $validated['issue_category'] ?? null,
             'description'        => $validated['description'] ?? 'Tiket dibuat melalui sistem.',
             'location'           => $validated['location'],
             'reporter_name'      => $validated['reporter_name'],
@@ -240,7 +236,7 @@ class TicketController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Tiket #{$ticketNumber} berhasil dibuat.",
-                'data'    => $ticket->load(['customer', 'asset', 'technicians']),
+                'data'    => $ticket->load(['customer', 'asset', 'activeTechnicians']),
             ], 201);
         }
 
@@ -273,10 +269,7 @@ class TicketController extends Controller
 
         // Jika Resolved atau Closed, nonaktifkan assignment aktif
         if (in_array($newStatus, ['Resolved', 'Closed'])) {
-            TicketAssignment::where('ticket_id', $ticket->id)->update([
-                'is_active'     => false,
-                'unassigned_at' => Carbon::now(),
-            ]);
+            $this->deactivateActiveAssignments($ticket);
         }
 
         // Catat aktivitas
@@ -305,7 +298,7 @@ class TicketController extends Controller
      */
     public function apiIndex(): JsonResponse
     {
-        $tickets = Ticket::with(['customer', 'asset', 'technicians', 'materials'])->latest()->get();
+        $tickets = Ticket::with(['customer', 'asset', 'activeTechnicians', 'materials'])->latest()->get();
 
         return response()->json([
             'success' => true,
@@ -319,7 +312,7 @@ class TicketController extends Controller
      */
     public function apiShow($id): JsonResponse
     {
-        $ticket = Ticket::with(['customer', 'asset', 'technicians', 'materials', 'attachments'])
+        $ticket = Ticket::with(['customer', 'asset', 'activeTechnicians', 'materials', 'attachments'])
             ->where('id', $id)
             ->orWhere('ticket_number', $id)
             ->first();
@@ -343,7 +336,7 @@ class TicketController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $ticket = Ticket::with(['customer', 'asset', 'creator', 'technicians', 'materials', 'attachments'])
+        $ticket = Ticket::with(['customer', 'asset', 'creator', 'activeTechnicians', 'materials', 'attachments'])
             ->where('id', $id)
             ->orWhere('ticket_number', $id)
             ->firstOrFail();
@@ -358,6 +351,10 @@ class TicketController extends Controller
 
         return view('tickets.show', [
             'ticket' => $ticket,
+            'technicians' => Technician::query()
+                ->whereIn('status', ['Available', 'On Task'])
+                ->orderBy('name')
+                ->get(),
             'activities' => ActivityLog::where('subject_type', Ticket::class)
                 ->where('subject_id', $ticket->id)
                 ->latest()
@@ -370,7 +367,7 @@ class TicketController extends Controller
      */
     public function edit(Request $request, $id)
     {
-        $ticket = Ticket::with(['customer', 'asset', 'technicians'])->where('id', $id)->orWhere('ticket_number', $id)->firstOrFail();
+        $ticket = Ticket::with(['customer', 'asset', 'activeTechnicians'])->where('id', $id)->orWhere('ticket_number', $id)->firstOrFail();
         $technicians = Technician::pluck('name')->all();
         $opds = Customer::where('type', 'opd')->orderBy('name')->get();
         $selectedOpdId = $ticket->customer_id ?? $opds->firstWhere('name', $ticket->customer_name)?->id;
@@ -382,6 +379,7 @@ class TicketController extends Controller
                 'data'    => [
                     'ticket' => $ticket,
                     'technicians' => $technicians,
+                    'issueCategories' => Ticket::ISSUE_CATEGORIES,
                     'opds' => $opds,
                     'selectedOpdId' => $selectedOpdId,
                 ],
@@ -391,6 +389,7 @@ class TicketController extends Controller
         return view('tickets.edit', [
             'ticket' => $ticket,
             'technicians' => $technicians,
+            'issueCategories' => Ticket::ISSUE_CATEGORIES,
             'opds' => $opds,
             'selectedOpdId' => $selectedOpdId,
         ]);
@@ -402,14 +401,14 @@ class TicketController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'customer_id'        => ['nullable', 'required_without:customer_name', Rule::exists('customers', 'id')->where('type', 'opd')->whereNull('deleted_at')],
-            'customer_name'      => 'nullable|required_without:customer_id|string|max:255',
+            'customer_id'        => ['required', 'integer', Rule::exists('customers', 'id')->where('type', 'opd')->whereNull('deleted_at')],
             'location'           => 'required|string|max:100',
             'reporter_name'      => 'required|string|max:150',
             'reporter_contact'   => ['nullable', 'string', 'regex:/^[0-9]{1,14}$/'],
             'priority'           => 'required|in:Low,Normal,High,Critical',
             'title'              => 'required|string|max:255',
             'description'        => 'nullable|string',
+            'issue_category'     => ['nullable', Rule::in(Ticket::ISSUE_CATEGORIES)],
             'assigned_tech_name' => 'nullable|string',
             'asset_name'         => 'nullable|string',
         ]);
@@ -432,9 +431,7 @@ class TicketController extends Controller
         }
 
         // 3. Cari Relasi Customer jika cocok
-        $customer = !empty($validated['customer_id'])
-            ? Customer::findOrFail($validated['customer_id'])
-            : Customer::where('name', $validated['customer_name'])->first();
+        $customer = Customer::findOrFail($validated['customer_id']);
 
         // 4. Cari Relasi Aset jika cocok
         $asset = null;
@@ -449,10 +446,11 @@ class TicketController extends Controller
 
         $ticket->update([
             'customer_id'        => $customer?->id,
-            'customer_name'      => $customer?->name ?? $validated['customer_name'],
+            'customer_name'      => $customer->name,
             'asset_id'           => $asset?->id,
             'title'              => $validated['title'],
             'subtitle'           => $validated['title'],
+            'issue_category'     => $validated['issue_category'] ?? null,
             'description'        => $validated['description'] ?? 'Tiket diperbarui melalui sistem.',
             'location'           => $validated['location'],
             'reporter_name'      => $validated['reporter_name'],
@@ -465,10 +463,7 @@ class TicketController extends Controller
 
         $activeAssignments = $ticket->assignments()->where('is_active', true);
         if (!$technician || $activeAssignments->where('technician_id', '!=', $technician->id)->exists()) {
-            $ticket->assignments()->where('is_active', true)->update([
-                'is_active'     => false,
-                'unassigned_at' => Carbon::now(),
-            ]);
+            $this->deactivateActiveAssignments($ticket);
         }
         if ($technician && !$ticket->assignments()
             ->where('technician_id', $technician->id)
@@ -498,7 +493,7 @@ class TicketController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Tiket #{$ticket->ticket_number} berhasil diperbarui.",
-                'data'    => $ticket->load(['customer', 'asset', 'technicians']),
+                'data'    => $ticket->load(['customer', 'asset', 'activeTechnicians']),
             ]);
         }
 
@@ -512,11 +507,7 @@ class TicketController extends Controller
     {
         $ticket = Ticket::where('id', $id)->orWhere('ticket_number', $id)->firstOrFail();
 
-        // Deactivate any active assignments
-        $ticket->assignments()->where('is_active', true)->update([
-            'is_active'     => false,
-            'unassigned_at' => Carbon::now(),
-        ]);
+        $this->deactivateActiveAssignments($ticket);
 
         // Catat ke Activity Log sebelum hapus
         ActivityLog::create([
@@ -538,5 +529,52 @@ class TicketController extends Controller
         }
 
         return redirect()->route('tickets.index')->with('success', "Tiket #{$ticket->ticket_number} berhasil dihapus.");
+    }
+
+    private function deactivateActiveAssignments(Ticket $ticket): void
+    {
+        $assignments = $ticket->assignments()
+            ->where('is_active', true)
+            ->with('technician')
+            ->get();
+
+        if ($assignments->isEmpty()) {
+            return;
+        }
+
+        $ticket->assignments()
+            ->whereIn('id', $assignments->pluck('id'))
+            ->update([
+                'is_active' => false,
+                'unassigned_at' => Carbon::now(),
+            ]);
+
+        $assignments->pluck('technician')
+            ->filter()
+            ->unique('id')
+            ->each(function (Technician $technician): void {
+                if ($technician->status === 'On Task' && ! $technician->activeAssignments()->exists()) {
+                    $technician->update(['status' => 'Available']);
+                }
+            });
+    }
+
+    private function nextTicketNumber(): string
+    {
+        $lastTicketNumber = Ticket::withTrashed()
+            ->orderByDesc('id')
+            ->value('ticket_number');
+        $nextNumber = 1001;
+
+        if (is_string($lastTicketNumber) && preg_match('/^TK-(\d+)$/', $lastTicketNumber, $matches)) {
+            $nextNumber = ((int) $matches[1]) + 1;
+        }
+
+        do {
+            $ticketNumber = 'TK-'.$nextNumber;
+            $nextNumber++;
+        } while (Ticket::withTrashed()->where('ticket_number', $ticketNumber)->exists());
+
+        return $ticketNumber;
     }
 }

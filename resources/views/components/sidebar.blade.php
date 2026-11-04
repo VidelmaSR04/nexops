@@ -15,6 +15,14 @@
     <!-- Navigation Menu -->
     <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
 
+        @if (Auth::user()->role === 'customer')
+            <a href="{{ route('customer.tickets.index') }}"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                      {{ request()->routeIs('customer.tickets.*') ? 'bg-primary text-white' : 'text-gray-500 hover:bg-gray-50 hover:text-dark' }}">
+                <i data-lucide="ticket" class="w-5 h-5"></i>
+                Tiket Saya
+            </a>
+        @else
         <a href="{{ route('dashboard') }}"
            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
                   {{ request()->routeIs('dashboard') ? 'bg-primary text-white' : 'text-gray-500 hover:bg-gray-50 hover:text-dark' }}">
@@ -77,6 +85,7 @@
             <i data-lucide="settings" class="w-5 h-5"></i>
             Settings
         </a>
+        @endif
 
     </nav>
 
@@ -88,7 +97,7 @@
             </div>
             <div class="flex-1 min-w-0">
                 <p class="text-dark text-sm font-medium truncate">{{ Auth::user()->name }}</p>
-                <p class="text-gray-400 text-xs">Administrator</p>
+                <p class="text-gray-400 text-xs">{{ Auth::user()->customer?->name ?? ucfirst(Auth::user()->role) }}</p>
             </div>
         </div>
     </div>

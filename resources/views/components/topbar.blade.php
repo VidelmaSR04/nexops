@@ -7,7 +7,7 @@
             <div class="relative">
                 <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
                 <input type="text"
-                       placeholder="Cari ticket, customer, perangkat, atau serial number..."
+                       placeholder="{{ Auth::user()->role === 'customer' ? 'Portal Tiket OPD' : 'Cari ticket, customer, perangkat, atau serial number...' }}"
                        class="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg
                               focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
                               placeholder-gray-400">
@@ -41,7 +41,7 @@
                     </div>
                     <div class="text-left hidden sm:block">
                         <p class="text-sm font-medium text-gray-700">{{ Auth::user()->name }}</p>
-                        <p class="text-xs text-gray-400">Administrator</p>
+                        <p class="text-xs text-gray-400">{{ Auth::user()->customer?->name ?? ucfirst(Auth::user()->role) }}</p>
                     </div>
                     <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 hidden sm:block"></i>
                 </button>

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Ticket;
+use App\Models\Technician;
 use App\Models\User;
 use App\Models\Customer;
 use Database\Seeders\OpdSeeder;
@@ -13,12 +14,31 @@ class TicketCrudTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_can_create_view_update_change_status_and_delete_ticket(): void
+    public function test_ticket_creation_rejects_customer_name_without_an_opd_relation(): void
     {
         $this->actingAs(User::factory()->create());
 
+        $this->postJson(route('tickets.store'), [
+            'customer_name' => 'Nama bebas tanpa OPD',
+            'location' => 'Situbondo',
+            'reporter_name' => 'Pelapor',
+            'priority' => 'Normal',
+            'title' => 'Tiket tanpa OPD',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('customer_id');
+
+        $this->assertDatabaseCount('tickets', 0);
+    }
+
+    public function test_user_can_create_view_update_change_status_and_delete_ticket(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+        $this->seed(OpdSeeder::class);
+        $opd = Customer::where('type', 'opd')->firstOrFail();
+
         $this->post(route('tickets.store'), [
-            'customer_name' => 'Customer Example',
+            'customer_id' => $opd->id,
             'location' => 'Situbondo',
             'reporter_name' => 'Reporter Example',
             'reporter_contact' => '08123456789',
@@ -34,6 +54,8 @@ class TicketCrudTest extends TestCase
         $this->assertDatabaseHas('tickets', [
             'id' => $ticket->id,
             'ticket_number' => $ticket->ticket_number,
+            'customer_id' => $opd->id,
+            'created_by' => $admin->id,
             'title' => 'Connection issue',
             'reporter_name' => 'Reporter Example',
             'reporter_contact' => '08123456789',
@@ -49,7 +71,7 @@ class TicketCrudTest extends TestCase
         $this->get(route('tickets.edit', $ticket->id))->assertOk();
 
         $this->put(route('tickets.update', $ticket->id), [
-            'customer_name' => 'Customer Example',
+            'customer_id' => $opd->id,
             'location' => 'Besuki',
             'reporter_name' => 'Updated Reporter',
             'reporter_contact' => '08111111111',
@@ -76,6 +98,89 @@ class TicketCrudTest extends TestCase
             ->assertRedirect(route('tickets.index'));
 
         $this->assertSoftDeleted('tickets', ['id' => $ticket->id]);
+    }
+
+    public function test_admin_can_assign_a_ticket_from_its_detail_using_the_assignment_controller(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+        $opd = Customer::create([
+            'customer_code' => 'OPD9001',
+            'name' => 'Dinas Contoh',
+            'type' => 'opd',
+            'status' => 'Aktif',
+        ]);
+        $technician = Technician::create([
+            'nik' => 'TECH-9001',
+            'name' => 'Teknisi Contoh',
+            'position' => 'Teknisi',
+            'area' => 'Situbondo',
+            'status' => 'Available',
+        ]);
+
+        $this->post(route('tickets.store'), [
+            'customer_id' => $opd->id,
+            'location' => 'Kantor OPD',
+            'reporter_name' => 'Pelapor Contoh',
+            'priority' => 'Normal',
+            'title' => 'Gangguan jaringan',
+            'description' => 'Koneksi terputus.',
+            'assigned_tech_name' => '-',
+        ])->assertRedirect(route('tickets.index'));
+
+        $ticket = Ticket::firstOrFail();
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'customer_id' => $opd->id,
+            'created_by' => $admin->id,
+        ]);
+
+        $this->get(route('tickets.show', $ticket->id))
+            ->assertOk()
+            ->assertSee('Assignment Teknisi')
+            ->assertSee('Teknisi Contoh');
+
+        $this->postJson(route('tickets.assignments.store', $ticket->id), [
+            'technician_id' => $technician->id,
+        ])->assertCreated()
+            ->assertJsonPath('data.technician_id', $technician->id);
+
+        $this->assertDatabaseHas('ticket_assignments', [
+            'ticket_id' => $ticket->id,
+            'technician_id' => $technician->id,
+            'is_active' => true,
+        ]);
+        $this->assertSame('Assigned', $ticket->fresh()->status);
+        $this->assertSame('On Task', $technician->fresh()->status);
+    }
+
+    public function test_deleting_an_opd_keeps_existing_ticket_history_and_customer_foreign_key(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
+        $opd = Customer::create([
+            'customer_code' => 'OPD9002',
+            'name' => 'Dinas Riwayat',
+            'type' => 'opd',
+            'status' => 'Aktif',
+        ]);
+        $ticket = Ticket::create([
+            'ticket_number' => 'TK-OPD-DELETE-1',
+            'customer_id' => $opd->id,
+            'customer_name' => $opd->name,
+            'title' => 'Tiket historis',
+            'priority' => 'Normal',
+            'status' => 'Open',
+        ]);
+
+        $this->delete(route('customers.destroy', $opd->id))
+            ->assertRedirect(route('customers.index'));
+
+        $this->assertSoftDeleted('customers', ['id' => $opd->id]);
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'customer_id' => $opd->id,
+            'customer_name' => 'Dinas Riwayat',
+        ]);
     }
 
     public function test_seeded_opd_can_be_selected_and_saved_on_a_ticket(): void
@@ -108,7 +213,6 @@ class TicketCrudTest extends TestCase
 
         $this->assertDatabaseHas('tickets', [
             'customer_id' => $opd->id,
-            'customer_name' => $opd->name,
             'reporter_name' => 'Pelapor OPD',
             'reporter_contact' => '081234567890',
         ]);
@@ -133,7 +237,6 @@ class TicketCrudTest extends TestCase
         $this->assertDatabaseHas('tickets', [
             'id' => $ticket->id,
             'customer_id' => $newOpd->id,
-            'customer_name' => $newOpd->name,
             'reporter_name' => 'Pelapor Baru',
             'reporter_contact' => '081111111111',
         ]);
@@ -194,9 +297,9 @@ class TicketCrudTest extends TestCase
             'type' => 'opd',
             'reporter_name' => 'Nama Pelapor',
             'reporter_contact' => '081234567890',
-            'registration_date' => '2026-10-28',
             'package_name' => '50 Mbps',
         ]);
+        $this->assertSame('2026-10-28', $customer->fresh()->registration_date?->format('Y-m-d'));
 
         $customer->refresh();
         $this->assertEqualsWithDelta(-7.706, (float) $customer->latitude, 0.000001);
@@ -249,10 +352,10 @@ class TicketCrudTest extends TestCase
             'customer_code' => $expectedCode,
             'reporter_name' => 'Nama Pelapor',
             'reporter_contact' => '081234567890',
-            'registration_date' => '2026-10-29',
             'area' => 'Besuki',
             'package_name' => '1 Gbps',
         ]);
+        $this->assertSame('2026-10-29', $customer->fresh()->registration_date?->format('Y-m-d'));
 
         $customer->update(['package_name' => '4000']);
         $this->put(route('customers.update', $customer->id), [

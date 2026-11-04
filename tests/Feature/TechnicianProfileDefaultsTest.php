@@ -11,7 +11,7 @@ class TechnicianProfileDefaultsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_new_technician_gets_generated_code_fixed_position_and_fixed_area(): void
+    public function test_new_technician_gets_generated_code_and_fixed_position_while_saving_area(): void
     {
         $this->actingAs(User::factory()->create());
 
@@ -39,14 +39,14 @@ class TechnicianProfileDefaultsTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.nik', 'TK002')
             ->assertJsonPath('data.role', 'Teknisi')
-            ->assertJsonPath('data.area', 'Dinas Komunikasi dan Informatika');
+            ->assertJsonPath('data.area', 'Situbondo');
 
         $technician = Technician::where('name', 'Teknisi Baru')->firstOrFail();
-        $this->assertNull($technician->latitude);
-        $this->assertNull($technician->longitude);
+        $this->assertEqualsWithDelta(-7.7, (float) $technician->latitude, 0.0001);
+        $this->assertEqualsWithDelta(113.9, (float) $technician->longitude, 0.0001);
     }
 
-    public function test_technician_update_cannot_change_generated_code_position_or_area(): void
+    public function test_technician_update_cannot_change_generated_code_or_position_but_saves_area(): void
     {
         $this->actingAs(User::factory()->create());
         $technician = Technician::create([
@@ -67,10 +67,10 @@ class TechnicianProfileDefaultsTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.nik', 'TK014')
             ->assertJsonPath('data.role', 'Teknisi')
-            ->assertJsonPath('data.area', 'Dinas Komunikasi dan Informatika');
+            ->assertJsonPath('data.area', 'Besuki');
 
         $this->assertSame('TK014', $technician->fresh()->nik);
         $this->assertSame('Teknisi', $technician->fresh()->position);
-        $this->assertSame('Dinas Komunikasi dan Informatika', $technician->fresh()->area);
+        $this->assertSame('Besuki', $technician->fresh()->area);
     }
 }

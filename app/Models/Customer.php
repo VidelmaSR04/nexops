@@ -40,6 +40,11 @@ class Customer extends Model
         return $this->hasMany(Ticket::class);
     }
 
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
+
     public function assets(): HasMany
     {
         return $this->hasMany(Asset::class);

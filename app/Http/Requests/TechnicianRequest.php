@@ -27,7 +27,7 @@ class TechnicianRequest extends FormRequest
             'nik' => ['nullable', 'string', 'max:30'],
             'name' => 'required|string|max:255',
             'position' => 'nullable|string|max:50',
-            'area' => 'nullable|string|max:60',
+            'area' => 'required|string|max:60',
             'latitude' => 'nullable|numeric|between:-90,90|required_with:longitude',
             'longitude' => 'nullable|numeric|between:-180,180|required_with:latitude',
             'phone' => ['nullable', 'string', 'max:30', 'regex:/^[0-9+().\-\s]{6,30}$/'],

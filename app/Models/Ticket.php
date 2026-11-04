@@ -13,6 +13,12 @@ class Ticket extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const ISSUE_CATEGORIES = [
+        'Koneksi Putus',
+        'Internet Lambat',
+        'Perangkat ONT Rusak',
+    ];
+
     protected $fillable = [
         'ticket_number',
         'customer_id',
@@ -24,6 +30,7 @@ class Ticket extends Model
         'assigned_tech_name',
         'title',
         'subtitle',
+        'issue_category',
         'description',
         'location',
         'priority',
@@ -64,6 +71,11 @@ class Ticket extends Model
         return $this->belongsToMany(Technician::class, 'ticket_assignments')
             ->withPivot(['assigned_by', 'assigned_at', 'unassigned_at', 'is_active'])
             ->withTimestamps();
+    }
+
+    public function activeTechnicians(): BelongsToMany
+    {
+        return $this->technicians()->wherePivot('is_active', true);
     }
 
     public function materials(): HasMany

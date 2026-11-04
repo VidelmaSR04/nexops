@@ -201,7 +201,7 @@
                                     </td>
                                     <td class="py-3 pr-3">
                                         <p class="font-medium text-dark">{{ $t['title'] }}</p>
-                                        <p class="text-[11px] text-secondary truncate max-w-[170px]">{{ $t['subtitle'] }}</p>
+                                        <p class="text-[11px] text-secondary truncate max-w-[170px]">{{ $t['category'] }} · {{ $t['subtitle'] }}</p>
                                     </td>
                                     <td class="py-3 pr-3" data-col="priority">
                                         <x-priority-badge :priority="$t['priority']" />
@@ -346,6 +346,10 @@
                             <div>
                                 <span class="text-secondary text-[11px] block">Judul:</span>
                                 <span id="info-title" class="font-medium text-dark">-</span>
+                            </div>
+                            <div>
+                                <span class="text-secondary text-[11px] block">Kategori Gangguan:</span>
+                                <span id="info-category" class="font-medium text-dark">-</span>
                             </div>
                             <div>
                                 <span class="text-secondary text-[11px] block">Deskripsi:</span>
@@ -517,6 +521,16 @@
             <div>
                 <label for="tf-title" class="block font-medium text-dark mb-1">Judul Masalah</label>
                 <input id="tf-title" type="text" name="title" required maxlength="255" class="{{ $modalInput }}">
+            </div>
+
+            <div>
+                <label for="tf-category" class="block font-medium text-dark mb-1">Kategori Gangguan</label>
+                <select id="tf-category" name="issue_category" class="{{ $modalInput }}">
+                    <option value="">Pilih kategori</option>
+                    @foreach ($issueCategories as $category)
+                        <option value="{{ $category }}">{{ $category }}</option>
+                    @endforeach
+                </select>
             </div>
 
             <div>
@@ -767,6 +781,7 @@
                     document.getElementById('tf-contact').value = blank(t.reporter_contact);
                     document.getElementById('tf-priority').value = t.priority;
                     document.getElementById('tf-title').value = blank(t.title);
+                    document.getElementById('tf-category').value = t.category === '-' ? '' : t.category;
                     document.getElementById('tf-description').value = blank(t.description);
                     document.getElementById('tf-tech').value = t.tech || '-';
                     document.getElementById('tf-asset').value = blank(t.asset);
@@ -944,6 +959,7 @@
                 document.getElementById('detail-sla-left').textContent = t.sla_left;
                 document.getElementById('detail-title').textContent = t.title;
                 document.getElementById('info-title').textContent = t.title;
+                document.getElementById('info-category').textContent = t.category || '-';
                 document.getElementById('detail-subtitle').textContent = t.subtitle;
                 document.getElementById('info-description').textContent = t.description;
 

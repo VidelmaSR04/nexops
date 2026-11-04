@@ -207,9 +207,11 @@
                             <option value="Baru">Status: Baru</option>
                             <option value="Nonaktif">Status: Nonaktif</option>
                         </select>
-                        <button type="button" onclick="openAssignTicketModal()" class="py-2 px-3 rounded-lg bg-primary text-white font-medium hover:bg-blue-700 transition-colors text-center">
-                            Assign Ticket
-                        </button>
+                        @if (Auth::user()->role === 'admin')
+                            <button type="button" onclick="document.getElementById('tab-pane-detail').scrollIntoView({ behavior: 'smooth', block: 'nearest' })" class="py-2 px-3 rounded-lg bg-primary text-white font-medium hover:bg-blue-700 transition-colors text-center">
+                                Kelola Akun
+                            </button>
+                        @endif
                     </div>
                     <div class="grid grid-cols-3 gap-2 pt-1">
                         <button type="button" onclick="switchTab('riwayat')" class="py-2 px-2 rounded-lg bg-white border border-border text-secondary hover:text-dark hover:bg-gray-50 text-center font-medium">Riwayat</button>
@@ -275,6 +277,25 @@
                         <div class="flex justify-between py-1">
                             <span class="text-secondary">Ticket Aktif</span>
                             <span class="px-2 py-0.5 rounded font-semibold bg-amber-50 text-amber-700">2 Ticket</span>
+                        </div>
+                        <div class="space-y-2 border-t border-gray-100 pt-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="font-semibold text-dark">Akun Pelapor Terhubung</span>
+                                <span id="linked-account-count" class="text-secondary">0 akun</span>
+                            </div>
+                            <div id="linked-account-list" class="space-y-2"></div>
+                            @if (Auth::user()->role === 'admin')
+                                <form id="account-link-form" class="flex flex-col gap-2 sm:flex-row">
+                                    <select id="account-user-select" required class="min-w-0 flex-1 rounded-lg border border-border bg-white px-2.5 py-2 text-dark">
+                                        <option value="">Pilih akun Customer</option>
+                                        @foreach ($availableCustomerUsers as $customerUser)
+                                            <option value="{{ $customerUser->id }}">{{ $customerUser->name }} — {{ $customerUser->email }}</option>
+                                        @endforeach
+                                    </select>
+                                    <button type="submit" class="rounded-lg bg-primary px-3 py-2 font-medium text-white hover:bg-blue-700">Hubungkan</button>
+                                </form>
+                                <p class="text-[11px] text-secondary">Akun yang sudah terhubung ke OPD lain tidak dapat dipilih.</p>
+                            @endif
                         </div>
                     </div>
 
@@ -487,40 +508,6 @@
         </div>
     </div>
 
-    {{-- Modal Assign Ticket --}}
-    <div id="modal-assign-ticket" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs hidden">
-        <div class="bg-white rounded-2xl border border-border shadow-2xl max-w-md w-full overflow-hidden">
-            <div class="p-4 border-b border-border flex items-center justify-between">
-                <h3 class="text-base font-bold text-dark">Assign Ticket Gangguan</h3>
-                <button type="button" onclick="closeAssignModal()" class="p-1 rounded-lg text-gray-400 hover:text-dark hover:bg-gray-100">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <form onsubmit="handleTicketSubmit(event)" class="p-5 space-y-3.5 text-xs">
-                <div>
-                    <label class="block font-medium text-dark mb-1">Pelanggan</label>
-                    <input type="text" id="ticketTargetCustomer" readonly class="w-full rounded-xl border border-border bg-gray-50 px-3 py-2 text-xs text-secondary">
-                </div>
-                <div>
-                    <label class="block font-medium text-dark mb-1">Kategori Kendala</label>
-                    <select class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20">
-                        <option value="Koneksi Putus">Koneksi Putus / Loss Signal</option>
-                        <option value="Internet Lambat">Internet Lambat</option>
-                        <option value="Perangkat ONT Rusak">Perangkat ONT Rusak</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block font-medium text-dark mb-1">Deskripsi</label>
-                    <textarea rows="3" required placeholder="Jelaskan kendala..." class="w-full rounded-xl border border-border px-3 py-2 text-xs focus:ring-2 focus:ring-primary/20"></textarea>
-                </div>
-                <div class="pt-3 border-t border-border flex items-center justify-end gap-2">
-                    <button type="button" onclick="closeAssignModal()" class="px-3.5 py-2 rounded-xl border border-border text-secondary hover:bg-gray-50 font-medium">Batal</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-primary text-white font-semibold hover:bg-blue-700 shadow-sm">Kirim Ticket</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     {{-- Dialog Konfirmasi Nonaktifkan --}}
     <div id="modal-deactivate" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs hidden">
         <div class="bg-white rounded-2xl border border-border shadow-2xl max-w-sm w-full p-5 text-center space-y-3.5">
@@ -543,6 +530,7 @@
         const serverData = @json($customersData ?? null);
         const customersData = serverData || [];
         const customerBaseUrl = @json(url('/customers'));
+        const availableCustomerUsers = @json(($availableCustomerUsers ?? collect())->map(fn ($user) => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email])->values());
         const customersPerPage = 20;
         let customerPage = 1;
         let customerDetailRequest = 0;
@@ -760,7 +748,6 @@
                 document.getElementById('qiArea').innerText = '';
                 document.getElementById('qiPaket').innerText = '';
                 document.getElementById('qiTagihan').innerText = '';
-                document.getElementById('ticketTargetCustomer').value = '';
                 return;
             }
 
@@ -783,8 +770,6 @@
             document.getElementById('qiPaket').innerText = cust.paket;
             document.getElementById('qiTagihan').innerText = cust.tagihan || '—';
 
-            const ticketTarget = document.getElementById('ticketTargetCustomer');
-            if (ticketTarget) ticketTarget.value = `${cust.name} (${cust.custNo})`;
         }
 
         async function loadCustomerRecords(customer) {
@@ -798,6 +783,7 @@
                 if (requestId !== customerDetailRequest || currentSelectedCustomer?.id !== customer.id) return;
 
                 const history = payload.data.ticket_history || [];
+                renderLinkedCustomerUsers(payload.data.linked_users || []);
                 const historyPane = document.getElementById('tab-pane-riwayat');
                 historyPane.innerHTML = history.length
                     ? '<div class="space-y-3 relative before:absolute before:inset-0 before:left-2 before:w-0.5 before:bg-gray-200">'
@@ -1830,17 +1816,45 @@
             });
         });
 
-        function openAssignTicketModal() { document.getElementById('modal-assign-ticket').classList.remove('hidden'); }
-        function closeAssignModal() { document.getElementById('modal-assign-ticket').classList.add('hidden'); }
+        function renderLinkedCustomerUsers(users) {
+            const list = document.getElementById('linked-account-list');
+            document.getElementById('linked-account-count').textContent = users.length + ' akun';
+            list.innerHTML = users.length
+                ? users.map(user => `<div class="flex items-center justify-between gap-2 rounded-lg border border-border px-2.5 py-2">
+                    <span class="min-w-0"><span class="block truncate font-medium text-dark">${escapeHtml(user.name)}</span><span class="block truncate text-[11px] text-secondary">${escapeHtml(user.email)}</span></span>
+                    ${@json(Auth::user()->role === 'admin') ? `<button type="button" data-unlink-user="${Number(user.id)}" class="shrink-0 rounded px-2 py-1 text-red-600 hover:bg-red-50">Lepas</button>` : ''}
+                </div>`).join('')
+                : '<p class="text-secondary">Belum ada akun Customer yang terhubung.</p>';
+        }
+
+        document.getElementById('account-link-form')?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!currentSelectedCustomer) return;
+            const userId = document.getElementById('account-user-select').value;
+            try {
+                await requestJson(`${customerBaseUrl}/${currentSelectedCustomer.id}/users`, 'POST', { user_id: Number(userId) });
+                window.location.reload();
+            } catch (error) {
+                window.alert(error.message);
+            }
+        });
+
+        document.getElementById('linked-account-list').addEventListener('click', async (event) => {
+            const button = event.target.closest('[data-unlink-user]');
+            if (!button || !currentSelectedCustomer) return;
+            try {
+                await requestJson(
+                    `${customerBaseUrl}/${currentSelectedCustomer.id}/users/${button.dataset.unlinkUser}`,
+                    'DELETE',
+                );
+                window.location.reload();
+            } catch (error) {
+                window.alert(error.message);
+            }
+        });
 
         function openDeactivateModal() { document.getElementById('modal-deactivate').classList.remove('hidden'); }
         function closeDeactivateModal() { document.getElementById('modal-deactivate').classList.add('hidden'); }
-
-        function handleTicketSubmit(event) {
-            event.preventDefault();
-            alert('Simulasi Frontend: Ticket berhasil di-assign!');
-            closeAssignModal();
-        }
 
         async function confirmDeactivate() {
             if (!currentSelectedCustomer) return;
