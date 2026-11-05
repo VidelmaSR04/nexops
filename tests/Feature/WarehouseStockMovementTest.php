@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\ActivityLog;
 use App\Models\Asset;
+use App\Models\Customer;
 use App\Models\InventoryItem;
 use App\Models\Ticket;
 use App\Models\TicketMaterial;
@@ -463,14 +464,22 @@ class WarehouseStockMovementTest extends TestCase
             'inventory_item_id' => $item->id,
             'status' => 'Maintenance',
         ]);
+        $customer = Customer::create([
+            'customer_code' => 'CST-WH-001',
+            'name' => 'Customer Test',
+        ]);
 
         $openTicket = Ticket::create([
             'ticket_number' => 'TK-OPEN',
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->name,
             'title' => 'Tiket terbuka',
             'status' => 'In Progress',
         ]);
         $closedTicket = Ticket::create([
             'ticket_number' => 'TK-CLOSED',
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->name,
             'title' => 'Tiket tertutup',
             'status' => 'Closed',
         ]);

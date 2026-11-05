@@ -95,8 +95,9 @@ class TicketController extends Controller
             })->toArray();
 
             $summary = [
+                'total'       => Ticket::count(),
                 'open'        => Ticket::where('status', 'Open')->count(),
-                'in_progress' => Ticket::where('status', 'In Progress')->count(),
+                'in_progress' => Ticket::whereIn('status', ['Assigned', 'In Progress', 'Waiting'])->count(),
                 'overdue'     => Ticket::whereNotIn('status', ['Resolved', 'Closed'])
                                 ->where('sla_due_at', '<', Carbon::now())
                                 ->count(),

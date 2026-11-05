@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\ActivityLog;
 use App\Models\Asset;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\InventoryItem;
 use App\Models\LoginHistory;
 use App\Models\Setting;
@@ -277,8 +278,6 @@ class NexopsDataSeeder extends Seeder
         }
 
         // Customers are managed through the OPD seeder and application.
-        $customers = [];
-
         // 6. TECHNICIANS (TEKNISI)
         $techniciansData = [
             ['name' => 'Budi Santoso',    'nik' => 'NIK001234', 'area' => 'Situbondo', 'status' => 'On Task',   'position' => 'Teknisi Senior', 'phone' => '0812 3456 7890', 'email' => 'budi.santoso@nexops.id',    'joined_at' => '2024-01-12', 'exp_years' => 3, 'rating' => 4.8],
@@ -660,15 +659,25 @@ class NexopsDataSeeder extends Seeder
             ],
         ];
 
-        foreach ($ticketsData as $tData) {
-            $cust = isset($customers[$tData['cust_code']]) ? $customers[$tData['cust_code']] : null;
+        $opds = Customer::query()
+            ->where('type', 'opd')
+            ->where('status', 'Aktif')
+            ->orderBy('id')
+            ->get();
+
+        if ($opds->count() < count($ticketsData)) {
+            throw new \RuntimeException('NexopsDataSeeder membutuhkan OPD master aktif untuk menautkan semua ticket demo.');
+        }
+
+        foreach ($ticketsData as $index => $tData) {
+            $cust = $opds[$index];
             $ast = !empty($tData['asset_code']) && isset($assets[$tData['asset_code']]) ? $assets[$tData['asset_code']] : null;
 
             $ticket = Ticket::updateOrCreate(
                 ['ticket_number' => $tData['ticket_number']],
                 [
                     'customer_id'        => $cust ? $cust->id : null,
-                    'customer_name'      => $tData['customer_name'],
+                    'customer_name'      => $cust->name,
                     'asset_id'           => $ast ? $ast->id : null,
                     'created_by'         => $adminUser->id,
                     'assigned_tech_name' => $tData['tech'],

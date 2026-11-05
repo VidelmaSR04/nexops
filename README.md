@@ -137,6 +137,16 @@ php artisan migrate
 
 Pastikan migration yang diperlukan telah tersedia. Jika project memiliki seeder, jalankan sesuai kebutuhan untuk mengisi data awal.
 
+#### Optional: Demo Tickets
+
+After the OPD and technician master data is available, add four repeatable demo tickets without creating duplicate customers:
+
+```bash
+php artisan db:seed --class=DemoTicketSeeder
+```
+
+This seeder is optional and is not included in the default `db:seed` command. Do not run it against production data.
+
 ### 7. Start the Development Server
 
 ```bash
