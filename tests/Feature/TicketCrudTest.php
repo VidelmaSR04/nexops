@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Customer;
 use Database\Seeders\OpdSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Database\QueryException;
 use Tests\TestCase;
 
 class TicketCrudTest extends TestCase
@@ -30,6 +31,40 @@ class TicketCrudTest extends TestCase
         $this->assertDatabaseCount('tickets', 0);
     }
 
+    public function test_database_rejects_tickets_without_a_customer_relation(): void
+    {
+        $this->expectException(QueryException::class);
+
+        Ticket::create([
+            'ticket_number' => 'TK-NO-CUSTOMER',
+            'title' => 'Ticket without customer',
+        ]);
+    }
+
+    public function test_ticket_summary_card_counts_all_active_tickets(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
+        $customer = Customer::create([
+            'customer_code' => 'OPD-SUMMARY',
+            'name' => 'OPD Summary',
+            'type' => 'opd',
+            'status' => 'Aktif',
+        ]);
+        Ticket::create([
+            'ticket_number' => 'TK-SUMMARY',
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->name,
+            'title' => 'Ticket summary',
+            'status' => 'Assigned',
+        ]);
+
+        $this->get(route('tickets.index'))
+            ->assertOk()
+            ->assertSee('Total Tiket')
+            ->assertViewHas('summary', fn (array $summary): bool => $summary['total'] === 1
+                && $summary['in_progress'] === 1);
+    }
+
     public function test_user_can_create_view_update_change_status_and_delete_ticket(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
@@ -50,6 +85,7 @@ class TicketCrudTest extends TestCase
         ])->assertRedirect(route('tickets.index'));
 
         $ticket = Ticket::firstOrFail();
+        $this->assertTrue($ticket->customer->is($opd));
 
         $this->assertDatabaseHas('tickets', [
             'id' => $ticket->id,

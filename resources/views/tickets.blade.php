@@ -32,7 +32,18 @@
         {{-- ============================================ --}}
         {{-- 2. SUMMARY CARDS                             --}}
         {{-- ============================================ --}}
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            {{-- Total Tickets --}}
+            <div class="bg-white rounded-xl border border-border p-4.5 flex items-center gap-3.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+                <div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                    <i data-lucide="ticket" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-secondary font-medium">Total Tiket</p>
+                    <p class="text-2xl font-bold text-dark mt-0.5">{{ $summary['total'] }}</p>
+                </div>
+            </div>
+
             {{-- Tiket Masuk --}}
             <div class="bg-white rounded-xl border border-border p-4.5 flex items-center gap-3.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
                 <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
@@ -50,7 +61,7 @@
                     <i data-lucide="loader-2" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <p class="text-xs text-secondary font-medium">Sedang Ditangani</p>
+                    <p class="text-xs text-secondary font-medium">Ditugaskan / Ditangani</p>
                     <p class="text-2xl font-bold text-dark mt-0.5">{{ $summary['in_progress'] }}</p>
                 </div>
             </div>
